@@ -90,46 +90,93 @@ struct DefaultHashFunctor<TYPE*>
   }
 };
 
-template<class KEY, class VALUE, class HASH = DefaultHashFunctor<KEY>, class EQUALS = DefaultEqualsFunctor<KEY>, int UNALLOCATED_SIZE = 13>
+template<class KEY, class VALUE, bool SIMPLE>
+struct HashMapBucket
+{
+};
+
+template<class KEY, class VALUE>
+struct HashMapBucket<KEY,VALUE,false>
+{
+  HashMapBucket() : key(), value(), state(EMPTY), hash(0), next(0) {}
+
+  inline void *operator new(size_t, HashMapBucket *p) { return (void*)p; }
+
+  inline void set(KEY k, VALUE v, size_t h)
+  {
+    key = k;
+    value = v;
+    hash = h;
+    state = OCCUPIED;
+  }
+
+  inline void setToDelete()
+  {
+    key = KEY();
+    value = VALUE();
+    state = DELETED;
+  }
+
+  static inline void initAll(HashMapBucket *buckets, size_t capacity)
+  {
+    for(size_t i = 0; i < capacity; ++i)
+      new (buckets + i) HashMapBucket();
+  }
+
+  static inline void destroyAll(HashMapBucket *buckets, size_t capacity)
+  {
+    for(size_t i = 0; i < capacity; ++i)
+      buckets[i].~HashMapBucket();
+  }
+
+  KEY key;
+  VALUE value;
+  enum State { EMPTY=0, OCCUPIED, DELETED } state;
+  size_t hash;
+  HashMapBucket *next;
+};
+
+template<class KEY, class VALUE>
+struct HashMapBucket<KEY,VALUE,true>
+{
+  inline void set(KEY k, VALUE v, size_t h)
+  {
+    key = k;
+    value = v;
+    hash = h;
+    state = OCCUPIED;
+  }
+
+  inline void setToDelete()
+  {
+    state = DELETED;
+  }
+
+  static inline void initAll(HashMapBucket *buckets, size_t capacity)
+  {
+    memset(buckets, 0, capacity * sizeof(HashMapBucket));
+  }
+
+  static inline void destroyAll(HashMapBucket *buckets, size_t capacity)
+  {
+  }
+
+  KEY key;
+  VALUE value;
+  enum State { EMPTY=0, OCCUPIED, DELETED } state;
+  size_t hash;
+  HashMapBucket *next;
+};
+
+template<class KEY, class VALUE,
+  class HASH = DefaultHashFunctor<KEY>,
+  class EQUALS = DefaultEqualsFunctor<KEY>,
+  int UNALLOCATED_SIZE = 13,
+  bool SIMPLE = false>
 class HashMap : public XERCES_CPP_NAMESPACE_QUALIFIER XMemory
 {
 private:
-  struct Bucket
-  {
-    Bucket() : key(), value(), state(EMPTY), hash(0), next(0) {}
-
-    inline void *operator new(size_t, Bucket *p) { return (void*)p; }
-
-    inline void set(KEY k, VALUE v, size_t h)
-    {
-      key = k;
-      value = v;
-      hash = h;
-      state = OCCUPIED;
-    }
-
-    inline void setToDelete()
-    {
-      key = KEY();
-      value = VALUE();
-      state = DELETED;
-    }
-
-    inline void clear()
-    {
-      key = KEY();
-      value = VALUE();
-      state = EMPTY;
-      hash = 0;
-      next = 0;
-    }
-
-    KEY key;
-    VALUE value;
-    enum State { EMPTY, OCCUPIED, DELETED } state;
-    size_t hash;
-    Bucket *next;
-  };
+  typedef HashMapBucket<KEY,VALUE,SIMPLE> Bucket;
 
 public:
   class iterator
@@ -201,12 +248,7 @@ private:
   {
     // Find the next highest or equal power of two
     --i;
-    i |= i >> 1;
-    i |= i >> 2;
-    i |= i >> 4;
-    i |= i >> 8;
-    i |= i >> 16;
-    i |= i >> 32;
+    i = (i >> 0) | (i >> 1) | (i >> 2) | (i >> 4) | (i >> 8) | (i >> 16) | (i >> 32);
     ++i;
     // Next lower power of two
     return i >> 1;
@@ -250,9 +292,7 @@ public:
       hash_(hash),
       equals_(equals)
   {
-    for(size_t i = 0; i < capacity_; ++i) {
-      new (buckets_ + i) Bucket();
-    }
+    Bucket::initAll(buckets_, capacity_);
   }
 
   HashMap(size_t initialCapacity, bool resizable,
@@ -269,9 +309,7 @@ public:
       hash_(hash),
       equals_(equals)
   {
-    for(size_t i = 0; i < capacity_; ++i) {
-      new (buckets_ + i) Bucket();
-    }
+    Bucket::initAll(buckets_, capacity_);
   }
 
   HashMap(const HashMap &o)
@@ -286,9 +324,7 @@ public:
       hash_(o.hash_),
       equals_(o.equals_)
   {
-    for(size_t i = 0; i < capacity_; ++i) {
-      new (buckets_ + i) Bucket();
-    }
+    Bucket::initAll(buckets_, capacity_);
     insert(o.buckets_, o.buckets_ + o.capacity_, /*overwrite*/false);
   }
 
@@ -304,17 +340,20 @@ public:
       hash_(o.hash_),
       equals_(o.equals_)
   {
-    for(size_t i = 0; i < capacity_; ++i) {
-      new (buckets_ + i) Bucket();
-    }
+    Bucket::initAll(buckets_, capacity_);
     insert(o.buckets_, o.buckets_ + o.capacity_, /*overwrite*/false);
   }
 
   HashMap &operator=(const HashMap &o)
   {
-    HashMap tmp(capacity_, resizable_, mm_);
-    tmp.insert(o.buckets_, o.buckets_ + o.capacity_, /*overwrite*/false);
-    swap(tmp);
+    if(SIMPLE && (!resizable_ || o.count_ < capacity_)) {
+      removeAll();
+      insert(o.buckets_, o.buckets_ + o.capacity_, /*overwrite*/false);
+    } else {
+      HashMap tmp(o.capacity_, resizable_, mm_);
+      tmp.insert(o.buckets_, o.buckets_ + o.capacity_, /*overwrite*/false);
+      swap(tmp);
+    }
     return *this;
   }
 
@@ -325,9 +364,7 @@ public:
 
   void release()
   {
-    for(size_t i = 0; i < capacity_; ++i) {
-      buckets_[i].~Bucket();
-    }
+    Bucket::destroyAll(buckets_, capacity_);
     if(buckets_ != (Bucket*)inlineBuckets_)
       mm_->deallocate(buckets_);
   }
@@ -457,13 +494,17 @@ public:
 
   inline void removeAll()
   {
-    attic_ = calculateAttic(capacity_);
-    lastKnownEmpty_ = buckets_ + capacity_;
-    count_ = 0;
-    deleted_ = 0;
-
-    for(size_t i = 0; i < capacity_; ++i) {
-      buckets_[i].clear();
+    if(size() == 0) return;
+    if(SIMPLE) {
+      attic_ = calculateAttic(capacity_);
+      lastKnownEmpty_ = buckets_ + capacity_;
+      count_ = 0;
+      deleted_ = 0;
+      Bucket::destroyAll(buckets_, capacity_);
+      Bucket::initAll(buckets_, capacity_);
+    } else {
+      HashMap tmp(capacity_, resizable_, mm_, hash_, equals_);
+      swap(tmp);
     }
   }
 
@@ -534,7 +575,7 @@ private:
     Bucket *ptr = &buckets_[h & (attic_ - 1)];
     if(ptr->state != Bucket::EMPTY) {
       while(true) {
-        if(ptr->state == Bucket::OCCUPIED && ptr->hash == h && equals_(key, ptr->key)) {
+        if(((ptr->state == Bucket::OCCUPIED) & (ptr->hash == h)) && equals_(key, ptr->key)) {
           found = true;
           break;
         }
