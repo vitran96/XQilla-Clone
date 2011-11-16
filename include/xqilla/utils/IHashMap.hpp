@@ -353,7 +353,7 @@ private:
     const Bucket *newAge /*hippy*/ = segment_->put(key, hash, value, equals_, age_, dead);
     if(newAge == 0) {
       RefCountPointer<Segment> newSegment;
-      Segment::copy(size() * 2, segment_, age_, newSegment, newAge);
+      Segment::copy(size() == 0 ? capacity() : size() * 2, segment_, age_, newSegment, newAge);
       dead = 0;
       newAge = newSegment->put(key, hash, value, equals_, newAge, dead);
       segment_.swap(newSegment);
