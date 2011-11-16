@@ -62,7 +62,7 @@ public:
 
   virtual void createTuple(DynamicContext *context, size_t capacity, TupleImpl::Ptr &result) const
   {
-    result = new TupleImpl(capacity, context->getDefaultCollation(this), context);
+    result = new TupleImpl(capacity, 0, context);
   }
 
 private:

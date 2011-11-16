@@ -89,6 +89,7 @@ int AnyAtomicType::compare(const AnyAtomicType::Ptr &b, const Collation *collati
   // Items are comparable
   switch(atype) {
   case AnyAtomicType::STRING:
+    if(collation == 0) collation = context->getDefaultCollation(0);
     return collation->compare(a->asString(context), b->asString(context));
   case AnyAtomicType::DOUBLE:
     return ((const Numeric *)a)->compare((const Numeric *)b.get(), context);
