@@ -209,6 +209,7 @@ xqilla/functions/FunctionUnparsedText.hpp \
 xqilla/functions/FunctionUpperCase.hpp \
 xqilla/functions/FunctionWords.hpp \
 xqilla/functions/FuncFactory.hpp \
+xqilla/functions/FuncFactoryTemplate.hpp \
 xqilla/functions/RegExpFunction.hpp \
 xqilla/functions/XQUserFunction.hpp \
 xqilla/functions/FunctionSignature.hpp \

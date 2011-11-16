@@ -164,7 +164,6 @@ src/functions/ExternalFunction.cpp \
 src/functions/XQillaFunction.cpp \
 src/functions/FunctionParseXML.cpp \
 src/functions/FuncFactory.cpp \
-src/functions/FuncFactoryTemplate.hpp \
 src/functions/FunctionLookup.cpp \
 src/functions/FunctionBaseURI.cpp \
 src/functions/FunctionCaseFold.cpp \
@@ -496,22 +495,14 @@ Win32Projects/VC7.1/xqtsRunner.vcproj \
 tests/xqts/xqts_testsuite/errors.xml \
 tests/xqts/xqts_testsuite/update_errors.xml \
 tests/xqts/xqts_testsuite/xsl_errors.xml \
-wintools/srcfiles.in \
 wintools/lib_paths.sed \
-wintools/srcfile_dsp.src \
 wintools/s_win32 \
-wintools/xqilla_dsp.src \
-wintools/filter_dsp.start \
-wintools/xqilla_cmd.dsp.src \
-wintools/s_win32_dsp \
-wintools/s_win32_common \
 wintools/README \
-wintools/filter_dsp.end \
-wintools/xqilla.template.xml \
 wintools/s_projects \
-wintools/app_dsp.src \
-wintools/gensrcfiles.xq \
-wintools/genproject.xq
+wintools/genproject.xq \
+wintools/xqilla.template.xml \
+wintools/xqilla.vs2010.xq \
+wintools/xqilla.vs2010_filter.xq
 
 
 xqilla_SOURCES = \

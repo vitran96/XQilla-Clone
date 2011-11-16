@@ -22,6 +22,7 @@ s!@XQILLA_VERSION_PATCH@!4!g
 s!@XERCES_LIBHOME@!@XERCES_WINHOME@/Build/Win32/VC6!g
 s!@XERCES_LIBHOME7@!@XERCES_WINHOME@/Build!g
 s!@XERCES_LIBHOME8@!@XERCES_WINHOME@/Build!g
+s!@XERCES_LIBHOME10@!@XERCES_WINHOME@/Build!g
 # Xerces-c is in ../../../xerces-c-src
 s!@XERCES_WINHOME@!../../../@XERCES_NAME@!g
 s!@XERCES_NAME@!xerces-c-src!g
@@ -29,8 +30,8 @@ s!@XERCES_STATIC_LIB@!xerces-c_static_@XERCES_VERSION_MAJOR@!g
 s!@XERCES_LIB@!xerces-c_@XERCES_VERSION_MAJOR@!g
 s!@XERCES_DLL@!xerces-c_@XERCES_VERSION_MAJOR@_@XERCES_VERSION_MINOR@!g
 
-# Current Xerces version is 3.1.0
+# Current Xerces version is 3.1.1
 s!@XERCES_VERSION_MAJOR@!3!g
 s!@XERCES_VERSION_MINOR@!1!g
-s!@XERCES_VERSION_PATCH@!0!g
+s!@XERCES_VERSION_PATCH@!1!g
 

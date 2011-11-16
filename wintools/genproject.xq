@@ -407,7 +407,9 @@ for $vsversion in distinct-values($projectDoc//visualstudioversion)
 for $project in $projectDoc/projects/project
 let $static := contains($project/@name,"static")
 let $proj := $project
-return 
+return
+if ($vsversion = "10.0") then ()
+else (
 put(<VisualStudioProject
    ProjectType="Visual C++"
    Version="{$vsversion}"
@@ -430,3 +432,4 @@ put(<VisualStudioProject
   {local:indent(2)}</Files>
   {local:indent(2)}<Globals/>
 {"&#xa;"}</VisualStudioProject>, local:getOutputName($project, $vsversion))
+)

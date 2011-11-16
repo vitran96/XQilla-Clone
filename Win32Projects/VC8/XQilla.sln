@@ -1,5 +1,6 @@
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual C++ Express 2008
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual Studio 2005
+
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xqilla", "xqilla.vcproj", "{63E85107-41E0-4FC7-8083-40E85861B426}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xqilla_cmd", "xqilla_cmd.vcproj", "{44F4673C-C971-4085-8750-3BA0D7FE6FD2}"

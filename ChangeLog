@@ -1,5 +1,54 @@
 XQilla: an XQuery and XPath 2.0 library and command line interpreter.
 
+
+version 2.3.0 (2011.09.09):
+	* Added support for XQuery 3.0 version declarations.
+	* Updated to support XQuery 3.0 higher order functions, including
+	  partial function application, function coercion, and function item
+	  SequenceType checking.
+	* Implemented XQuery 3.0 FLWOR clause ordering.
+	* Implemented XQuery 3.0 FLWOR count clause.
+	* Implemented XQuery 3.0 extended typeswitch syntax.
+	* Implemented XQuery 3.0 namespace test and constructor.
+	* Implemented XQuery 3.0 private functions.
+	* Updated to the latest W3C XQuery Full Text syntax.
+	* Implemented Unicode word bounding and sentence bounding for XQuery
+	  Full Text tokenization.
+	* Implemented XQuery Full Text case options.
+	* Implemented XQuery 1.0 second edition semantics for module import.
+	* Added the xqilla:explain() function to return the query plan of an
+	  expression.
+	* Added xqilla:words() and xqilla:sentences() to perform Unicode word
+	  and sentance boundary detection.
+	* Added xqilla:drop().
+	* Rewrote a number of the built-in XQuery functions in XQuery itself.
+	* Implemented constant time indexing into materialized sequences.
+	* Improved the efficiency of the tail call optimization code.
+	* Optimized boolean operators.
+	* Optimized DOMDocument::evaluate() calls.
+	* Fixed various bugs in static typing.
+	* Fixed various memory leaks in the DOM 3 API, and regular expressions.
+	* Fixed a bug that caused a crash when using huge integers.
+	* Modified to build against Xerces-C 3.1.1
+	* Added Visual Studio 2010 support.
+	* Build fix for AIX 5.3.
+	* Build fix for the clang++ compiler.
+	* Build fix for GCC 4.6.
+
+version 2.2.4 (2010.03.01):
+	* Modified to build against Xerces-C 3.1.0
+	* Modified the DOM 3 API to only orphan grammars if PSVI is enabled.
+	* Fixed computed attribute constructors not to use the default element
+	  namespace for names.
+	* Modified node serialization to generate prefixes for attributes with
+	  no prefix but in a namespace.
+	* Modified node serialization to use existing prefixes if possible.
+	* Fixed an unknown exception during certain update operations.
+	* Build fix for Sun Workshop 6 compiler.
+	* Build fix for older GCC.
+	* Added maintainer mode (--enable-maintainer-mode) to rebuild build
+	  related files.
+
 version 2.2.3 (2009.11.12):
 	* Work around for a Xerces-C bug in DOMDocument::importNode() that
 	  resulted in badly copied prefixes using XQuery Update.

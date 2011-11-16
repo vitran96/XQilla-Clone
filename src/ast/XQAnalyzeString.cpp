@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2010,
+ * Copyright (c) 2004, 2011,
  *     Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -187,7 +187,7 @@ Item::Ptr AnalyzeStringResult::next(DynamicContext *context)
 
       if(tokStart < matchStart) {
         const XMLCh *str = XPath2Utils::subString(input_, tokStart, matchStart - tokStart, mm);
-        strings_.push_back(pair<const XMLCh*, Match*>(str, 0));
+        strings_.push_back(pair<const XMLCh*, Match*>(str, static_cast<Match*>(0)));
       }
 
       const XMLCh *str = XPath2Utils::subString(input_, matchStart, matchEnd - matchStart, mm);
@@ -200,7 +200,7 @@ Item::Ptr AnalyzeStringResult::next(DynamicContext *context)
     if(tokStart < (int) length) {
       const XMLCh *str = XPath2Utils::subString(input_, tokStart,
                                                 (unsigned int)(length - tokStart), mm);
-      strings_.push_back(pair<const XMLCh*, Match*>(str, 0));
+      strings_.push_back(pair<const XMLCh*, Match*>(str, static_cast<Match*>(0)));
     }
   }
 

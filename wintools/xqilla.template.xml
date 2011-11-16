@@ -13,9 +13,11 @@
 <projects>
   <visualstudioversion>7.10</visualstudioversion>
   <visualstudioversion>8.00</visualstudioversion>
+  <visualstudioversion>10.0</visualstudioversion>
   <variable name='sourcePath'>../../</variable>
   <variable name='outputBase.7.10'>../../build/windows/VC7.1/</variable>
   <variable name='outputBase.8.00'>../../build/windows/VC8/</variable>
+  <variable name='outputBase.10.0'>../../build/windows/VC10/</variable>
   <preprocessor config='all'>WIN32;_WINDOWS</preprocessor>
   <preprocessor config='Debug'>_DEBUG</preprocessor>
   <preprocessor config='Release'>NDEBUG</preprocessor>
@@ -30,7 +32,7 @@
     <libname config='Release'>@XQILLA_LIB@</libname>
     <libname config='Static Debug'>@XQILLA_STATIC_LIB@d</libname>
     <libname config='Static Release'>@XQILLA_STATIC_LIB@</libname>
-    <platform name='Win32 x64 IA64' vsver="7.10 8.00">
+    <platform name='Win32 x64 IA64' vsver="7.10 8.00 10.0">
       <config type='Debug'>
         <libdir>$(OutDir)</libdir>
       </config>
@@ -78,6 +80,20 @@
         <libdir>@XERCES_LIBHOME8@/Win32/VC8/$(ConfigurationName)</libdir>
       </config>
     </platform>
+    <platform name="Win32" vsver="10.0">
+      <config type="Debug">
+        <libdir>@XERCES_LIBHOME10@/Win32/VC10/$(ConfigurationName)</libdir>
+      </config>
+      <config type="Release">
+        <libdir>@XERCES_LIBHOME10@/Win32/VC10/$(ConfigurationName)</libdir>
+      </config>
+      <config type="Static Debug">
+        <libdir>@XERCES_LIBHOME10@/Win32/VC10/$(ConfigurationName)</libdir>
+      </config>
+      <config type="Static Release">
+        <libdir>@XERCES_LIBHOME10@/Win32/VC10/$(ConfigurationName)</libdir>
+      </config>
+    </platform>
     <platform name="x64" vsver="8.00">
       <config type="Debug">
         <libdir>@XERCES_LIBHOME8@/Win64/VC8/$(ConfigurationName)</libdir>
@@ -92,6 +108,20 @@
         <libdir>@XERCES_LIBHOME8@/Win64/VC8/$(ConfigurationName)</libdir>
       </config>
     </platform>
+    <platform name="x64" vsver="10.0">
+      <config type="Debug">
+        <libdir>@XERCES_LIBHOME10@/Win64/VC10/$(ConfigurationName)</libdir>
+      </config>
+      <config type="Release">
+        <libdir>@XERCES_LIBHOME10@/Win64/VC10/$(ConfigurationName)</libdir>
+      </config>
+      <config type="Static Debug">
+        <libdir>@XERCES_LIBHOME10@/Win64/VC10/$(ConfigurationName)</libdir>
+      </config>
+      <config type="Static Release">
+        <libdir>@XERCES_LIBHOME10@/Win64/VC10/$(ConfigurationName)</libdir>
+      </config>
+    </platform>
   </library>
   <project name='xqilla' guid='63E85107-41E0-4FC7-8083-40E85861B426'>
     <type>library</type>
@@ -102,7 +132,7 @@
     <preprocessor config='Release'>XQILLA_APIS</preprocessor>
     <preprocessor config='Debug'>XQILLA_APIS</preprocessor>
     <files>
-      <filter name='include'>
+      <filter name='include' guid='48c5158e-7562-4630-85ec-70fde5e25ad8'>
         <file name='include/xqc.h'/>
         <file name='include/xqilla/xqilla-dom3.hpp'/>
         <file name='include/xqilla/xqilla-simple.hpp'/>
@@ -201,7 +231,6 @@
         <file name='include/xqilla/fulltext/FTContent.hpp'/>
         <file name='include/xqilla/fulltext/FTWindow.hpp'/>
         <file name='include/xqilla/axis/NodeTest.hpp'/>
-        <file name='include/xqilla/axis/SelfAxis.hpp'/>
         <file name='include/xqilla/context/ContextHelpers.hpp'/>
         <file name='include/xqilla/context/DynamicContext.hpp'/>
         <file name='include/xqilla/context/StaticContext.hpp'/>
@@ -361,6 +390,7 @@
         <file name='include/xqilla/functions/FunctionYearFromDateTime.hpp'/>
         <file name='include/xqilla/functions/FunctionYearsFromDuration.hpp'/>
         <file name='include/xqilla/functions/FuncFactory.hpp'/>
+        <file name='include/xqilla/functions/FuncFactoryTemplate.hpp'/>
         <file name='include/xqilla/functions/RegExpFunction.hpp'/>
         <file name='include/xqilla/functions/XQUserFunction.hpp'/>
         <file name='include/xqilla/functions/FunctionSignature.hpp'/>
@@ -451,9 +481,7 @@
         <file name='include/xqilla/runtime/ResultBufferImpl.hpp'/>
         <file name='include/xqilla/runtime/Result.hpp'/>
         <file name='include/xqilla/runtime/ResultImpl.hpp'/>
-        <file name='include/xqilla/runtime/SingleResult.hpp'/>
         <file name='include/xqilla/runtime/SequenceResult.hpp'/>
-        <file name='include/xqilla/runtime/LazySequenceResult.hpp'/>
         <file name='include/xqilla/runtime/EmptyResult.hpp'/>
         <file name='include/xqilla/schema/DocumentCache.hpp'/>
         <file name='include/xqilla/schema/SequenceType.hpp'/>
@@ -499,7 +527,7 @@
         <file name='include/xqilla/xqts/TestSuiteResultListener.hpp'/>
         <file name='include/xqilla/xqts/TestSuiteRunner.hpp'/>
       </filter>
-      <filter name="ast">
+      <filter name="ast" guid="1cd30824-8edb-41b6-ade1-d44efdf60c2f">
         <file name="src/ast/ASTNodeImpl.cpp"/>
         <file name="src/ast/TupleNode.cpp"/>
         <file name="src/ast/ContextTuple.cpp"/>
@@ -557,11 +585,10 @@
         <file name="src/ast/XQValidate.cpp"/>
         <file name="src/ast/XQVariable.cpp"/>
       </filter>
-      <filter name="axis">
+      <filter name="axis" guid="213e6d72-164a-4abc-9d81-ea4ec1fa913e">
         <file name="src/axis/NodeTest.cpp"/>
-        <file name="src/axis/SelfAxis.cpp"/>
       </filter>
-      <filter name="context">
+      <filter name="context" guid="7654848b-9dc8-466b-869c-b3ec4586f839">
         <file name="src/context/UpdateFactory.cpp"/>
         <file name="src/context/impl/CodepointCollation.cpp"/>
         <file name="src/context/impl/CollationImpl.cpp"/>
@@ -573,7 +600,7 @@
         <file name="src/context/impl/XQContextImpl.cpp"/>
         <file name="src/context/impl/XQDynamicContextImpl.cpp"/>
       </filter>
-      <filter name="debug">
+      <filter name="debug" guid="ba3d8aed-4201-4441-99c5-d6dd82313e1e">
         <file name="src/debug/ASTDebugHook.cpp"/>
         <file name="src/debug/DebugHookDecorator.cpp"/>
         <file name="src/debug/InputParser.cpp"/>
@@ -581,7 +608,7 @@
         <file name="src/debug/TupleDebugHook.cpp"/>
         <file name="src/debug/StackFrame.cpp"/>
       </filter>
-      <filter name="dom-api">
+      <filter name="dom-api" guid="3ed20b1a-e72c-4898-99d0-c75067468c96">
         <file name="src/dom-api/XPath2NodeSerializer.cpp"/>
         <file name="src/dom-api/XPath2NodeSerializer.hpp"/>
         <file name="src/dom-api/XQillaImplementation.cpp"/>
@@ -602,7 +629,7 @@
         <file name="src/dom-api/impl/XQillaXMLGrammarPoolImpl.cpp"/>
         <file name="src/dom-api/impl/XQillaXMLGrammarPoolImpl.hpp"/>
       </filter>
-      <filter name="events">
+      <filter name="events" guid="a6be29cb-95bc-486b-b58f-00553ca40be2">
         <file name="src/events/ContentSequenceFilter.cpp"/>
         <file name="src/events/EventGenerator.cpp"/>
         <file name="src/events/EventSerializer.cpp"/>
@@ -611,13 +638,13 @@
         <file name="src/events/NoInheritFilter.hpp"/>
         <file name="src/events/QueryPathTreeFilter.cpp"/>
       </filter>
-      <filter name="exceptions">
+      <filter name="exceptions" guid="ae555685-8d0e-41eb-9fb4-43ce07eb4634">
         <file name="src/exceptions/InvalidLexicalSpaceException.hpp"/>
         <file name="src/exceptions/MiscException.hpp"/>
         <file name="src/exceptions/XQException.cpp"/>
         <file name="src/exceptions/XQillaException.cpp"/>
       </filter>
-      <filter name="fastxdm">
+      <filter name="fastxdm" guid="cf11a8bc-d48e-484a-8e88-d1c606bf1844">
         <file name="src/fastxdm/FastXDMConfiguration.cpp"/>
         <file name="src/fastxdm/FastXDMDocument.cpp"/>
         <file name="src/fastxdm/FastXDMDocument.hpp"/>
@@ -628,14 +655,14 @@
         <file name="src/fastxdm/FastXDMUpdateFactory.cpp"/>
         <file name="src/fastxdm/FastXDMUpdateFactory.hpp"/>
       </filter>
-      <filter name="framework">
+      <filter name="framework" guid="05488243-4053-4c55-aa5d-68a0c52784df">
         <file name="src/framework/BaseMemoryManager.cpp"/>
         <file name="src/framework/ProxyMemoryManager.cpp"/>
         <file name="src/framework/ReferenceCounted.cpp"/>
         <file name="src/framework/StringPool.cpp"/>
         <file name="src/framework/XPath2MemoryManagerImpl.cpp"/>
       </filter>
-      <filter name="fulltext">
+      <filter name="fulltext" guid="b0e26f99-e085-45e8-8798-d9016881cd56">
         <file name="src/fulltext/DefaultTokenStore.cpp"/>
         <file name="src/fulltext/DefaultTokenizer.cpp"/>
         <file name="src/fulltext/FTAnd.cpp"/>
@@ -650,11 +677,10 @@
         <file name="src/fulltext/FTWindow.cpp"/>
         <file name="src/fulltext/FTWords.cpp"/>
       </filter>
-      <filter name="functions">
+      <filter name="functions" guid="3cf1b3ed-ebac-4530-8fcc-96a6918d3c25">
         <file name="src/functions/EXSLTMathFunction.cpp"/>
         <file name="src/functions/ExternalFunction.cpp"/>
         <file name="src/functions/FuncFactory.cpp"/>
-        <file name="src/functions/FuncFactoryTemplate.hpp"/>
         <file name="src/functions/FunctionAbs.cpp"/>
         <file name="src/functions/FunctionAcos.cpp"/>
         <file name="src/functions/FunctionAdjustDateTimeToTimezone.cpp"/>
@@ -773,7 +799,7 @@
         <file name="src/functions/CoreModule.hpp"/>
         <file name="src/functions/FnModule.hpp"/>
       </filter>
-      <filter name="items">
+      <filter name="items" guid="33dcf0b4-a424-4215-af63-de2c4ea514f0">
         <file name="src/items/ATDurationOrDerived.cpp"/>
         <file name="src/items/ATUntypedAtomic.cpp"/>
         <file name="src/items/AnyAtomicType.cpp"/>
@@ -816,7 +842,7 @@
         <file name="src/items/impl/FunctionRefImpl.cpp"/>
         <file name="src/items/impl/FunctionRefImpl.hpp"/>
       </filter>
-      <filter name="lexer">
+      <filter name="lexer" guid="097699e5-205b-4104-b6b0-df53e616718b">
         <file name="src/lexer/FlexLexer.h"/>
         <file name="src/lexer/XQLexer.cpp"/>
         <file name="src/lexer/XQLexer.hpp"/>
@@ -824,7 +850,7 @@
         <file name="src/lexer/XSLT2Lexer.cpp"/>
         <file name="src/lexer/XSLT2Lexer.hpp"/>
       </filter>
-      <filter name="mapm">
+      <filter name="mapm" guid="89484a09-b3d8-4082-8fe6-9c2e23de8d43">
         <file name="src/mapm/m_apm.cpp"/>
         <file name="src/mapm/m_apm_lc.h"/>
         <file name="src/mapm/mapm5sin.c"/>
@@ -865,7 +891,7 @@
         <file name="src/mapm/mapmutil.c"/>
         <file name="src/mapm/mapmutl2.c"/>
       </filter>
-      <filter name="operators">
+      <filter name="operators" guid="de07f4db-5013-4831-b9ee-9866db06c303">
         <file name="src/operators/And.cpp"/>
         <file name="src/operators/ArithmeticOperator.cpp"/>
         <file name="src/operators/ComparisonOperator.cpp"/>
@@ -890,7 +916,7 @@
         <file name="src/operators/UnaryMinus.cpp"/>
         <file name="src/operators/Union.cpp"/>
       </filter>
-      <filter name="optimizer">
+      <filter name="optimizer" guid="35a9babf-7d81-4caa-952d-59b00be19adf">
         <file name="src/optimizer/ASTCopier.cpp"/>
         <file name="src/optimizer/ASTReleaser.cpp"/>
         <file name="src/optimizer/ASTVisitor.cpp"/>
@@ -901,24 +927,22 @@
         <file name="src/optimizer/QueryPathTreeGenerator.cpp"/>
         <file name="src/optimizer/ASTToXML.cpp"/>
       </filter>
-      <filter name="parser">
+      <filter name="parser" guid="328cacad-2ac8-4a30-9160-25e86e003537">
         <file name="src/parser/QName.cpp"/>
         <file name="src/parser/XQParser.cpp"/>
         <file name="src/parser/XQParser.hpp"/>
       </filter>
-      <filter name="runtime">
+      <filter name="runtime" guid="8fee88eb-8985-4e6c-85c1-2315f15b33df">
         <file name="src/runtime/ClosureResult.cpp"/>
         <file name="src/runtime/EmptyResult.cpp"/>
-        <file name="src/runtime/LazySequenceResult.cpp"/>
         <file name="src/runtime/Result.cpp"/>
         <file name="src/runtime/ResultBuffer.cpp"/>
         <file name="src/runtime/ResultBufferImpl.cpp"/>
         <file name="src/runtime/ResultImpl.cpp"/>
         <file name="src/runtime/Sequence.cpp"/>
         <file name="src/runtime/SequenceResult.cpp"/>
-        <file name="src/runtime/SingleResult.cpp"/>
       </filter>
-      <filter name="schema">
+      <filter name="schema" guid="74d32292-bdcc-478d-8f5a-02fe04cde6af">
         <file name="src/schema/AnyAtomicTypeDatatypeValidator.cpp"/>
         <file name="src/schema/DocumentCacheImpl.cpp"/>
         <file name="src/schema/FaxppDocumentCacheImpl.cpp"/>
@@ -926,11 +950,11 @@
         <file name="src/schema/SchemaValidatorFilter.cpp"/>
         <file name="src/schema/SequenceType.cpp"/>
       </filter>
-      <filter name="simple-api">
+      <filter name="simple-api" guid="df47f154-45ee-4335-ab02-e23842829560">
         <file name="src/simple-api/XQQuery.cpp"/>
         <file name="src/simple-api/XQilla.cpp"/>
       </filter>
-      <filter name="update">
+      <filter name="update" guid="486194cc-dab7-48bc-9ae7-23688a06a279">
         <file name="src/update/FunctionPut.cpp"/>
         <file name="src/update/PendingUpdateList.cpp"/>
         <file name="src/update/UApplyUpdates.cpp"/>
@@ -945,7 +969,7 @@
         <file name="src/update/UReplaceValueOf.cpp"/>
         <file name="src/update/UTransform.cpp"/>
       </filter>
-      <filter name="utils">
+      <filter name="utils" guid="c35e1470-6663-4da6-a9a4-f557a42052d1">
         <file name="src/utils/ContextUtils.cpp"/>
         <file name="src/utils/DateUtils.cpp"/>
         <file name="src/utils/DateUtils.hpp"/>
@@ -961,7 +985,7 @@
         <file name="src/utils/XStr.cpp"/>
         <file name="src/utils/DelayedModule.cpp"/>
       </filter>
-      <filter name="xerces">
+      <filter name="xerces" guid="ff80d5da-7332-4758-b00b-f416e285f5c5">
         <file name="src/xerces/AncestorAxis.cpp"/>
         <file name="src/xerces/AncestorAxis.hpp"/>
         <file name="src/xerces/AncestorOrSelfAxis.cpp"/>
@@ -998,12 +1022,12 @@
         <file name="src/xerces/XercesUpdateFactory.cpp"/>
         <file name="src/xerces/XercesUpdateFactory.hpp"/>
       </filter>
-      <filter name="xqts">
+      <filter name="xqts" guid="b4449c1a-4ddd-4bf6-b753-a746ae8937cc">
         <file name="src/xqts/TestSuiteParser.cpp"/>
         <file name="src/xqts/TestSuiteResultListener.cpp"/>
         <file name="src/xqts/TestSuiteRunner.cpp"/>
       </filter>
-      <filter name="yajl">
+      <filter name="yajl" guid="a23a04f6-0ed6-4b4c-a9c8-0754ee912bc7">
         <file name="src/yajl/yajl.c"/>
         <file name="src/yajl/yajl_buf.c"/>
         <file name="src/yajl/yajl_buf.h"/>
@@ -1018,7 +1042,7 @@
         <file name="src/yajl/yajl_parser.c"/>
         <file name="src/yajl/yajl_parser.h"/>
       </filter>
-      <filter name="xqc">
+      <filter name="xqc" guid="a55f8810-3951-46fb-9469-ed6871991041">
         <file name="src/xqc/XQillaXQCImplementation.cpp"/>
         <file name="src/xqc/XQillaXQCImplementation.hpp"/>
         <file name="src/xqc/XQillaXQCStaticContext.cpp"/>

@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * $Id: UnicodeTransformer.hpp 475 2008-01-08 18:47:44Z jpcs $
+ * $Id$
  */
 
 #ifndef UNICODETRANSFORMER_HPP

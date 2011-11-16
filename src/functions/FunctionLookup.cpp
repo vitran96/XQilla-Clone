@@ -220,7 +220,7 @@ const ExternalFunction *FunctionLookup::lookUpGlobalExternalFunction(
   return ef;
 }
 
-#include "FuncFactoryTemplate.hpp"
+#include <xqilla/functions/FuncFactoryTemplate.hpp>
 #include <xqilla/functions/FunctionBaseURI.hpp>
 #include <xqilla/functions/FunctionCollection.hpp>
 #include <xqilla/functions/FunctionCompare.hpp>

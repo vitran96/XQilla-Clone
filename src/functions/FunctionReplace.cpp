@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2010,
+ * Copyright (c) 2004, 2011,
  *     Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -86,7 +86,7 @@ ASTNode *FunctionReplace::staticTypingImpl(StaticContext *context)
 
   	try
     {
-      regExp_ = new (memMgr) RegularExpression(pattern_, optionsBuf.getRawBuffer());
+      regExp_ = new (memMgr) RegularExpression(pattern_, optionsBuf.getRawBuffer(), memMgr);
     } catch (ParseException &e){
       processParseException(e, "FunctionReplace::staticTypingImpl", memMgr);
     }

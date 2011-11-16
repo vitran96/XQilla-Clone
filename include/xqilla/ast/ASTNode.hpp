@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2010,
+ * Copyright (c) 2004, 2011,
  *     Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,7 +34,7 @@ class StaticAnalysis;
 class PendingUpdateList;
 class EventHandler;
 class StaticTyper;
-class BoolResult;
+struct BoolResult;
 
 class XQILLA_API ASTNode : public LocationInfo
 {

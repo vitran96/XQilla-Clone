@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2010,
+ * Copyright (c) 2004, 2011,
  *     Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -85,7 +85,7 @@ ASTNode *FunctionTokenize::staticTypingImpl(StaticContext *context)
 
   	try
     {
-      regExp_ = new (memMgr) RegularExpression(pattern_, optionsBuf.getRawBuffer());
+      regExp_ = new (memMgr) RegularExpression(pattern_, optionsBuf.getRawBuffer(), memMgr);
       if(regExp_->matches(XMLUni::fgZeroLenString))
         XQThrow(FunctionException, X("FunctionTokenize::staticTypingImpl"), X("The pattern matches the zero-length string [err:FORX0003]"));
     } catch (ParseException &e){

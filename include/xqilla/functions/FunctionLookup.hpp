@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2010,
+ * Copyright (c) 2004, 2011,
  *     Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -74,6 +74,7 @@ public:
                                        const FunctionLookup *contextTable);
   static const ExternalFunction *lookUpGlobalExternalFunction(const XMLCh* URI, const XMLCh* fname, size_t numArgs,
                                                               const FunctionLookup *contextTable);
+  static XPath2MemoryManager *getMemoryManager();
   static void initialize();
   static void terminate();
 private:

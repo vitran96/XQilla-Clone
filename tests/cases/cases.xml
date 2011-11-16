@@ -13,8 +13,8 @@
     <schema ID="schema1" uri="" FileName="schema/schema1.xsd"/>
 
     <module ID="functional" FileName="hofunctions/functional"/>
-    <module ID="private_module1" FileName="xquery11/functiondecl/private_module1"/>
-    <module ID="private_module2" FileName="xquery11/functiondecl/private_module2"/>
+    <module ID="private_module1" FileName="xquery3/functiondecl/private_module1"/>
+    <module ID="private_module2" FileName="xquery3/functiondecl/private_module2"/>
 
 <!--     <collection ID="categoryCollection"> -->
 <!--       <input-document>category</input-document> -->
@@ -329,49 +329,49 @@
     </test-case>
   </test-group>
 
-  <test-group name="xquery11">
+  <test-group name="xquery3">
     <GroupInfo>
-      <title>Tests for XQuery 1.1 functionality</title>
+      <title>Tests for XQuery 3.0 functionality</title>
     </GroupInfo>
 
     <test-group name="flwor">
       <GroupInfo>
-        <title>Tests for XQuery 1.1 FLWOR</title>
+        <title>Tests for XQuery 3.0 FLWOR</title>
       </GroupInfo>
 
-      <test-case name="flwor1" FilePath="xquery11/flwor">
+      <test-case name="flwor1" FilePath="xquery3/flwor">
         <query name="flwor1"/>
         <output-file compare="Fragment">flwor1.out</output-file>
       </test-case>
-      <test-case name="flwor2" FilePath="xquery11/flwor">
+      <test-case name="flwor2" FilePath="xquery3/flwor">
         <query name="flwor2"/>
         <output-file compare="Fragment">flwor2.out</output-file>
       </test-case>
-      <test-case name="count1" FilePath="xquery11/flwor">
+      <test-case name="count1" FilePath="xquery3/flwor">
         <query name="count1"/>
         <output-file compare="Fragment">count1.out</output-file>
       </test-case>
-      <test-case name="count2" FilePath="xquery11/flwor">
+      <test-case name="count2" FilePath="xquery3/flwor">
         <query name="count2"/>
         <output-file compare="Fragment">count2.out</output-file>
       </test-case>
-      <test-case name="count3" FilePath="xquery11/flwor">
+      <test-case name="count3" FilePath="xquery3/flwor">
         <query name="count3"/>
         <output-file compare="Fragment">count3.out</output-file>
       </test-case>
-      <test-case name="count4" FilePath="xquery11/flwor">
+      <test-case name="count4" FilePath="xquery3/flwor">
         <query name="count4"/>
         <output-file compare="Fragment">count4.out</output-file>
       </test-case>
-      <test-case name="count5" FilePath="xquery11/flwor">
+      <test-case name="count5" FilePath="xquery3/flwor">
         <query name="count5"/>
         <output-file compare="Fragment">count5.out</output-file>
       </test-case>
-      <test-case name="count6" FilePath="xquery11/flwor">
+      <test-case name="count6" FilePath="xquery3/flwor">
         <query name="count6"/>
         <output-file compare="Fragment">count6.out</output-file>
       </test-case>
-      <test-case name="count7" FilePath="xquery11/flwor">
+      <test-case name="count7" FilePath="xquery3/flwor">
         <query name="count7"/>
         <output-file compare="Fragment">count7.out</output-file>
       </test-case>
@@ -379,29 +379,29 @@
 
     <test-group name="functiondecl">
       <GroupInfo>
-        <title>Tests for XQuery 1.1 Function Declarations</title>
+        <title>Tests for XQuery 3.0 Function Declarations</title>
       </GroupInfo>
 
-      <test-case name="private1" FilePath="xquery11/functiondecl">
+      <test-case name="private1" FilePath="xquery3/functiondecl">
         <module namespace="http://snelson.org.uk/test/private_module1">private_module1</module>
         <query name="private1"/>
         <expected-error>XPST0017</expected-error>
       </test-case>
-      <test-case name="private2" FilePath="xquery11/functiondecl">
+      <test-case name="private2" FilePath="xquery3/functiondecl">
         <module namespace="http://snelson.org.uk/test/private_module1">private_module1</module>
         <query name="private2"/>
         <output-file compare="Fragment">private2.out</output-file>
       </test-case>
-      <test-case name="private3" FilePath="xquery11/functiondecl">
+      <test-case name="private3" FilePath="xquery3/functiondecl">
         <module namespace="http://snelson.org.uk/test/private_module1">private_module1</module>
         <query name="private3"/>
         <output-file compare="Fragment">private3.out</output-file>
       </test-case>
-      <test-case name="private4" FilePath="xquery11/functiondecl">
+      <test-case name="private4" FilePath="xquery3/functiondecl">
         <query name="private4"/>
         <output-file compare="Fragment">private4.out</output-file>
       </test-case>
-      <test-case name="private5" FilePath="xquery11/functiondecl">
+      <test-case name="private5" FilePath="xquery3/functiondecl">
         <module namespace="http://snelson.org.uk/test/private_module2">private_module2</module>
         <query name="private5"/>
         <expected-error>XQST0048</expected-error>
@@ -410,16 +410,20 @@
 
     <test-group name="versiondecl">
       <GroupInfo>
-        <title>Tests for XQuery 1.1 Version Declaration</title>
+        <title>Tests for XQuery 3.0 Version Declaration</title>
       </GroupInfo>
 
-      <test-case name="version1" FilePath="xquery11/versiondecl">
+      <test-case name="version1" FilePath="xquery3/versiondecl">
         <query name="version1"/>
         <output-file compare="Fragment">version1.out</output-file>
       </test-case>
-      <test-case name="version2" FilePath="xquery11/versiondecl">
+      <test-case name="version2" FilePath="xquery3/versiondecl">
         <query name="version2"/>
         <expected-error>XPST0003</expected-error>
+      </test-case>
+      <test-case name="version3" FilePath="xquery3/versiondecl">
+        <query name="version3"/>
+        <expected-error>XQST0031</expected-error>
       </test-case>
     </test-group>
 
@@ -489,14 +493,14 @@
 
     <test-group name="modules">
       <GroupInfo>
-        <title>Tests for XQuery 1.1 Module Semantics</title>
+        <title>Tests for XQuery 3.0 Module Semantics</title>
       </GroupInfo>
 
-      <test-case name="module11_1" FilePath="xquery11/modules">
+      <test-case name="module11_1" FilePath="xquery3/modules">
         <query name="module11_1"/>
         <output-file compare="Fragment">module11_1.out</output-file>
       </test-case>
-      <test-case name="module11_2" FilePath="xquery11/modules">
+      <test-case name="module11_2" FilePath="xquery3/modules">
         <query name="module11_2"/>
         <expected-error>XPST0008</expected-error>
       </test-case>

@@ -1,4 +1,4 @@
-xquery version "1.1";
+xquery version "3.0";
 
 module namespace func = "http://snelson.org.uk/functions/functional";
 declare default function namespace "http://snelson.org.uk/functions/functional";
