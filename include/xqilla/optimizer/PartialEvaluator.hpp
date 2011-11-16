@@ -52,7 +52,6 @@ protected:
   virtual ASTNode *optimizeInlineFunction(XQInlineFunction *item);
   virtual ASTNode *optimizeFunction(XQFunction *item);
   virtual ASTNode *optimizeTypeswitch(XQTypeswitch *item);
-  virtual ASTNode *optimizeTreatAs(XQTreatAs *item);
 
   bool checkSizeLimit(const ASTNode *oldAST, const ASTNode *newAST);
 

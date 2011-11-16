@@ -1093,39 +1093,9 @@ ASTNode *PartialEvaluator::optimizePartialApply(XQPartialApply *item)
   }
 }
 
-static inline FunctionSignature *findSignature(ASTNode *expr)
-{
-  FunctionSignature *signature = 0;
-
-  switch(expr->getType()) {
-  case ASTNode::INLINE_FUNCTION: {
-    signature = ((XQInlineFunction*)expr)->getItemType()->getFunctionSignature();
-    break;
-  }
-  case ASTNode::FUNCTION_COERCION: {
-    XQFunctionCoercion *coercion = (XQFunctionCoercion*)expr;
-    if(coercion->getFuncConvert()->getType() == ASTNode::INLINE_FUNCTION)
-      signature = ((XQInlineFunction*)coercion->getFuncConvert())->getItemType()->getFunctionSignature();
-    break;
-  }
-  default: break;
-  }
-
-  return signature;
-}
-
 ASTNode *PartialEvaluator::optimizeFunctionCoercion(XQFunctionCoercion *item)
 {
   ASTVisitor::optimizeFunctionCoercion(item);
-
-  FunctionSignature *signature = findSignature(item->getExpression());
-  if(signature && item->getSequenceType()->getItemType()->matches(signature)) {
-    ASTNode *result = item->getExpression();
-    item->setExpression(0);
-    sizeLimit_ += ASTCounter().count(item);
-    item->release();
-    return result;
-  }
 
   if(item->getExpression()->getType() != ASTNode::INLINE_FUNCTION || functionInlineLimit_ <= 0)
     return item;
@@ -1148,25 +1118,6 @@ ASTNode *PartialEvaluator::optimizeFunctionCoercion(XQFunctionCoercion *item)
     result->release();
     return item;
   }
-}
-
-ASTNode *PartialEvaluator::optimizeTreatAs(XQTreatAs *item)
-{
-  ASTVisitor::optimizeTreatAs(item);
-
-  const ItemType *itemType = item->getSequenceType()->getItemType();
-  if(!itemType) return item;
-
-  FunctionSignature *signature = findSignature(item->getExpression());
-  if(signature && itemType->matches(signature)) {
-    ASTNode *result = item->getExpression();
-    item->setExpression(0);
-    sizeLimit_ += ASTCounter().count(item);
-    item->release();
-    return result;
-  }
-
-  return item;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
