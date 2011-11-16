@@ -145,6 +145,8 @@
 
 #include <xqilla/axis/NodeTest.hpp>
 
+#include <xqilla/items/impl/ATDecimalOrDerivedImpl.hpp>
+#include <xqilla/items/impl/ATDoubleOrDerivedImpl.hpp>
 #include <xqilla/schema/SequenceType.hpp>
 #include <xqilla/context/DynamicContext.hpp>
 #include <xqilla/exceptions/NamespaceLookupException.hpp>
@@ -3533,7 +3535,7 @@ LetBinding:
   }
   | _SCORE_ _DOLLAR_ VarName _COLON_EQUALS_ ExprSingle
   {
-    ASTNode *literal = WRAP(@1, new (MEMMGR) XQLiteral((ItemType*)&ItemType::INTEGER, X("0"), MEMMGR));
+    ASTNode *literal = WRAP(@1, new (MEMMGR) XQDecimalLiteral((ItemType*)&ItemType::INTEGER, 0, MEMMGR));
     $$ = WRAP(@1, new (MEMMGR) LetTuple(0, $3, literal, MEMMGR));
   }
   ;
@@ -5791,7 +5793,8 @@ TransformBinding:
 IntegerLiteral:
   _INTEGER_LITERAL_
   {
-    $$ = WRAP(@1, new (MEMMGR) XQLiteral((ItemType*)&ItemType::INTEGER, $1, MEMMGR));
+    $$ = WRAP(@1, new (MEMMGR) XQDecimalLiteral((ItemType*)&ItemType::INTEGER,
+        ATDecimalOrDerivedImpl::parseDecimal($1), MEMMGR));
   }
   ;
 
@@ -5799,7 +5802,8 @@ IntegerLiteral:
 DecimalLiteral:
   _DECIMAL_LITERAL_
   {
-    $$ = WRAP(@1, new (MEMMGR) XQLiteral((ItemType*)&ItemType::DECIMAL, $1, MEMMGR));
+    $$ = WRAP(@1, new (MEMMGR) XQDecimalLiteral((ItemType*)&ItemType::DECIMAL,
+        ATDecimalOrDerivedImpl::parseDecimal($1), MEMMGR));
   }
   ;
 
@@ -5807,7 +5811,8 @@ DecimalLiteral:
 DoubleLiteral:
   _DOUBLE_LITERAL_
   {
-    $$ = WRAP(@1, new (MEMMGR) XQLiteral((ItemType*)&ItemType::DOUBLE, $1, MEMMGR));
+    $$ = WRAP(@1, new (MEMMGR) XQDoubleLiteral((ItemType*)&ItemType::DOUBLE,
+        ATDoubleOrDerivedImpl::parseDouble($1), MEMMGR));
   }
   ;
 

@@ -151,6 +151,8 @@ public:
   static State getState(float v);
   static const XMLCh* asString(float v, const DynamicContext *context);
 
+  static float parseFloat(const XMLCh* const value);
+
 private:
   /* set the value of this decimal */
   void setFloat(const XMLCh* const value);

@@ -513,18 +513,18 @@ bool ATFloatOrDerivedImpl::isInteger() const
   return ::isInteger(value_);
 }
 
+float ATFloatOrDerivedImpl::parseFloat(const XMLCh* const value)
+{
+  if(value == NULL)
+    return numeric_limits<float>::quiet_NaN();
+  else if(XPath2Utils::equals(value, Numeric::NegINF_string))
+    return -std::numeric_limits<float>::infinity();
+  else if(XPath2Utils::equals(value, Numeric::INF_string))
+    return std::numeric_limits<float>::infinity();
+  return (float)::atof(UTF8(value));
+}
+
 void ATFloatOrDerivedImpl::setFloat(const XMLCh* const value)
 {
-  if(value == NULL) {
-    value_ = numeric_limits<float>::quiet_NaN();
-  }
-  else if(XPath2Utils::equals(value, Numeric::NegINF_string)) {
-    value_ = -std::numeric_limits<float>::infinity();
-  }
-  else if(XPath2Utils::equals(value, Numeric::INF_string)) {
-    value_ = std::numeric_limits<float>::infinity();
-  }
-  else {
-    value_ = (float)::atof(UTF8(value));
-  }
+  value_ = parseFloat(value);
 }

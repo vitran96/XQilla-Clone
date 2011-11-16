@@ -475,18 +475,18 @@ bool ATDoubleOrDerivedImpl::isInteger() const
   return ::isInteger(value_);
 }
 
+double ATDoubleOrDerivedImpl::parseDouble(const XMLCh* const value)
+{
+  if(value == NULL)
+    return numeric_limits<double>::quiet_NaN();
+  else if(XPath2Utils::equals(value, Numeric::NegINF_string))
+    return -std::numeric_limits<double>::infinity();
+  else if(XPath2Utils::equals(value, Numeric::INF_string))
+    return std::numeric_limits<double>::infinity();
+  return ::atof(UTF8(value));
+}
+
 void ATDoubleOrDerivedImpl::setDouble(const XMLCh* const value)
 {
-  if(value == NULL) {
-    value_ = numeric_limits<double>::quiet_NaN();
-  }
-  else if(XPath2Utils::equals(value, Numeric::NegINF_string)) {
-    value_ = -std::numeric_limits<double>::infinity();
-  }
-  else if(XPath2Utils::equals(value, Numeric::INF_string)) {
-    value_ = std::numeric_limits<double>::infinity();
-  }
-  else {
-    value_ = ::atof(UTF8(value));
-  }
+  value_ = parseDouble(value);
 }

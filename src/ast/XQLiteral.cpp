@@ -126,44 +126,6 @@ bool XQLiteral::isDateOrTimeAndHasNoTimezone(StaticContext *context) const
 ASTNode* XQLiteral::staticResolution(StaticContext *context)
 {
   type_->staticResolution(context, this);
-
-  switch(type_->getPrimitiveType()) {
-  case AnyAtomicType::DECIMAL: {
-    // Pre-parse numeric literals
-    XPath2MemoryManager* mm = context->getMemoryManager();
-    AutoDelete<DynamicContext> dContext(context->createDynamicContext());
-    dContext->setMemoryManager(mm);
-
-    Numeric::Ptr number = (Numeric*)createResult(dContext)->next(dContext).get();
-    ASTNode *result = new (mm) XQDecimalLiteral(type_, number->asMAPM(), mm);
-    this->release();
-    return result->staticResolution(context);
-  }
-  case AnyAtomicType::FLOAT: {
-    // Pre-parse numeric literals
-    XPath2MemoryManager* mm = context->getMemoryManager();
-    AutoDelete<DynamicContext> dContext(context->createDynamicContext());
-    dContext->setMemoryManager(mm);
-
-    Numeric::Ptr number = (Numeric*)createResult(dContext)->next(dContext).get();
-    ASTNode *result = new (mm) XQFloatLiteral(type_, number->asFloat(), mm);
-    this->release();
-    return result->staticResolution(context);
-  }
-  case AnyAtomicType::DOUBLE: {
-    // Pre-parse numeric literals
-    XPath2MemoryManager* mm = context->getMemoryManager();
-    AutoDelete<DynamicContext> dContext(context->createDynamicContext());
-    dContext->setMemoryManager(mm);
-
-    Numeric::Ptr number = (Numeric*)createResult(dContext)->next(dContext).get();
-    ASTNode *result = new (mm) XQDoubleLiteral(type_, number->asDouble(), mm);
-    this->release();
-    return result->staticResolution(context);
-  }
-  default: break;
-  }
-
   return this;
 }
 
