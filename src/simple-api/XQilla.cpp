@@ -70,7 +70,8 @@ Optimizer *XQilla::createOptimizer(DynamicContext *context, unsigned int flags)
       // optimizer = new PrintASTOptimizer("After partial evaluation", context, optimizer);
       optimizer = new StaticTyper(context, optimizer);
       // optimizer = new PrintASTOptimizer("After static typing (2)", context, optimizer);
-      optimizer = new QueryPathTreeGenerator(context, optimizer);
+      if(context->getProjection())
+        optimizer = new QueryPathTreeGenerator(context, optimizer);
     }
     if((flags & DEBUG_QUERY) != 0) {
       optimizer = new DebugHookDecorator(context, optimizer);
