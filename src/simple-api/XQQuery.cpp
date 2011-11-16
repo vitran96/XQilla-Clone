@@ -488,10 +488,6 @@ void XQQuery::staticTyping(StaticTyper *styper)
   // Run staticTyping on the user defined functions,
   // which calculates a better type for them
   for(i = m_userDefFns.begin(); i != m_userDefFns.end(); ++i) {
-    for(j = m_userDefFns.begin(); j != m_userDefFns.end(); ++j) {
-      (*j)->resetStaticTypingOnce();
-    }
-
     (*i)->staticTypingOnce(m_context, styper);
   }
 
