@@ -115,6 +115,15 @@ private:
       state = DELETED;
     }
 
+    inline void clear()
+    {
+      key = KEY();
+      value = VALUE();
+      state = EMPTY;
+      hash = 0;
+      next = 0;
+    }
+
     KEY key;
     VALUE value;
     enum State { EMPTY, OCCUPIED, DELETED } state;
@@ -448,8 +457,14 @@ public:
 
   inline void removeAll()
   {
-    HashMap tmp(capacity_, resizable_, mm_, hash_, equals_);
-    swap(tmp);
+    attic_ = calculateAttic(capacity_);
+    lastKnownEmpty_ = buckets_ + capacity_;
+    count_ = 0;
+    deleted_ = 0;
+
+    for(size_t i = 0; i < capacity_; ++i) {
+      buckets_[i].clear();
+    }
   }
 
   inline void swap(HashMap &o)

@@ -74,10 +74,10 @@ private:
   const XMLCh *uri_, *prefix_, *localname_;
 };
 
-class XQILLA_API XQNumericLiteral : public ASTNodeImpl
+class XQILLA_API XQDecimalLiteral : public ASTNodeImpl
 {
 public:
-  XQNumericLiteral(ItemType *type, const MAPM& value,
+  XQDecimalLiteral(ItemType *type, const MAPM& value,
                    XPath2MemoryManager* memMgr);
 
   virtual bool isDateOrTimeAndHasNoTimezone(StaticContext* context) const;
@@ -95,6 +95,48 @@ public:
 private:
   ItemType *type_;
   M_APM_struct value_;
+};
+
+class XQILLA_API XQFloatLiteral : public ASTNodeImpl
+{
+public:
+  XQFloatLiteral(ItemType *type, float value, XPath2MemoryManager* memMgr);
+
+  virtual bool isDateOrTimeAndHasNoTimezone(StaticContext* context) const;
+
+  virtual ASTNode *staticResolution(StaticContext *context);
+  virtual ASTNode *staticTypingImpl(StaticContext *context);
+  virtual Result createResult(DynamicContext* context, int flags=0) const;
+  virtual EventGenerator::Ptr generateEvents(EventHandler *events, DynamicContext *context,
+                                             bool preserveNS, bool preserveType) const;
+
+  ItemType *getItemType() const { return type_; }
+  float getValue() const { return value_; }
+
+private:
+  ItemType *type_;
+  float value_;
+};
+
+class XQILLA_API XQDoubleLiteral : public ASTNodeImpl
+{
+public:
+  XQDoubleLiteral(ItemType *type, double value, XPath2MemoryManager* memMgr);
+
+  virtual bool isDateOrTimeAndHasNoTimezone(StaticContext* context) const;
+
+  virtual ASTNode *staticResolution(StaticContext *context);
+  virtual ASTNode *staticTypingImpl(StaticContext *context);
+  virtual Result createResult(DynamicContext* context, int flags=0) const;
+  virtual EventGenerator::Ptr generateEvents(EventHandler *events, DynamicContext *context,
+                                             bool preserveNS, bool preserveType) const;
+
+  ItemType *getItemType() const { return type_; }
+  double getValue() const { return value_; }
+
+private:
+  ItemType *type_;
+  double value_;
 };
 
 #endif

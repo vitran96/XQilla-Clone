@@ -28,17 +28,10 @@
 
 class XQILLA_API ATFloatOrDerivedImpl : public ATFloatOrDerived 
 {
-
 public:
-  /* constructor */
   ATFloatOrDerivedImpl(const XMLCh* typeURI, const XMLCh* typeName, const XMLCh* value, const StaticContext* context);
+  ATFloatOrDerivedImpl(const XMLCh* typeURI, const XMLCh* typeName, float value);
 
-  /* constructor */
-  ATFloatOrDerivedImpl(const XMLCh* typeURI, const XMLCh* typeName, const MAPM value, const StaticContext* context);
-
-  /** destructor -- do nothing*/
-  virtual ~ATFloatOrDerivedImpl() { };
-  
   virtual void *getInterface(const XMLCh *name) const;
 
   /* Get the name of the primitive type (basic type) of this type
@@ -58,6 +51,10 @@ public:
   virtual Numeric::Ptr promoteTypeIfApplicable(AnyAtomicType::AtomicObjectType typeIndex,
                                                const DynamicContext* context) const;
   
+  virtual bool equals(const AnyAtomicType::Ptr &target, const DynamicContext* context) const;
+  virtual bool lessThan(const Numeric::Ptr &other, const DynamicContext* context) const;
+  virtual bool greaterThan(const Numeric::Ptr &other, const DynamicContext* context) const;
+
   /** Returns a Numeric object which is the sum of this and other */
   virtual Numeric::Ptr add(const Numeric::Ptr &other, const DynamicContext* context) const;
 
@@ -88,16 +85,16 @@ public:
  
   /** Returns the Additive inverse of this Numeric */
   virtual Numeric::Ptr invert(const DynamicContext* context) const;
-  
+
   /** Returns the absolute value of this Numeric */
   virtual Numeric::Ptr abs(const DynamicContext* context) const;
 
   /** Returns the square root of this Numeric */
   virtual Numeric::Ptr sqrt(const DynamicContext* context) const;
- 
+  
   /** Returns the sinus of this Numeric */
   virtual Numeric::Ptr sin(const DynamicContext* context) const;
-
+  
   /** Returns the cosinus of this Numeric */
   virtual Numeric::Ptr cos(const DynamicContext* context) const;
 
@@ -135,9 +132,7 @@ public:
 
   /* Is this xs:float infinite? */
   virtual bool isInfinite() const;
-
-  /* Get the primitive index associated with this type */
-  virtual AnyAtomicType::AtomicObjectType getPrimitiveTypeIndex() const;
+  virtual bool isInteger() const;
 
   /* Get the primitive index associated with this type */
   static AnyAtomicType::AtomicObjectType getTypeIndex(); 
@@ -145,47 +140,29 @@ public:
   /* Get the primitive type name */
   static const XMLCh* getPrimitiveName();
 
-  virtual const MAPM &asMAPM() const { return _float; }
+  virtual MAPM asMAPM() const;
+  virtual State getState() const;
 
-  virtual State getState() const { return _state; }
+  virtual double asDouble() const { return (double)value_; }
+  virtual float asFloat() const { return value_; }
+  virtual int asInt() const { return (int)value_; }
 
-  /* The significant digits */
-  static int g_nSignificantDigits;
-
-  static MAPM parseFloat(const XMLCh* const value, State &state);
+  static bool isNegative(float v);
+  static State getState(float v);
+  static const XMLCh* asString(float v, const DynamicContext *context);
 
 private:
-
   /* set the value of this decimal */
   void setFloat(const XMLCh* const value);
 
-  /* returns a new infinity ATFloatOrDerived*/
-  ATFloatOrDerived::Ptr infinity(const DynamicContext* context) const;
-
-  /* returns a new negative infinity ATFloatOrDerived*/
-  ATFloatOrDerived::Ptr negInfinity(const DynamicContext* context) const;
-
-  /* returns a NaN ATFloatOrDerived*/
-  ATFloatOrDerived::Ptr notANumber(const DynamicContext* context) const;
-
-  /* returns a -0 ATFloatOrDerived*/
-  ATFloatOrDerived::Ptr negZero(const DynamicContext* context) const;
-  
-  /*returns a ATFloatOrDerived of value value*/
-  ATFloatOrDerived::Ptr newFloat(MAPM value, const DynamicContext* context) const;
-
   /*The value of this float*/
-  MAPM _float;
-
-  /* is it NaN, INF, NegINF, or just a float (NUM) */
-  State _state;
+  float value_;
 
   /* the name of this type */
-  const XMLCh* _typeName;
+  const XMLCh* typeName_;
 
   /* the uri of this type */
-  const XMLCh* _typeURI;
- 
+  const XMLCh* typeURI_; 
 };
 
-#endif // _ATFLOATORDERIVEDIMPL_HPP
+#endif

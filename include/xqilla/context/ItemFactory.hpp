@@ -65,14 +65,14 @@ public:
 
   /* @name Number factory methods */
 
-  virtual ATDoubleOrDerived::Ptr createDouble(const MAPM value, const DynamicContext* context) = 0;
+  virtual ATDoubleOrDerived::Ptr createDouble(double value, const DynamicContext* context) = 0;
   virtual ATDoubleOrDerived::Ptr createDouble(const XMLCh* value, const DynamicContext* context) = 0;
-  virtual ATDoubleOrDerived::Ptr createDoubleOrDerived(const XMLCh* typeURI, const XMLCh* typeName, const MAPM value, const DynamicContext* context) = 0;
+  virtual ATDoubleOrDerived::Ptr createDoubleOrDerived(const XMLCh* typeURI, const XMLCh* typeName, double value, const DynamicContext* context) = 0;
   virtual ATDoubleOrDerived::Ptr createDoubleOrDerived(const XMLCh* typeURI, const XMLCh* typeName, const XMLCh* value, const DynamicContext* context) = 0;
 
-  virtual ATFloatOrDerived::Ptr createFloat(const MAPM value, const DynamicContext* context) = 0;
+  virtual ATFloatOrDerived::Ptr createFloat(float value, const DynamicContext* context) = 0;
   virtual ATFloatOrDerived::Ptr createFloat(const XMLCh* value, const DynamicContext* context) = 0;
-  virtual ATFloatOrDerived::Ptr createFloatOrDerived(const XMLCh* typeURI, const XMLCh* typeName, const MAPM value, const DynamicContext* context) = 0;
+  virtual ATFloatOrDerived::Ptr createFloatOrDerived(const XMLCh* typeURI, const XMLCh* typeName, float value, const DynamicContext* context) = 0;
   virtual ATFloatOrDerived::Ptr createFloatOrDerived(const XMLCh* typeURI, const XMLCh* typeName, const XMLCh* value, const DynamicContext* context) = 0;
 
   virtual ATDecimalOrDerived::Ptr createInteger(const int value, const DynamicContext* context) = 0;

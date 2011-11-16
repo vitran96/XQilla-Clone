@@ -136,19 +136,13 @@ public:
   /** Is this Numeric positive? */
   virtual bool isPositive() const;
 
-  /** Treat this decimal (must be integer) as a codepoint **/
-  virtual XMLInt32 treatAsCodepoint(const DynamicContext* context) const;
-
-  /* Get the primitive index associated with this type */
-  virtual AnyAtomicType::AtomicObjectType getPrimitiveTypeIndex() const;
-
   /* Get the primitive index associated with this type */
   static AnyAtomicType::AtomicObjectType getTypeIndex(); 
 
   /* Get the primitive type name */
   static const XMLCh* getPrimitiveName();
   
-  virtual const MAPM &asMAPM() const { return _decimal; }
+  virtual MAPM asMAPM() const { return _decimal; }
 
   virtual State getState() const { return isNegative()? NEG_NUM : NUM; }
 

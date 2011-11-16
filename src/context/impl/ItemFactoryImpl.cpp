@@ -83,20 +83,20 @@ ATQNameOrDerived::Ptr ItemFactoryImpl::createQName(const XMLCh* uri,
     );
 }
 
-ATDoubleOrDerived::Ptr ItemFactoryImpl::createDouble(const MAPM value, const DynamicContext* context)
+ATDoubleOrDerived::Ptr ItemFactoryImpl::createDouble(double value, const DynamicContext* context)
 {
   return new ATDoubleOrDerivedImpl(SchemaSymbols::fgURI_SCHEMAFORSCHEMA,
-                                   SchemaSymbols::fgDT_DOUBLE, value, context);
+                                   SchemaSymbols::fgDT_DOUBLE, value);
 }
 
 ATDoubleOrDerived::Ptr ItemFactoryImpl::createDouble(const XMLCh* value, const DynamicContext* context) {
   return (ATDoubleOrDerived*)datatypeLookup_->getDoubleFactory()->createInstance(value, context).get();
 }
 
-ATFloatOrDerived::Ptr ItemFactoryImpl::createFloat(const MAPM value, const DynamicContext* context)
+ATFloatOrDerived::Ptr ItemFactoryImpl::createFloat(float value, const DynamicContext* context)
 {
   return new ATFloatOrDerivedImpl(SchemaSymbols::fgURI_SCHEMAFORSCHEMA,
-                                  SchemaSymbols::fgDT_FLOAT, value, context);
+                                  SchemaSymbols::fgDT_FLOAT, value);
 }
 
 ATFloatOrDerived::Ptr ItemFactoryImpl::createFloat(const XMLCh* value, const DynamicContext* context) {
@@ -330,13 +330,10 @@ ATDoubleOrDerived::Ptr ItemFactoryImpl::createDoubleOrDerived(const XMLCh* typeU
   return (const ATDoubleOrDerived*)datatypeLookup_->getDoubleFactory()->createInstance(typeURI, typeName, value, context).get();
 }
 
-/** create a xs:double with a MAPM */
-ATDoubleOrDerived::Ptr ItemFactoryImpl::createDoubleOrDerived(const XMLCh* typeURI, 
-                                                                const XMLCh* typeName,
-                                                                const MAPM value, 
-                                                                const DynamicContext* context)
+ATDoubleOrDerived::Ptr ItemFactoryImpl::createDoubleOrDerived(const XMLCh* typeURI,
+  const XMLCh* typeName, double value, const DynamicContext* context)
 {
-  ATDoubleOrDerived::Ptr retVal = new ATDoubleOrDerivedImpl(typeURI, typeName, value, context);
+  ATDoubleOrDerived::Ptr retVal = new ATDoubleOrDerivedImpl(typeURI, typeName, value);
 
   // check if it's a valid instance
   DatatypeValidator* validator = context->getDocumentCache()->getDatatypeValidator(typeURI, typeName);
@@ -377,10 +374,10 @@ ATFloatOrDerived::Ptr ItemFactoryImpl::createFloatOrDerived(const XMLCh* typeURI
 /** create a xs:float with a MAPM */
 ATFloatOrDerived::Ptr ItemFactoryImpl::createFloatOrDerived(const XMLCh* typeURI, 
                                                               const XMLCh* typeName,
-                                                              const MAPM value, 
+                                                              float value, 
                                                               const DynamicContext* context)
 { 
-  ATFloatOrDerived::Ptr retVal = new ATFloatOrDerivedImpl(typeURI, typeName, value, context);
+  ATFloatOrDerived::Ptr retVal = new ATFloatOrDerivedImpl(typeURI, typeName, value);
 
   // check if it's a valid instance
   DatatypeValidator* validator = context->getDocumentCache()->getDatatypeValidator(typeURI, typeName);

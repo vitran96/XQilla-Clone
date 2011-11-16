@@ -317,7 +317,8 @@ ASTNode *PartialEvaluator::optimize(ASTNode *item)
   switch(item->getType()) {
   case ASTNode::SEQUENCE:
   case ASTNode::LITERAL:
-  case ASTNode::NUMERIC_LITERAL:
+  case ASTNode::DECIMAL_LITERAL:
+  case ASTNode::DOUBLE_LITERAL:
   case ASTNode::QNAME_LITERAL:
     break;
   default:

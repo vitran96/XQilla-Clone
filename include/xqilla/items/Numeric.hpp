@@ -33,27 +33,14 @@ class XQILLA_API Numeric : public AnyAtomicType
 public:
   typedef RefCountPointer<const Numeric> Ptr;
 
-  /* is this type numeric?  Return true */
+  /** is this type numeric?  Return true */
   virtual bool isNumericValue() const { return true; };
 
-  /* Get the name of the primitive type (basic type) of this type
-   * (ie "decimal" for xs:decimal) */
-  virtual const XMLCh* getPrimitiveTypeName() const = 0;
-
-  /* Get the namespace URI for this type */
-  virtual const XMLCh* getTypeURI() const = 0;
-
-  /* Get the name of this type  (ie "integer" for xs:integer) */
-  virtual const XMLCh* getTypeName() const = 0;
-
-  /* returns the XMLCh* (canonical) representation of this type */
-  virtual const XMLCh* asString(const DynamicContext* context) const = 0;
-
-  /* Promote this to the given type, if possible */
+  /** Promote this to the given type, if possible */
   virtual Numeric::Ptr promoteTypeIfApplicable(AnyAtomicType::AtomicObjectType typeIndex,
                                                const DynamicContext* context) const = 0;
-  
-  /* returns true if the two Numeric values are equal 
+
+  /** returns true if the two Numeric values are equal 
    * false otherwise */
   virtual bool equals(const AnyAtomicType::Ptr &target, const DynamicContext* context) const;
 
@@ -153,8 +140,9 @@ public:
 
   virtual AnyAtomicType::AtomicObjectType getPrimitiveTypeIndex() const = 0;
 
-  virtual const MAPM &asMAPM() const = 0;
+  virtual MAPM asMAPM() const = 0;
   virtual double asDouble() const;
+  virtual float asFloat() const;
   virtual int asInt() const;
 
   enum State {
@@ -178,7 +166,6 @@ public:
   static void checkDoubleLimits(Numeric::State &state, MAPM &value);
 
   static const XMLCh *asDecimalString(const MAPM &value, int significantDigits, const StaticContext* context);
-  static const XMLCh *asDoubleString(State state, const MAPM &value, int significantDigits, const StaticContext* context);
 
   static void hashMAPM(const MAPM &m, uint32_t *pc, uint32_t *pb);
 
@@ -187,8 +174,6 @@ protected:
                                             const XMLCh* targetType, const DynamicContext* context) const;
 
   const XMLCh *asDecimalString(int significantDigits, const StaticContext* context) const;
-  const XMLCh *asDoubleString(int significantDigits, const StaticContext* context) const;
-  
 };
 
-#endif //  __NUMERIC_HPP
+#endif

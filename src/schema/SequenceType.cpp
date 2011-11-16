@@ -848,7 +848,9 @@ bool ItemType::matchesNameType(const Item::Ptr &toBeTested, const DynamicContext
 
   if(m_TypeName) {
     if(toBeTested->getType() == Item::ATOMIC) {
-      return m_primitiveType == ((AnyAtomicType*)toBeTested.get())->getPrimitiveTypeIndex() &&
+      AnyAtomicType::AtomicObjectType testType = ((AnyAtomicType*)toBeTested.get())->getPrimitiveTypeIndex();
+      return (m_primitiveType == testType || (m_primitiveType == AnyAtomicType::DURATION &&
+          (testType == AnyAtomicType::YEAR_MONTH_DURATION || testType == AnyAtomicType::DAY_TIME_DURATION))) &&
         ((AnyAtomicType*)toBeTested.get())->isInstanceOfType(m_TypeURI, m_TypeName, context);
     } else if (toBeTested->getType() == Item::NODE) {
       return ((Node*)toBeTested.get())->hasInstanceOfType(m_TypeURI, m_TypeName, context);

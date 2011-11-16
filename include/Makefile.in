@@ -367,7 +367,6 @@ xqilla/functions/FunctionLookup.hpp \
 xqilla/functions/FunctionAnalyzeString.hpp \
 xqilla/functions/FunctionBaseURI.hpp \
 xqilla/functions/FunctionCaseFold.hpp \
-xqilla/functions/FunctionCodepointsToString.hpp \
 xqilla/functions/FunctionCollection.hpp \
 xqilla/functions/FunctionCompare.hpp \
 xqilla/functions/FunctionConcat.hpp \

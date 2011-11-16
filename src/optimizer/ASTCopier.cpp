@@ -265,7 +265,9 @@ ASTNode *ASTCopier::optimize ## methodname (classname *item) \
 
 COPY_XQ2(Literal, ItemType, Value)
 COPY_XQ4(QNameLiteral, ItemType, URI, Prefix, Localname)
-COPY_XQ2(NumericLiteral, ItemType, Value)
+COPY_XQ2(DecimalLiteral, ItemType, Value)
+COPY_XQ2(FloatLiteral, ItemType, Value)
+COPY_XQ2(DoubleLiteral, ItemType, Value)
 COPY_XQ1(Sequence, Children)
 COPY_XQ2(Step, Axis, NodeTest)
 COPY_XQ4(Variable, Prefix, URI, Name, Global)

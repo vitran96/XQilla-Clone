@@ -105,8 +105,12 @@ ASTNode *ASTVisitor::optimize(ASTNode *item)
     return optimizeLiteral((XQLiteral *)item);
   case ASTNode::QNAME_LITERAL:
     return optimizeQNameLiteral((XQQNameLiteral *)item);
-  case ASTNode::NUMERIC_LITERAL:
-    return optimizeNumericLiteral((XQNumericLiteral *)item);
+  case ASTNode::DECIMAL_LITERAL:
+    return optimizeDecimalLiteral((XQDecimalLiteral *)item);
+  case ASTNode::FLOAT_LITERAL:
+    return optimizeFloatLiteral((XQFloatLiteral *)item);
+  case ASTNode::DOUBLE_LITERAL:
+    return optimizeDoubleLiteral((XQDoubleLiteral *)item);
   case ASTNode::SEQUENCE:
     return optimizeSequence((XQSequence *)item);
   case ASTNode::FUNCTION:
@@ -278,7 +282,17 @@ ASTNode *ASTVisitor::optimizeQNameLiteral(XQQNameLiteral *item)
   return item;
 }
 
-ASTNode *ASTVisitor::optimizeNumericLiteral(XQNumericLiteral *item)
+ASTNode *ASTVisitor::optimizeDecimalLiteral(XQDecimalLiteral *item)
+{
+  return item;
+}
+
+ASTNode *ASTVisitor::optimizeFloatLiteral(XQFloatLiteral *item)
+{
+  return item;
+}
+
+ASTNode *ASTVisitor::optimizeDoubleLiteral(XQDoubleLiteral *item)
 {
   return item;
 }

@@ -405,8 +405,18 @@ bool RewritePattern::matches(const ASTNode *ast, DynamicContext *context,
         return false;
       lit = ast->createResult(context)->next(context);
     }
-    else if(ast->getType() == ASTNode::NUMERIC_LITERAL) {
-      if(((XQNumericLiteral*)ast)->getItemType()->getPrimitiveType() != primitiveType)
+    else if(ast->getType() == ASTNode::DECIMAL_LITERAL) {
+      if(((XQDecimalLiteral*)ast)->getItemType()->getPrimitiveType() != primitiveType)
+        return false;
+      lit = ast->createResult(context)->next(context);
+    }
+    else if(ast->getType() == ASTNode::FLOAT_LITERAL) {
+      if(((XQFloatLiteral*)ast)->getItemType()->getPrimitiveType() != primitiveType)
+        return false;
+      lit = ast->createResult(context)->next(context);
+    }
+    else if(ast->getType() == ASTNode::DOUBLE_LITERAL) {
+      if(((XQDoubleLiteral*)ast)->getItemType()->getPrimitiveType() != primitiveType)
         return false;
       lit = ast->createResult(context)->next(context);
     }

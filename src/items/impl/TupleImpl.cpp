@@ -37,8 +37,8 @@ XERCES_CPP_NAMESPACE_USE;
 using namespace std;
 
 TupleImpl::TupleImpl(DynamicContext *context)
-  : values_(17, AtomicHashFunctor(context->getDefaultCollation(0), context),
-            AtomicEqualsFunctor(context->getDefaultCollation(0), context)),
+  : values_(17, AtomicHashFunctor(0, context),
+            AtomicEqualsFunctor(0, context)),
     signature_(0),
     mm_(context->getMemoryManager())
 {
@@ -205,7 +205,7 @@ public:
     static const XMLCh s_key[] = { 'k', 'e', 'y', 0 };
     static const XMLCh s_value[] = { 'v', 'a', 'l', 'u', 'e', 0 };
 
-    TupleImpl::Ptr newTuple = new TupleImpl(2, context->getDefaultCollation(this), context);
+    TupleImpl::Ptr newTuple = new TupleImpl(2, 0, context);
     newTuple->add(context->getItemFactory()->createString(s_key, context),
                   (Item::Ptr)i_.getKey());
     newTuple->add(context->getItemFactory()->createString(s_value, context),
@@ -281,10 +281,9 @@ FunctionRef::Ptr TupleImpl::partialApply(const Result &arg, unsigned int argNum,
 static Result emptyMap(const VectorOfASTNodes &args, DynamicContext *context,
                        const LocationInfo *info)
 {
-  Collation* collation;
+  Collation* collation = 0;
   if(args.size() > 0) collation = context->getCollation(args[0]->createResult(context)->
     next(context)->asString(context), info);
-  else collation = context->getDefaultCollation(info);
 
   return (Item::Ptr)new TupleImpl(13, collation, context);
 }

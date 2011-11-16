@@ -31,7 +31,6 @@ class XQILLA_API ATStringOrDerivedImpl : public ATStringOrDerived
 {
 
 public:
-
   /* constructor */
   ATStringOrDerivedImpl(const XMLCh* typeURI, const XMLCh* typeName, const XMLCh* value, const StaticContext* context);
 

@@ -42,7 +42,9 @@ public:
   ///enum for data types
   typedef enum {
     LITERAL,
-    NUMERIC_LITERAL,
+    DECIMAL_LITERAL,
+    FLOAT_LITERAL,
+    DOUBLE_LITERAL,
     QNAME_LITERAL,
     SEQUENCE,
     FUNCTION,

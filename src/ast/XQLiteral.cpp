@@ -56,15 +56,20 @@ ASTNode *XQLiteral::create(const Item::Ptr &item, DynamicContext *context, XPath
                                        qname->getName(), mm);
       break;
     }
-    case AnyAtomicType::DECIMAL:
-    case AnyAtomicType::DOUBLE:
+    case AnyAtomicType::DOUBLE: {
+      const Numeric *number = (const Numeric*)atom;
+      result = new (mm) XQDoubleLiteral(type, number->asDouble(), mm);
+      break;
+    }
     case AnyAtomicType::FLOAT: {
       const Numeric *number = (const Numeric*)atom;
-      if(number->getState() == Numeric::NUM || (number->getState() == Numeric::NEG_NUM && !number->isZero())) {
-        result = new (mm) XQNumericLiteral(type, number->asMAPM(), mm);
-        break;
-      }
-      // Fall through
+      result = new (mm) XQFloatLiteral(type, number->asFloat(), mm);
+      break;
+    }
+    case AnyAtomicType::DECIMAL: {
+      const Numeric *number = (const Numeric*)atom;
+      result = new (mm) XQDecimalLiteral(type, number->asMAPM(), mm);
+      break;
     }
     default:
       result = new (mm) XQLiteral(type, atom->asString(context), mm);
@@ -123,8 +128,28 @@ ASTNode* XQLiteral::staticResolution(StaticContext *context)
   type_->staticResolution(context, this);
 
   switch(type_->getPrimitiveType()) {
-  case AnyAtomicType::DECIMAL:
-  case AnyAtomicType::FLOAT:
+  case AnyAtomicType::DECIMAL: {
+    // Pre-parse numeric literals
+    XPath2MemoryManager* mm = context->getMemoryManager();
+    AutoDelete<DynamicContext> dContext(context->createDynamicContext());
+    dContext->setMemoryManager(mm);
+
+    Numeric::Ptr number = (Numeric*)createResult(dContext)->next(dContext).get();
+    ASTNode *result = new (mm) XQDecimalLiteral(type_, number->asMAPM(), mm);
+    this->release();
+    return result->staticResolution(context);
+  }
+  case AnyAtomicType::FLOAT: {
+    // Pre-parse numeric literals
+    XPath2MemoryManager* mm = context->getMemoryManager();
+    AutoDelete<DynamicContext> dContext(context->createDynamicContext());
+    dContext->setMemoryManager(mm);
+
+    Numeric::Ptr number = (Numeric*)createResult(dContext)->next(dContext).get();
+    ASTNode *result = new (mm) XQFloatLiteral(type_, number->asFloat(), mm);
+    this->release();
+    return result->staticResolution(context);
+  }
   case AnyAtomicType::DOUBLE: {
     // Pre-parse numeric literals
     XPath2MemoryManager* mm = context->getMemoryManager();
@@ -132,12 +157,9 @@ ASTNode* XQLiteral::staticResolution(StaticContext *context)
     dContext->setMemoryManager(mm);
 
     Numeric::Ptr number = (Numeric*)createResult(dContext)->next(dContext).get();
-    if(number->getState() == Numeric::NUM || (number->getState() == Numeric::NEG_NUM && !number->isZero())) {
-      ASTNode *result = new (mm) XQNumericLiteral(type_, number->asMAPM(), mm);
-      this->release();
-      return result->staticResolution(context);;
-    }
-    break;
+    ASTNode *result = new (mm) XQDoubleLiteral(type_, number->asDouble(), mm);
+    this->release();
+    return result->staticResolution(context);
   }
   default: break;
   }
@@ -224,8 +246,8 @@ EventGenerator::Ptr XQQNameLiteral::generateEvents(EventHandler *events, Dynamic
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-XQNumericLiteral::XQNumericLiteral(ItemType *type, const MAPM &value, XPath2MemoryManager* memMgr)
-  : ASTNodeImpl(NUMERIC_LITERAL, memMgr),
+XQDecimalLiteral::XQDecimalLiteral(ItemType *type, const MAPM &value, XPath2MemoryManager* memMgr)
+  : ASTNodeImpl(DECIMAL_LITERAL, memMgr),
     type_(type)
 {
   _src.getStaticType() = type_;
@@ -244,23 +266,23 @@ XQNumericLiteral::XQNumericLiteral(ItemType *type, const MAPM &value, XPath2Memo
   memcpy(value_.m_apm_data, cval->m_apm_data, len);
 }
 
-bool XQNumericLiteral::isDateOrTimeAndHasNoTimezone(StaticContext *context) const
+bool XQDecimalLiteral::isDateOrTimeAndHasNoTimezone(StaticContext *context) const
 {
   return false;
 }
 
-ASTNode* XQNumericLiteral::staticResolution(StaticContext *context)
+ASTNode* XQDecimalLiteral::staticResolution(StaticContext *context)
 {
   type_->staticResolution(context, this);
   return this;
 }
 
-ASTNode *XQNumericLiteral::staticTypingImpl(StaticContext *context)
+ASTNode *XQDecimalLiteral::staticTypingImpl(StaticContext *context)
 {
   return this;
 }
 
-MAPM XQNumericLiteral::getValue() const
+MAPM XQDecimalLiteral::getValue() const
 {
   // Use the C API to copy our fake MAPM
   MAPM copy;
@@ -268,40 +290,96 @@ MAPM XQNumericLiteral::getValue() const
   return copy;
 }
 
-Result XQNumericLiteral::createResult(DynamicContext* context, int flags) const
+Result XQDecimalLiteral::createResult(DynamicContext* context, int flags) const
 {
-  switch(type_->getPrimitiveType()) {
-  case AnyAtomicType::DECIMAL:
-    return (Item::Ptr)new ATDecimalOrDerivedImpl(type_->getTypeURI(), type_->getTypeName(), getValue(), context);
-  case AnyAtomicType::FLOAT:
-    return (Item::Ptr)new ATFloatOrDerivedImpl(type_->getTypeURI(), type_->getTypeName(), getValue(), context);
-  case AnyAtomicType::DOUBLE:
-    return (Item::Ptr)new ATDoubleOrDerivedImpl(type_->getTypeURI(), type_->getTypeName(), getValue(), context);
-  default: break;
-  }
+  return (Item::Ptr)new ATDecimalOrDerivedImpl(type_->getTypeURI(), type_->getTypeName(), getValue(), context);
+}
+
+EventGenerator::Ptr XQDecimalLiteral::generateEvents(EventHandler *events, DynamicContext *context,
+                                              bool preserveNS, bool preserveType) const
+{
+  events->atomicItemEvent(type_->getPrimitiveType(), Numeric::asDecimalString(getValue(), ATDecimalOrDerivedImpl::g_nSignificantDigits,
+      context), type_->getTypeURI(), type_->getTypeName());
   return 0;
 }
 
-EventGenerator::Ptr XQNumericLiteral::generateEvents(EventHandler *events, DynamicContext *context,
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+XQFloatLiteral::XQFloatLiteral(ItemType *type, float value, XPath2MemoryManager* memMgr)
+  : ASTNodeImpl(FLOAT_LITERAL, memMgr),
+    type_(type),
+    value_(value)
+{
+  _src.getStaticType() = type_;
+}
+
+bool XQFloatLiteral::isDateOrTimeAndHasNoTimezone(StaticContext *context) const
+{
+  return false;
+}
+
+ASTNode* XQFloatLiteral::staticResolution(StaticContext *context)
+{
+  type_->staticResolution(context, this);
+  return this;
+}
+
+ASTNode *XQFloatLiteral::staticTypingImpl(StaticContext *context)
+{
+  return this;
+}
+
+Result XQFloatLiteral::createResult(DynamicContext* context, int flags) const
+{
+  return (Item::Ptr)new ATFloatOrDerivedImpl(type_->getTypeURI(), type_->getTypeName(), value_);
+}
+
+EventGenerator::Ptr XQFloatLiteral::generateEvents(EventHandler *events, DynamicContext *context,
                                               bool preserveNS, bool preserveType) const
 {
-  switch(type_->getPrimitiveType()) {
-  case AnyAtomicType::DECIMAL:
-    events->atomicItemEvent(type_->getPrimitiveType(), Numeric::asDecimalString(getValue(), ATDecimalOrDerivedImpl::g_nSignificantDigits,
-                                                                                context), type_->getTypeURI(), type_->getTypeName());
-    break;
-  case AnyAtomicType::FLOAT:
-    events->atomicItemEvent(type_->getPrimitiveType(), Numeric::asDoubleString(Numeric::NUM, getValue(),
-                                                                               ATFloatOrDerivedImpl::g_nSignificantDigits, context),
-                            type_->getTypeURI(), type_->getTypeName());
-    break;
-  case AnyAtomicType::DOUBLE:
-    events->atomicItemEvent(type_->getPrimitiveType(), Numeric::asDoubleString(Numeric::NUM, getValue(),
-                                                                               ATDoubleOrDerivedImpl::g_nSignificantDigits, context),
-                            type_->getTypeURI(), type_->getTypeName());
-    break;
-  default: break;
-  }
+  // TBD Could be more efficient - jpcs
+  events->atomicItemEvent(type_->getPrimitiveType(), ATFloatOrDerivedImpl::asString(value_, context),
+    type_->getTypeURI(), type_->getTypeName());
+  return 0;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+XQDoubleLiteral::XQDoubleLiteral(ItemType *type, double value, XPath2MemoryManager* memMgr)
+  : ASTNodeImpl(DOUBLE_LITERAL, memMgr),
+    type_(type),
+    value_(value)
+{
+  _src.getStaticType() = type_;
+}
+
+bool XQDoubleLiteral::isDateOrTimeAndHasNoTimezone(StaticContext *context) const
+{
+  return false;
+}
+
+ASTNode* XQDoubleLiteral::staticResolution(StaticContext *context)
+{
+  type_->staticResolution(context, this);
+  return this;
+}
+
+ASTNode *XQDoubleLiteral::staticTypingImpl(StaticContext *context)
+{
+  return this;
+}
+
+Result XQDoubleLiteral::createResult(DynamicContext* context, int flags) const
+{
+  return (Item::Ptr)new ATDoubleOrDerivedImpl(type_->getTypeURI(), type_->getTypeName(), value_);
+}
+
+EventGenerator::Ptr XQDoubleLiteral::generateEvents(EventHandler *events, DynamicContext *context,
+                                              bool preserveNS, bool preserveType) const
+{
+  // TBD Could be more efficient - jpcs
+  events->atomicItemEvent(type_->getPrimitiveType(), ATDoubleOrDerivedImpl::asString(value_, context),
+    type_->getTypeURI(), type_->getTypeName());
   return 0;
 }
 

@@ -23,6 +23,7 @@ module namespace fn = "http://www.w3.org/2005/xpath-functions";
 
 declare namespace rw = "http://xqilla.sourceforge.net/rewrite";
 declare namespace math = "http://www.w3.org/2005/xpath-functions/math";
+declare namespace emath = "http://exslt.org/math";
 
 declare function data($a as item()*) as xs:anyAtomicType*
 {
@@ -884,7 +885,7 @@ declare function map-pairs($f as function(item(), item()) as item()*, $seq1 as i
 declare %xqilla:inline
 function round($arg as xs:anyAtomicType?, $precision as xs:integer) as xs:anyAtomicType?
 {
-  let $factor := math:exp10($precision)
+  let $factor := emath:power(10, $precision)
   return round($arg * $factor) div $factor
 };
 

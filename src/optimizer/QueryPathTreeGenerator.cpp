@@ -1212,7 +1212,19 @@ ASTNode *QueryPathTreeGenerator::optimizeQNameLiteral(XQQNameLiteral *item)
   return item;
 }
 
-ASTNode *QueryPathTreeGenerator::optimizeNumericLiteral(XQNumericLiteral *item)
+ASTNode *QueryPathTreeGenerator::optimizeDecimalLiteral(XQDecimalLiteral *item)
+{
+  push(PathResult());
+  return item;
+}
+
+ASTNode *QueryPathTreeGenerator::optimizeFloatLiteral(XQFloatLiteral *item)
+{
+  push(PathResult());
+  return item;
+}
+
+ASTNode *QueryPathTreeGenerator::optimizeDoubleLiteral(XQDoubleLiteral *item)
 {
   push(PathResult());
   return item;

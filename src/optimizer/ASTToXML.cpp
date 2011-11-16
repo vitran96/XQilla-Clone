@@ -296,8 +296,14 @@ void ASTToXML::getElementName(ASTNode *item, XMLBuffer &buf)
   case ASTNode::QNAME_LITERAL:
     buf.append(X("QNameLiteral"));
     break;
-  case ASTNode::NUMERIC_LITERAL:
-    buf.append(X("NumericLiteral"));
+  case ASTNode::DECIMAL_LITERAL:
+    buf.append(X("DecimalLiteral"));
+    break;
+  case ASTNode::FLOAT_LITERAL:
+    buf.append(X("FloatLiteral"));
+    break;
+  case ASTNode::DOUBLE_LITERAL:
+    buf.append(X("DoubleLiteral"));
     break;
   case ASTNode::SEQUENCE:
     buf.append(X("Sequence"));
@@ -626,7 +632,7 @@ ASTNode *ASTToXML::optimizeQNameLiteral(XQQNameLiteral *item)
   return ASTVisitor::optimizeQNameLiteral(item);
 }
 
-ASTNode *ASTToXML::optimizeNumericLiteral(XQNumericLiteral *item)
+ASTNode *ASTToXML::optimizeDecimalLiteral(XQDecimalLiteral *item)
 {
   char obuf[1024];
   m_apm_to_string_mt(obuf, item->getRawValue().m_apm_datalength, const_cast<M_APM>(&item->getRawValue()));
@@ -636,7 +642,31 @@ ASTNode *ASTToXML::optimizeNumericLiteral(XQNumericLiteral *item)
   item->getItemType()->toBuffer(buf);
   events_->attributeEvent(0, 0, s_type, buf.getRawBuffer(), 0, 0);
 
-  return ASTVisitor::optimizeNumericLiteral(item);
+  return ASTVisitor::optimizeDecimalLiteral(item);
+}
+
+ASTNode *ASTToXML::optimizeFloatLiteral(XQFloatLiteral *item)
+{
+  ostringstream oss;
+  oss << item->getValue();
+  events_->attributeEvent(0, 0, s_value, X(oss.str().c_str()), 0, 0);
+  XMLBuffer buf;
+  item->getItemType()->toBuffer(buf);
+  events_->attributeEvent(0, 0, s_type, buf.getRawBuffer(), 0, 0);
+
+  return ASTVisitor::optimizeFloatLiteral(item);
+}
+
+ASTNode *ASTToXML::optimizeDoubleLiteral(XQDoubleLiteral *item)
+{
+  ostringstream oss;
+  oss << item->getValue();
+  events_->attributeEvent(0, 0, s_value, X(oss.str().c_str()), 0, 0);
+  XMLBuffer buf;
+  item->getItemType()->toBuffer(buf);
+  events_->attributeEvent(0, 0, s_type, buf.getRawBuffer(), 0, 0);
+
+  return ASTVisitor::optimizeDoubleLiteral(item);
 }
 
 void ASTToXML::optimizeNodeTest(const NodeTest *step)

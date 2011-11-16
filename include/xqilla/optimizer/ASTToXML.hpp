@@ -51,7 +51,9 @@ protected:
   virtual ASTNode *optimizeOperator(XQOperator *item);
   virtual ASTNode *optimizeLiteral(XQLiteral *item);
   virtual ASTNode *optimizeQNameLiteral(XQQNameLiteral *item);
-  virtual ASTNode *optimizeNumericLiteral(XQNumericLiteral *item);
+  virtual ASTNode *optimizeDecimalLiteral(XQDecimalLiteral *item);
+  virtual ASTNode *optimizeFloatLiteral(XQFloatLiteral *item);
+  virtual ASTNode *optimizeDoubleLiteral(XQDoubleLiteral *item);
   virtual ASTNode *optimizeStep(XQStep *item);
   virtual ASTNode *optimizeInlineFunction(XQInlineFunction *item);
   virtual ASTNode *optimizePromoteUntyped(XQPromoteUntyped *item);

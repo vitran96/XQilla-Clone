@@ -343,13 +343,13 @@ const XMLCh adjustTimeToTimezoneName[] =
 
 static SimpleBuiltinFactory adjustTimeToTimezoneFactory1(
   XQFunction::XMLChFunctionURI, adjustTimeToTimezoneName, 1,
-  "($arg as xs:Time?) as xs:Time?", adjustToTimezone<ATTimeOrDerived>,
+  "($arg as xs:time?) as xs:time?", adjustToTimezone<ATTimeOrDerived>,
   StaticAnalysis::TIMEZONE
 );
 
 static SimpleBuiltinFactory adjustTimeToTimezoneFactory2(
   XQFunction::XMLChFunctionURI, adjustTimeToTimezoneName, 2,
-  "($arg as xs:Time?, $timezone as xs:dayTimeDuration?) as xs:Time?",
+  "($arg as xs:time?, $timezone as xs:dayTimeDuration?) as xs:time?",
   adjustToTimezone<ATTimeOrDerived>
 );
 

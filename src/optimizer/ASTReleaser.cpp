@@ -125,7 +125,9 @@ ASTNode *ASTReleaser::optimize ## methodname (classname *item) \
 
 RELEASE_XQ(Literal)
 RELEASE_XQ(QNameLiteral)
-RELEASE_XQ(NumericLiteral)
+RELEASE_XQ(DecimalLiteral)
+RELEASE_XQ(FloatLiteral)
+RELEASE_XQ(DoubleLiteral)
 RELEASE_XQ(Step)
 RELEASE_XQ(Variable)
 RELEASE_XQ(ExprSubstitution)

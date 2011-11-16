@@ -93,25 +93,25 @@ static const DelayedModule::Decl rw_declarations[] = {
   {
     DelayedModule::Decl::REWRITE_RULE, "", 0, false, 81, 25,
     "rw:DivOneFold: ~e div 1 -> ~e\n"
-    "  where rw:subtype(~e, 'xs:decimal?') or rw:subtype(~this, 'xs:float?') or\n"
+    "  where rw:subtype(~this, 'xs:decimal?') or rw:subtype(~this, 'xs:float?') or\n"
     "    rw:subtype(~this, 'xs:double?')"
   },
   {
     DelayedModule::Decl::REWRITE_RULE, "", 0, false, 84, 25,
     "rw:AddZeroFold: ~e + 0 -> ~e\n"
-    "  where rw:subtype(~e, 'xs:decimal?') or rw:subtype(~this, 'xs:float?') or\n"
+    "  where rw:subtype(~this, 'xs:decimal?') or rw:subtype(~this, 'xs:float?') or\n"
     "    rw:subtype(~this, 'xs:double?')"
   },
   {
     DelayedModule::Decl::REWRITE_RULE, "", 0, false, 87, 25,
     "rw:SubZeroFold: ~e - 0 -> ~e\n"
-    "  where rw:subtype(~e, 'xs:decimal?') or rw:subtype(~this, 'xs:float?') or\n"
+    "  where rw:subtype(~this, 'xs:decimal?') or rw:subtype(~this, 'xs:float?') or\n"
     "    rw:subtype(~this, 'xs:double?')"
   },
   {
     DelayedModule::Decl::REWRITE_RULE, "", 0, false, 90, 25,
     "rw:ZeroSubFold: 0 - ~e -> - ~e\n"
-    "  where rw:subtype(~e, 'xs:decimal?') or rw:subtype(~this, 'xs:float?') or\n"
+    "  where rw:subtype(~this, 'xs:decimal?') or rw:subtype(~this, 'xs:float?') or\n"
     "    rw:subtype(~this, 'xs:double?')"
   },
   {

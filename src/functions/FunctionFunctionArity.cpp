@@ -67,7 +67,7 @@ ASTNode *FunctionFunctionArity::staticTypingImpl(StaticContext *context)
 
     if(arity != -1 && !sa.areDocsOrCollectionsUsed() && !sa.isNoFoldingForced()) {
       XPath2MemoryManager* mm = context->getMemoryManager();
-      ASTNode *result = new (mm) XQNumericLiteral((ItemType*)&ItemType::INTEGER, MAPM(arity), mm);
+      ASTNode *result = new (mm) XQDecimalLiteral((ItemType*)&ItemType::INTEGER, MAPM(arity), mm);
       result->setLocationInfo(this);
       return result;
     }    

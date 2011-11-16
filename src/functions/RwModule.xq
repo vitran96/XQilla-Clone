@@ -79,16 +79,16 @@ declare option rw:rule "rw:MulOneFold: ~e * 1 -> ~e
   where rw:subtype(~this, 'xs:decimal?') or rw:subtype(~this, 'xs:float?') or
     rw:subtype(~this, 'xs:double?')";
 declare option rw:rule "rw:DivOneFold: ~e div 1 -> ~e
-  where rw:subtype(~e, 'xs:decimal?') or rw:subtype(~this, 'xs:float?') or
+  where rw:subtype(~this, 'xs:decimal?') or rw:subtype(~this, 'xs:float?') or
     rw:subtype(~this, 'xs:double?')";
 declare option rw:rule "rw:AddZeroFold: ~e + 0 -> ~e
-  where rw:subtype(~e, 'xs:decimal?') or rw:subtype(~this, 'xs:float?') or
+  where rw:subtype(~this, 'xs:decimal?') or rw:subtype(~this, 'xs:float?') or
     rw:subtype(~this, 'xs:double?')";
 declare option rw:rule "rw:SubZeroFold: ~e - 0 -> ~e
-  where rw:subtype(~e, 'xs:decimal?') or rw:subtype(~this, 'xs:float?') or
+  where rw:subtype(~this, 'xs:decimal?') or rw:subtype(~this, 'xs:float?') or
     rw:subtype(~this, 'xs:double?')";
 declare option rw:rule "rw:ZeroSubFold: 0 - ~e -> - ~e
-  where rw:subtype(~e, 'xs:decimal?') or rw:subtype(~this, 'xs:float?') or
+  where rw:subtype(~this, 'xs:decimal?') or rw:subtype(~this, 'xs:float?') or
     rw:subtype(~this, 'xs:double?')";
 
 declare option rw:rule "rw:AddEmptyFold: ~e + () -> ()";
