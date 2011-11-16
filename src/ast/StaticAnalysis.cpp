@@ -149,8 +149,8 @@ bool StaticAnalysis::isNoFoldingForced() const
 
 void StaticAnalysis::variableUsed(const XMLCh *namespaceURI, const XMLCh *name)
 {
-  _dynamicVariables.put(XPath2NSUtils::makeURIName(namespaceURI, name, _memMgr),
-                        VarEntry(namespaceURI, name));
+  VarEntry entry = { namespaceURI, name };
+  _dynamicVariables.put(entry, 0);
 }
 
 void StaticAnalysis::variablesUsed(VarIterator &begin, VarIterator &end) const
@@ -161,7 +161,8 @@ void StaticAnalysis::variablesUsed(VarIterator &begin, VarIterator &end) const
 
 bool StaticAnalysis::removeVariable(const XMLCh *namespaceURI, const XMLCh *name)
 {
-  VarIterator i = _dynamicVariables.find(XPath2NSUtils::makeURIName(namespaceURI, name, _memMgr));
+  VarEntry entry = { namespaceURI, name };
+  VarIterator i = _dynamicVariables.find(entry);
   if(i != _dynamicVariables.end()) {
     _dynamicVariables.remove(i);
     return true;
@@ -171,7 +172,8 @@ bool StaticAnalysis::removeVariable(const XMLCh *namespaceURI, const XMLCh *name
 
 bool StaticAnalysis::isVariableUsed(const XMLCh *namespaceURI, const XMLCh *name) const
 {
-  return _dynamicVariables.contains(XPath2NSUtils::makeURIName(namespaceURI, name, _memMgr));
+  VarEntry entry = { namespaceURI, name };
+  return _dynamicVariables.contains(entry);
 }
 
 bool StaticAnalysis::isVariableUsed() const
@@ -196,14 +198,14 @@ void StaticAnalysis::addExceptContextFlags(const StaticAnalysis &o)
 
 void StaticAnalysis::addExceptVariable(const XMLCh *namespaceURI, const XMLCh *name, const StaticAnalysis &o)
 {
-  const XMLCh *uriname = XPath2NSUtils::makeURIName(namespaceURI, name, _memMgr);
-  bool remove = !_dynamicVariables.contains(uriname);
+  VarEntry entry = { namespaceURI, name };
+  bool remove = !_dynamicVariables.contains(entry);
 
   // Don't copy VACUOUS
   _flags |= (o._flags & ~VACUOUS);
   _dynamicVariables.putAll(o._dynamicVariables);
 
-  if(remove) _dynamicVariables.remove(uriname);
+  if(remove) _dynamicVariables.remove(entry);
 }
 
 /** Returns true if flags are set, or variables have been used */
@@ -294,7 +296,7 @@ std::string StaticAnalysis::toString() const
     else {
       s << ", ";
     }
-    s << "{" << UTF8(i.getValue().uri) << "}" << UTF8(i.getValue().name);
+    s << "{" << UTF8(i.getKey().uri) << "}" << UTF8(i.getKey().name);
   }
   s << "]" << std::endl;
 

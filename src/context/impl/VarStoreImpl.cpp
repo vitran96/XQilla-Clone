@@ -112,7 +112,7 @@ void VarStoreImpl::cacheVariableStore(const StaticAnalysis &src, const VariableS
   src.variablesUsed(i, end);
 
   for(; i != end; ++i) {
-    store_ = new VarEntry(i.getValue().uri, i.getValue().name, toCache->getVar(i.getValue().uri, i.getValue().name),
+    store_ = new VarEntry(i.getKey().uri, i.getKey().name, toCache->getVar(i.getKey().uri, i.getKey().name),
                           ResultBufferImpl::UNLIMITED_COUNT, store_);
   }
 }

@@ -34,14 +34,24 @@ class XPath2MemoryManager;
 class XQILLA_API StaticAnalysis
 {
 public:
-  class XQILLA_API VarEntry
+  struct XQILLA_API VarEntry
   {
-  public:
-    VarEntry() : uri(0), name(0) {}
-    VarEntry(const XMLCh *u, const XMLCh *n) : uri(u), name(n) {}
     const XMLCh *uri, *name;
+
+    bool operator==(const VarEntry &o) const
+    {
+      return XPath2Utils::equals(name, o.name) && XPath2Utils::equals(uri, o.uri) ;
+    }
+    inline size_t hash() const
+    {
+      return DefaultHashFunctor<const XMLCh*>()(name);
+    }
   };
-  typedef HashMap<const XMLCh*,VarEntry>::iterator VarIterator;
+  typedef HashMap<VarEntry,int,
+    DefaultHashFunctor<VarEntry>,
+    DefaultEqualsFunctor<VarEntry>,
+    13,true> VarMap;
+  typedef VarMap::iterator VarIterator;
 
   StaticAnalysis(XPath2MemoryManager* memMgr);
   StaticAnalysis(const StaticAnalysis &o, XPath2MemoryManager* memMgr);
@@ -150,7 +160,7 @@ private:
   unsigned _properties;
   StaticType _staticType;
 
-  HashMap<const XMLCh*,VarEntry> _dynamicVariables;
+  VarMap _dynamicVariables;
 
   XPath2MemoryManager *_memMgr;
 };
