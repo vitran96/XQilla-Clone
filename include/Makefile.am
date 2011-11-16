@@ -197,7 +197,6 @@ xqilla/functions/FunctionStaticBaseURI.hpp \
 xqilla/functions/FunctionString.hpp \
 xqilla/functions/FunctionStringLength.hpp \
 xqilla/functions/FunctionStringToCodepoints.hpp \
-xqilla/functions/FunctionSubstring.hpp \
 xqilla/functions/FunctionTime.hpp \
 xqilla/functions/FunctionTokenize.hpp \
 xqilla/functions/FunctionTrace.hpp \

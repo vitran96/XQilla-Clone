@@ -53,13 +53,7 @@ public:
   virtual Result asCodepoints(const DynamicContext* context) const;
 
   /* returns the substring starting at startingLoc of given length */
-  virtual ATStringOrDerived::Ptr substring(const Numeric::Ptr &startingLoc, const Numeric::Ptr &length, const DynamicContext* context) const;
-
-  /* returns the substring that occurs after the first occurence of pattern */
-  virtual ATStringOrDerived::Ptr substringAfter(const ATStringOrDerived::Ptr &pattern, Collation* collation, const DynamicContext* context) const;
-
-  /* returns the substring that occurs before the first occurence of pattern */
-  virtual ATStringOrDerived::Ptr substringBefore(const ATStringOrDerived::Ptr &pattern, Collation* collation, const DynamicContext* context) const;
+  virtual ATStringOrDerived::Ptr substring(unsigned startIndex, unsigned endIndex, const DynamicContext* context) const;
 
   /* returns the length of this string */
   virtual unsigned int getLength() const;
@@ -95,4 +89,4 @@ private:
  
 };
 
-#endif // _ATSTRINGORDERIVEDIMPL_HPP
+#endif

@@ -261,7 +261,6 @@ const ExternalFunction *FunctionLookup::lookUpGlobalExternalFunction(
 #include <xqilla/functions/FunctionString.hpp>
 #include <xqilla/functions/FunctionStringLength.hpp>
 #include <xqilla/functions/FunctionStringToCodepoints.hpp>
-#include <xqilla/functions/FunctionSubstring.hpp>
 #include <xqilla/functions/FunctionTokenize.hpp>
 #include <xqilla/functions/FunctionTrace.hpp>
 #include <xqilla/functions/FunctionUnordered.hpp>
@@ -323,8 +322,6 @@ static void initGlobalTable(FunctionLookup *t, XPath2MemoryManager *memMgr)
   t->insertFunction(new (memMgr) FuncFactoryTemplate<FunctionCompare>(memMgr));
   //   fn:concat
   t->insertFunction(new (memMgr) FuncFactoryTemplate<FunctionConcat>(memMgr));
-  //   fn:substring
-  t->insertFunction(new (memMgr) FuncFactoryTemplate<FunctionSubstring>(memMgr));
   //   fn:string-length
   t->insertFunction(new (memMgr) FuncFactoryTemplate<FunctionStringLength>(memMgr));
   //   fn:normalize-space
