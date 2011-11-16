@@ -68,7 +68,9 @@ XERCES_CPP_NAMESPACE_USE
 ModuleCache::ModuleCache(MemoryManager *mm)
   : byURI_(11, true, mm),
     byNamespace_(11, true, mm),
-    ordered_(XQillaAllocator<XQQuery*>(mm))
+    ordered_(XQillaAllocator<XQQuery*>(mm)),
+    funcIndex_(23, true, mm),
+    varIndex_(23, true, mm)
 {
 }
 
@@ -110,6 +112,40 @@ XQQuery *ModuleCache::getByNamespace(const XMLCh *ns) const
 {
   XQQuery * const *found = byNamespace_.get(ns);
   return found ? *found : 0;
+}
+
+XQQuery *ModuleCache::findModuleForFunction(const XQUserFunction *item) const
+{
+  if(funcIndex_.isEmpty()) {
+    ModuleMap::iterator i = const_cast<ModuleMap&>(byURI_).begin();
+    ModuleMap::iterator end = const_cast<ModuleMap&>(byURI_).end();
+    for(; i != end; ++i) {
+      UserFunctions::const_iterator itFn = i.getValue()->getFunctions().begin();
+      UserFunctions::const_iterator endFn = i.getValue()->getFunctions().end();
+      for(; itFn != endFn; ++itFn)
+        funcIndex_.put(*itFn, i.getValue());
+    }
+  }
+
+  XQQuery * const *found = funcIndex_.get(item);
+  return found ? *found : 0;  
+}
+
+XQQuery *ModuleCache::findModuleForVariable(const XQGlobalVariable *item) const
+{
+  if(varIndex_.isEmpty()) {
+    ModuleMap::iterator i = const_cast<ModuleMap&>(byURI_).begin();
+    ModuleMap::iterator end = const_cast<ModuleMap&>(byURI_).end();
+    for(; i != end; ++i) {
+      GlobalVariables::const_iterator itG = i.getValue()->getVariables().begin();
+      GlobalVariables::const_iterator endG = i.getValue()->getVariables().end();
+      for(; itG != endG; ++itG)
+        varIndex_.put(*itG, i.getValue());
+    }
+  }
+
+  XQQuery * const *found = varIndex_.get(item);
+  return found ? *found : 0;  
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -220,64 +256,6 @@ void XQQuery::execute(EventHandler *events, const XMLCh *templateQName, DynamicC
   Item::Ptr value = context->getItemFactory()->createUntypedAtomic(templateQName, context);
   context->setExternalVariable(XQillaFunction::XMLChFunctionURI, X("name"), value);
   execute(events, context);
-}
-
-XQQuery *XQQuery::findModuleForFunction(const XMLCh *uri, const XMLCh *name, int numArgs)
-{
-  UserFunctions::iterator itFn = m_userDefFns.begin();
-  for(; itFn != m_userDefFns.end(); ++itFn) {
-    if(*itFn && XPath2Utils::equals(name, (*itFn)->getName()) &&
-       XPath2Utils::equals(uri, (*itFn)->getURI()) &&
-       (*itFn)->getMinArgs() == (size_t)numArgs) {
-      return this;
-    }
-  }
-
-  ImportedModules::const_iterator modIt;
-  for(modIt = m_importedModules.begin(); modIt != m_importedModules.end(); ++modIt) {
-    if(XPath2Utils::equals(uri, (*modIt)->getModuleTargetNamespace())) {
-      XQQuery *module = *modIt;
-      for(; module; module = module->getNext()) {
-        itFn = module->m_userDefFns.begin();
-        for(; itFn != module->m_userDefFns.end(); ++itFn) {
-          if(*itFn && XPath2Utils::equals(name, (*itFn)->getName()) &&
-             (*itFn)->getMinArgs() == (size_t)numArgs) {
-            return module;
-          }
-        }
-      }
-    }
-  }
-
-  return 0;
-}
-
-XQQuery *XQQuery::findModuleForVariable(const XMLCh *uri, const XMLCh *name)
-{
-  GlobalVariables::iterator itVar = m_userDefVars.begin();
-  for(; itVar != m_userDefVars.end(); ++itVar) {
-    if(*itVar && XPath2Utils::equals(name, (*itVar)->getVariableLocalName()) &&
-       XPath2Utils::equals(uri, (*itVar)->getVariableURI())) {
-      return this;
-    }
-  }
-
-  ImportedModules::const_iterator modIt;
-  for(modIt = m_importedModules.begin(); modIt != m_importedModules.end(); ++modIt) {
-    if(XPath2Utils::equals(uri, (*modIt)->getModuleTargetNamespace())) {
-      XQQuery *module = *modIt;
-      for(; module; module = module->getNext()) {
-        itVar = module->m_userDefVars.begin();
-        for(; itVar != module->m_userDefVars.end(); ++itVar) {
-          if(*itVar && XPath2Utils::equals(name, (*itVar)->getVariableLocalName())) {
-            return module;
-          }
-        }
-      }
-    }
-  }
-
-  return 0;
 }
 
 static void duplicateVariableError(const XQGlobalVariable *existing, const XQGlobalVariable *bad,

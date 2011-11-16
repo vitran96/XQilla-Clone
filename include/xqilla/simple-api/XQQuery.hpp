@@ -38,6 +38,7 @@ class XQQuery;
 class DelayedModule;
 class DelayedFuncFactory;
 class StaticTyper;
+class XQUserFunctionInstance;
 
 typedef std::vector<XQGlobalVariable*, XQillaAllocator<XQGlobalVariable*> > GlobalVariables;
 typedef std::vector<XQTypeAlias*, XQillaAllocator<XQTypeAlias*> > TypeAliases;
@@ -45,6 +46,8 @@ typedef std::vector<XQRewriteRule*, XQillaAllocator<XQRewriteRule*> > RewriteRul
 typedef std::vector<XQQuery*, XQillaAllocator<XQQuery*> > ImportedModules;
 typedef std::vector<DelayedFuncFactory*, XQillaAllocator<DelayedFuncFactory*> > DelayedFunctions;
 
+typedef HashMap<const XQUserFunction*, XQQuery*> FuncIndex;
+typedef HashMap<const XQGlobalVariable*, XQQuery*> VarIndex;
 typedef HashMap<const XMLCh *, XQQuery*> ModuleMap;
 
 class XQILLA_API ModuleCache : public XERCES_CPP_NAMESPACE_QUALIFIER XMemory
@@ -57,9 +60,14 @@ public:
   XQQuery *getByURI(const XMLCh *uri) const;
   XQQuery *getByNamespace(const XMLCh *ns) const;
 
+  XQQuery *findModuleForFunction(const XQUserFunction *item) const;
+  XQQuery *findModuleForVariable(const XQGlobalVariable *item) const;
+
   ModuleMap byURI_;
   ModuleMap byNamespace_;
   ImportedModules ordered_;
+  mutable FuncIndex funcIndex_;
+  mutable VarIndex varIndex_;
 
 private:
   ModuleCache(const ModuleCache&);
@@ -308,9 +316,6 @@ public:
   /// Performs a module import from the given target namespace and locations
   void importModule(const XMLCh* szUri, VectorOfStrings* locations, const LocationInfo *location);
   void importModule(XQQuery *module);
-
-  XQQuery *findModuleForVariable(const XMLCh *uri, const XMLCh *name);
-  XQQuery *findModuleForFunction(const XMLCh *uri, const XMLCh *name, int numArgs);
 
   //@}
 

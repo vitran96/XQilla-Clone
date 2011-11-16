@@ -376,8 +376,8 @@ public:
 private:
   virtual ASTNode *optimizeUserFunction(XQUserFunctionInstance *item)
   {
-    XQQuery *module = context_->getModule()->
-      findModuleForFunction(item->getFunctionURI(), item->getFunctionName(), item->getArguments().size());
+    XQQuery *module = context_->getModule()->getModuleCache()->
+      findModuleForFunction(item->getFunctionDefinition());
     if(module == context_->getModule()) {
       // See if we can work out a better return type for the user defined function.
       // This call will just return if it's already been static typed

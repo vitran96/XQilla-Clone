@@ -60,16 +60,9 @@ XQUserFunction *StaticTyper::optimizeFunctionDef(XQUserFunction *item)
 ASTNode *StaticTyper::optimize(ASTNode *item)
 {
   ASTNode *result = ASTVisitor::optimize(item);
-  if(result != item) return optimize(result);
+  if(result != item) return result;
 
   return item->staticTypingImpl(context_);
-}
-
-#define SUBSTITUTE(item, name) {\
-    ASTNode *result = item->get ## name (); \
-    item->set ##name (0); \
-    item->release(); \
-    return result; \
 }
 
 ASTNode *StaticTyper::optimizePredicate(XQPredicate *item)
@@ -354,7 +347,8 @@ ASTNode *StaticTyper::optimizeVariable(XQVariable *item)
   if(vtype && vtype->global) {
     // See if this is a global variable from one of the imported modules,
     // and if so make sure it's static typed first
-    XQQuery *module = context_->getModule()->findModuleForVariable(item->getURI(), item->getName());
+    XQQuery *module = context_->getModule()->getModuleCache()->
+      findModuleForVariable(vtype->global);
     if(module == context_->getModule()) {
       if(globalsUsed_) globalsUsed_->push_back(vtype->global);
     }
@@ -373,8 +367,8 @@ ASTNode *StaticTyper::optimizeUserFunction(XQUserFunctionInstance *item)
 
   // See if this is a function from one of the imported modules,
   // and if so make sure it's static typed first
-  XQQuery *module = context_->getModule()->
-    findModuleForFunction(item->getFunctionURI(), item->getFunctionName(), item->getArguments().size());
+  XQQuery *module = context_->getModule()->getModuleCache()->
+    findModuleForFunction(item->getFunctionDefinition());
   if(module && module != context_->getModule()) {
     AutoReset<StaticContext*> autoReset(context_);
     module->staticTypingOnce(this);
