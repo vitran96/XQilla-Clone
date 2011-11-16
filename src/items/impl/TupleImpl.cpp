@@ -78,8 +78,8 @@ const XMLCh *TupleImpl::asString(const DynamicContext *context) const
   buf.set(X("tuple{"));
 
   bool addComma = false;
-  ValueMap::iterator i = const_cast<ValueMap&>(values_).begin();
-  ValueMap::iterator end = const_cast<ValueMap&>(values_).end();
+  ValueMap::const_iterator i = const_cast<ValueMap&>(values_).begin();
+  ValueMap::const_iterator end = const_cast<ValueMap&>(values_).end();
   for(; i != end; ++i) {
     if(addComma)
       buf.append(X(", "));
@@ -158,8 +158,8 @@ bool TupleImpl::contains(const AnyAtomicType::Ptr &key) const
 void TupleImpl::getInScopeVariables(vector<pair<const XMLCh*, const XMLCh*> > &variables) const
 {
   pair<const XMLCh*, const XMLCh*> pair;
-  ValueMap::iterator i = const_cast<ValueMap&>(values_).begin();
-  ValueMap::iterator end = const_cast<ValueMap&>(values_).end();
+  ValueMap::const_iterator i = const_cast<ValueMap&>(values_).begin();
+  ValueMap::const_iterator end = const_cast<ValueMap&>(values_).end();
   for(; i != end; ++i) {
     if(i.getKey()->getPrimitiveTypeIndex() == AnyAtomicType::QNAME) {
       pair.first = ((ATQNameOrDerived*)i.getKey().get())->getURI();
@@ -191,8 +191,8 @@ Tuple::Ptr TupleImpl::remove(const AnyAtomicType::Ptr &key) const
 class TupleEntries : public ResultImpl
 {
 public:
-  TupleEntries(const TupleImpl *tuple, const TupleImpl::ValueMap::iterator &begin,
-               const TupleImpl::ValueMap::iterator &end, const LocationInfo *location)
+  TupleEntries(const TupleImpl *tuple, const TupleImpl::ValueMap::const_iterator &begin,
+               const TupleImpl::ValueMap::const_iterator &end, const LocationInfo *location)
     : ResultImpl(location),
       tuple_(tuple),
       i_(begin),
@@ -217,7 +217,7 @@ public:
 
 private:
   Tuple::Ptr tuple_;
-  TupleImpl::ValueMap::iterator i_, end_;
+  TupleImpl::ValueMap::const_iterator i_, end_;
 };
 
 Result TupleImpl::entries(const LocationInfo *location) const

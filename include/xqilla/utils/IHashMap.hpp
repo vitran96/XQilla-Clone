@@ -48,12 +48,12 @@ private:
   };
 
 public:
-  class iterator
+  class const_iterator
   {
   public:
-    inline iterator() : bkt_(0), age_(0) {}
+    inline const_iterator() : bkt_(0), age_(0) {}
 
-    inline iterator(Bucket *s, const Bucket *a)
+    inline const_iterator(Bucket *s, const Bucket *a)
       : bkt_(s), age_(a)
     {
       while(bkt_ < age_ && bkt_->isDead(age_)) {
@@ -61,7 +61,7 @@ public:
       }
     }
 
-    inline iterator &operator++()
+    inline const_iterator &operator++()
     {
       if(bkt_ < age_) {
         do {
@@ -72,19 +72,19 @@ public:
       return *this;
     }
 
-    inline iterator operator++(int)
+    inline const_iterator operator++(int)
     {
-      iterator tmp = *this;
+      const_iterator tmp = *this;
       ++*this;
       return tmp;
     }
 
-    inline bool operator==(const iterator &o) const
+    inline bool operator==(const const_iterator &o) const
     {
       return bkt_ == o.bkt_;
     }
 
-    inline bool operator!=(const iterator &o) const
+    inline bool operator!=(const const_iterator &o) const
     {
       return bkt_ != o.bkt_;
     }
@@ -94,7 +94,7 @@ public:
       return bkt_->key;
     }
 
-    inline VALUE &getValue() const
+    inline const VALUE &getValue() const
     {
       return bkt_->value;
     }
@@ -105,6 +105,16 @@ public:
   };
 
 public:
+  inline IHashMap(const HASH &hash = HASH(), const EQUALS &equals = EQUALS())
+    : hash_(hash),
+      equals_(equals),
+      segment_(0),
+      age_(0),
+      dead_(0)
+  {
+    Segment::create(17, segment_, age_);
+  }
+
   inline IHashMap(size_t initialCapacity, const HASH &hash = HASH(), const EQUALS &equals = EQUALS())
     : hash_(hash),
       equals_(equals),
@@ -151,13 +161,13 @@ public:
     return segment_->get(key, hash, equals_, age_) != 0;
   }
 
-  inline iterator begin()
+  inline const_iterator begin() const
   {
-    return iterator(segment_->getBuckets(), age_);
+    return const_iterator(segment_->getBuckets(), age_);
   }
-  inline iterator end()
+  inline const_iterator end() const
   {
-    return iterator((Bucket*)age_, age_);
+    return const_iterator((Bucket*)age_, age_);
   }
 
   inline size_t size() const { return segment_->getCount(age_) - dead_; }

@@ -49,18 +49,8 @@ ResultBuffer::ResultBuffer()
 {
 }
 
-Result ResultBuffer::createResult()
+Result ResultBuffer::createResult() const
 {
   if(_impl.isNull()) return 0;
-
-  Result result = _impl->createResult(_start);
-
-  if(_impl->getMaxReadCount() != ResultBufferImpl::UNLIMITED_COUNT &&
-     _impl->incrementReadCount() >= _impl->getMaxReadCount()) {
-    // We've reached the maximum read count, so noone
-    // else will want to read from this ResultBuffer
-    _impl = 0;
-  }
-
-  return result;
+  return _impl->createResult(_start);
 }

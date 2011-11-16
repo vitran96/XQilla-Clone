@@ -33,7 +33,7 @@ public:
   ResultBuffer();
 
   /// Creates a result that returns the same items as the one used to construct this buffer
-  Result createResult();
+  Result createResult() const;
 
   bool isNull() const
   {
