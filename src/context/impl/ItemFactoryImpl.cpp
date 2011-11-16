@@ -73,14 +73,8 @@ ATQNameOrDerived::Ptr ItemFactoryImpl::createQName(const XMLCh* uri,
 	const XMLCh* name, 
 	const DynamicContext* context
 	) {
-  return createQNameOrDerived(
-    SchemaSymbols::fgURI_SCHEMAFORSCHEMA,
-    SchemaSymbols::fgDT_QNAME,
-    uri,
-    prefix,
-    name,
-    context
-    );
+  return new ATQNameOrDerivedImpl(SchemaSymbols::fgURI_SCHEMAFORSCHEMA, SchemaSymbols::fgDT_QNAME,
+    uri, prefix, name, context);
 }
 
 ATDoubleOrDerived::Ptr ItemFactoryImpl::createDouble(double value, const DynamicContext* context)
@@ -453,24 +447,7 @@ ATQNameOrDerived::Ptr ItemFactoryImpl::createQNameOrDerived(const XMLCh* typeURI
 	const XMLCh* name, 
 	const DynamicContext* context) {
 
-  ATQNameOrDerivedImpl* tmp =  new ATQNameOrDerivedImpl(typeURI, typeName, uri, prefix, name, context);
-  
-  const DatatypeFactory* dtf_anyURI = datatypeLookup_->getAnyURIFactory();
-  if(dtf_anyURI->checkInstance(uri, context->getMemoryManager())) {
-    const DatatypeFactory* dtf_NCName = datatypeLookup_->getStringFactory();
-    if (dtf_NCName->checkInstance(SchemaSymbols::fgURI_SCHEMAFORSCHEMA, SchemaSymbols::fgDT_NCNAME, name, context->getMemoryManager())) {
-      return tmp;
-    } else {
-      // this call will obviously fail, but it is better for error reporting, 
-      // since we actually get the XMLException's error message 
-      return (const ATQNameOrDerived::Ptr )dtf_NCName->
-        createInstance(SchemaSymbols::fgURI_SCHEMAFORSCHEMA, SchemaSymbols::fgDT_NCNAME, name, context);
-    }
-  } else {
-    // this call will obviously fail, but it is better for error reporting, 
-    // since we actually get the XMLException's error message 
-    return (const ATQNameOrDerived::Ptr )dtf_anyURI->createInstance(uri, context);
-  }
+  return new ATQNameOrDerivedImpl(typeURI, typeName, uri, prefix, name, context);
 }
 
 
