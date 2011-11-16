@@ -74,44 +74,48 @@ ASTNode *XQFunctionDeref::staticTypingImpl(StaticContext *context)
 
   _src.getStaticType() = StaticType::EMPTY;
 
-  const StaticType::ItemTypes &types = expr_->getStaticAnalysis().getStaticType().getTypes();
-  StaticType::ItemTypes::const_iterator i = types.begin();
-  for(; i != types.end(); ++i) {
-    if((*i)->getItemTestType() == ItemType::TEST_FUNCTION) {
-      if((*i)->getFunctionSignature()) {
-        if((*i)->getFunctionSignature()->numArgs() == numArgs) {
-          StaticType tmp((*i)->getFunctionSignature()->returnType, BasicMemoryManager::get());
-          tmp.multiply(0,1);
-          _src.getStaticType().typeUnion(tmp);
+  if((expr_->getStaticAnalysis().getStaticType().getFlags() & (TypeFlags::FUNCTION | TypeFlags::TUPLE)) != 0) {
+    _src.getStaticType() = StaticType::ITEM_STAR;
+  } else {
+    const StaticType::ItemTypes &types = expr_->getStaticAnalysis().getStaticType().getTypes();
+    StaticType::ItemTypes::const_iterator i = types.begin();
+    for(; i != types.end(); ++i) {
+      if((*i)->getItemTestType() == ItemType::TEST_FUNCTION) {
+        if((*i)->getFunctionSignature()) {
+          if((*i)->getFunctionSignature()->numArgs() == numArgs) {
+            StaticType tmp((*i)->getFunctionSignature()->returnType, BasicMemoryManager::get());
+            tmp.multiply(0,1);
+            _src.getStaticType().typeUnion(tmp);
+          }
+        } else {
+          _src.getStaticType() = StaticType::ITEM_STAR;
+          break;
         }
-      } else {
-        _src.getStaticType() = StaticType::ITEM_STAR;
-        break;
-      }
-    } else if((*i)->getItemTestType() == ItemType::TEST_MAP) {
-      if((*i)->getValueType()) {
+      } else if((*i)->getItemTestType() == ItemType::TEST_MAP) {
+        if((*i)->getValueType()) {
+          if(numArgs == 1) {
+            StaticType tmp((*i)->getValueType(), BasicMemoryManager::get());
+            _src.getStaticType().typeUnion(tmp);
+          }
+        } else {
+          _src.getStaticType() = StaticType::ITEM_STAR;
+          break;
+        }
+      } else if((*i)->getItemTestType() == ItemType::TEST_TUPLE) {
         if(numArgs == 1) {
-          StaticType tmp((*i)->getValueType(), BasicMemoryManager::get());
-          _src.getStaticType().typeUnion(tmp);
+          _src.getStaticType() = StaticType::ITEM_STAR;
+          break;
         }
-      } else {
+      } else if(ItemType::TUPLE.isSubtypeOf(*i)) {
+        _src.getStaticType() = StaticType::ITEM_STAR;
+        break;
+      } else if(ItemType::MAP.isSubtypeOf(*i)) {
+        _src.getStaticType() = StaticType::ITEM_STAR;
+        break;
+      } else if(ItemType::FUNCTION.isSubtypeOf(*i)) {
         _src.getStaticType() = StaticType::ITEM_STAR;
         break;
       }
-    } else if((*i)->getItemTestType() == ItemType::TEST_TUPLE) {
-      if(numArgs == 1) {
-        _src.getStaticType() = StaticType::ITEM_STAR;
-        break;
-      }
-    } else if(ItemType::TUPLE.isSubtypeOf(*i)) {
-      _src.getStaticType() = StaticType::ITEM_STAR;
-      break;
-    } else if(ItemType::MAP.isSubtypeOf(*i)) {
-      _src.getStaticType() = StaticType::ITEM_STAR;
-      break;
-    } else if(ItemType::FUNCTION.isSubtypeOf(*i)) {
-      _src.getStaticType() = StaticType::ITEM_STAR;
-      break;
     }
   }
 

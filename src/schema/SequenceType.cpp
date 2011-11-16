@@ -202,6 +202,14 @@ SequenceType::TypeMatch SequenceType::matches(const StaticType &actual) const
   }
 
   bool foundMatch = false;
+
+  TypeFlags::Enum myFlags = TypeFlags::flags(m_pItemType);
+  if(actual.containsType(myFlags)) {
+    foundMatch = true;
+    if(!m_pItemType->isPrimitive() || !actual.isType(myFlags))
+      result.type = MAYBE;
+  }
+
   StaticType::ItemTypes::const_iterator i = actual.getTypes().begin();
   for(; i != actual.getTypes().end(); ++i) {
     if((*i)->isSubtypeOf(m_pItemType, /*forStaticType*/true)) {

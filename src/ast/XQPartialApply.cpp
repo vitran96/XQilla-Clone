@@ -92,27 +92,31 @@ ASTNode *XQPartialApply::staticTypingImpl(StaticContext *context)
   _src.getStaticType() = StaticType::EMPTY;
   bool doneOne = false;
 
-  const StaticType::ItemTypes &types = expr_->getStaticAnalysis().getStaticType().getTypes();
-  StaticType::ItemTypes::const_iterator i = types.begin();
-  for(; i != types.end(); ++i) {
-    if((*i)->getItemTestType() == ItemType::TEST_FUNCTION) {
-      if((*i)->getFunctionSignature()) {
-        if((*i)->getFunctionSignature()->numArgs() == args_->size()) {
-          FunctionSignature *newSig = new (getMemoryManager())
-            FunctionSignature((*i)->getFunctionSignature(), args_, getMemoryManager());
-          ItemType *type = new (getMemoryManager()) ItemType(newSig, (*i)->getDocumentCache());
-          type->setLocationInfo(this);
-          StaticType tmp(type, BasicMemoryManager::get());
-          if(doneOne) _src.getStaticType().typeUnion(tmp);
-          else { _src.getStaticType() = tmp; doneOne = true; }
+  if((expr_->getStaticAnalysis().getStaticType().getFlags() & TypeFlags::FUNCTION) != 0) {
+    _src.getStaticType() = StaticType::FUNCTION;
+  } else {
+    const StaticType::ItemTypes &types = expr_->getStaticAnalysis().getStaticType().getTypes();
+    StaticType::ItemTypes::const_iterator i = types.begin();
+    for(; i != types.end(); ++i) {
+      if((*i)->getItemTestType() == ItemType::TEST_FUNCTION) {
+        if((*i)->getFunctionSignature()) {
+          if((*i)->getFunctionSignature()->numArgs() == args_->size()) {
+            FunctionSignature *newSig = new (getMemoryManager())
+              FunctionSignature((*i)->getFunctionSignature(), args_, getMemoryManager());
+            ItemType *type = new (getMemoryManager()) ItemType(newSig, (*i)->getDocumentCache());
+            type->setLocationInfo(this);
+            StaticType tmp(type, BasicMemoryManager::get());
+            if(doneOne) _src.getStaticType().typeUnion(tmp);
+            else { _src.getStaticType() = tmp; doneOne = true; }
+          }
+        } else {
+          _src.getStaticType() = StaticType::FUNCTION;
+          break;
         }
-      } else {
-        _src.getStaticType() = StaticType::FUNCTION;
+      } else if(ItemType::FUNCTION.isSubtypeOf(*i)) {
+        _src.getStaticType() = StaticType::ITEM_STAR;
         break;
       }
-    } else if(ItemType::FUNCTION.isSubtypeOf(*i)) {
-      _src.getStaticType() = StaticType::ITEM_STAR;
-      break;
     }
   }
 

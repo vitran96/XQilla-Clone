@@ -102,7 +102,7 @@ TypeFlags::Enum flagsForAtomicType(AnyAtomicType::AtomicObjectType type)
   return TypeFlags::EMPTY;
 }
 
-static inline TypeFlags::Enum flagsForItemType(const ItemType *type)
+TypeFlags::Enum TypeFlags::flags(const ItemType *type)
 {
   switch(type->getItemTestType()) {
   case ItemType::TEST_ANYTHING:
@@ -144,43 +144,66 @@ bool ItemType::intersects(const ItemType *b) const
 {
   if(alias_) return alias_->getType()->intersects(b);
 
-  TypeFlags::Enum aflags = flagsForItemType(this);
-  TypeFlags::Enum bflags = flagsForItemType(b);
+  TypeFlags::Enum aflags = TypeFlags::flags(this);
+  TypeFlags::Enum bflags = TypeFlags::flags(b);
   return (aflags & bflags) != 0;
 }
 
 static inline bool flagsIntersect(const ItemType *type, TypeFlags::Enum flags)
 {
-  TypeFlags::Enum tflags = flagsForItemType(type);
+  TypeFlags::Enum tflags = TypeFlags::flags(type);
   return ((tflags & flags) != 0);
 }
 
 static inline bool flagsSubtype(const ItemType *type, TypeFlags::Enum flags)
 {
-  TypeFlags::Enum tflags = flagsForItemType(type);
+  TypeFlags::Enum tflags = TypeFlags::flags(type);
   return ((tflags & flags) != 0) && (tflags & ~flags) == 0;
 }
 
-static inline void normalizedPushBack(StaticType::ItemTypes &newTypes, const ItemType *type)
+static inline void normalizedPushBack(StaticType::ItemTypes &newTypes, TypeFlags::Enum &newFlags, const ItemType *type)
 {
-  // Keep the StaticType normalized
-  StaticType::ItemTypes::iterator i = newTypes.begin();
-  while(i != newTypes.end()) {
-    if(type->isSubtypeOf(*i))
-      return;
-    if((*i)->isSubtypeOf(type))
-      newTypes.erase(i);
-    else ++i;
+  switch(type->getItemTestType()) {
+  case ItemType::TEST_ANYTHING:
+  case ItemType::TEST_SCHEMA_ELEMENT:
+  case ItemType::TEST_ELEMENT:
+  case ItemType::TEST_SCHEMA_ATTRIBUTE:
+  case ItemType::TEST_ATTRIBUTE:
+  case ItemType::TEST_SCHEMA_DOCUMENT:
+  case ItemType::TEST_DOCUMENT:
+  case ItemType::TEST_NODE:
+  case ItemType::TEST_PI:
+  case ItemType::TEST_COMMENT:
+  case ItemType::TEST_TEXT:
+  case ItemType::TEST_NAMESPACE:
+  case ItemType::TEST_ATOMIC_TYPE:
+  case ItemType::TEST_EXPRESSION:
+    newFlags = newFlags | TypeFlags::flags(type);
+    break;
+  case ItemType::TEST_FUNCTION:
+  case ItemType::TEST_TUPLE:
+  case ItemType::TEST_MAP: {
+    // Keep the StaticType normalized
+    StaticType::ItemTypes::iterator i = newTypes.begin();
+    while(i != newTypes.end()) {
+      if(type->isSubtypeOf(*i))
+        return;
+      if((*i)->isSubtypeOf(type))
+        newTypes.erase(i);
+      else ++i;
+    }
+    newTypes.push_back(type);
+    break;
   }
-  newTypes.push_back(type);
+  }
 }
 
-static void addItemTypesFromFlags(TypeFlags::Enum tflags, StaticType::ItemTypes &newTypes)
+static void addItemTypesFromFlags(TypeFlags::Enum tflags, StaticType::ItemTypes &newTypes, TypeFlags::Enum &newFlags)
 {
 #define ADD_ITEMTYPE_FOR(type) \
-  if((tflags & TypeFlags::type) == TypeFlags::type) { \
-    normalizedPushBack(newTypes, &ItemType::type); \
-    tflags = tflags & (TypeFlags::Enum)~TypeFlags::type; \
+  if((tflags & TypeFlags::type) == TypeFlags::type) {             \
+    normalizedPushBack(newTypes, newFlags, &ItemType::type);      \
+    tflags = tflags & (TypeFlags::Enum)~TypeFlags::type;          \
   }
 
   ADD_ITEMTYPE_FOR(NODE);
@@ -220,18 +243,18 @@ static void addItemTypesFromFlags(TypeFlags::Enum tflags, StaticType::ItemTypes 
 }
 
 static inline bool intersectItemType(const ItemType *type, TypeFlags::Enum flags,
-                                     StaticType::ItemTypes &newTypes)
+                                     StaticType::ItemTypes &newTypes, TypeFlags::Enum &newFlags)
 {
-  TypeFlags::Enum tflags = flagsForItemType(type);
+  TypeFlags::Enum tflags = TypeFlags::flags(type);
 
   if((tflags & flags) == 0) return true;
 
   if((tflags & ~flags) == 0) {
-    normalizedPushBack(newTypes, type);
+    normalizedPushBack(newTypes, newFlags, type);
     return false;
   }
 
-  addItemTypesFromFlags(tflags & flags, newTypes);
+  addItemTypesFromFlags(tflags & flags, newTypes, newFlags);
   return true;
 }
 
@@ -239,6 +262,7 @@ const unsigned int StaticType::UNLIMITED = (unsigned int)-1;
 
 StaticType::StaticType(MemoryManager *mm)
   : types_(XQillaAllocator<const ItemType*>(mm)),
+    flags_(TypeFlags::EMPTY),
     min_(0),
     max_(0)
 {
@@ -246,6 +270,7 @@ StaticType::StaticType(MemoryManager *mm)
 
 StaticType::StaticType(const StaticType &o, XERCES_CPP_NAMESPACE_QUALIFIER MemoryManager *mm)
   : types_(XQillaAllocator<const ItemType*>(mm)),
+    flags_(TypeFlags::EMPTY),
     min_(0),
     max_(0)
 {
@@ -254,22 +279,25 @@ StaticType::StaticType(const StaticType &o, XERCES_CPP_NAMESPACE_QUALIFIER Memor
 
 StaticType::StaticType(const ItemType *type, MemoryManager *mm)
   : types_(XQillaAllocator<const ItemType*>(mm)),
+    flags_(TypeFlags::EMPTY),
     min_(1),
     max_(1)
 {
-  types_.push_back(type);
+  normalizedPushBack(types_, flags_, type);
 }
 
 StaticType::StaticType(const ItemType *type, unsigned int min, unsigned int max, MemoryManager *mm)
   : types_(XQillaAllocator<const ItemType*>(mm)),
+    flags_(TypeFlags::EMPTY),
     min_(min),
     max_(max)
 {
-  types_.push_back(type);
+  normalizedPushBack(types_, flags_, type);
 }
 
 StaticType::StaticType(const SequenceType *type, MemoryManager *mm)
   : types_(XQillaAllocator<const ItemType*>(mm)),
+    flags_(TypeFlags::EMPTY),
     min_(0),
     max_(0)
 {
@@ -279,27 +307,22 @@ StaticType::StaticType(const SequenceType *type, MemoryManager *mm)
 StaticType &StaticType::operator=(const StaticType &o)
 {
   types_.clear();
-
   ItemTypes::const_iterator i = o.types_.begin();
-  for(; i != o.types_.end(); ++i) {
+  for(; i != o.types_.end(); ++i)
     types_.push_back(*i);
-  }
-
+  flags_ = o.flags_;
   min_ = o.min_;
   max_ = o.max_;
-
   return *this;
 }
 
 StaticType &StaticType::operator=(const ItemType *type)
 {
   types_.clear();
-
-  types_.push_back(type);
-
+  flags_ = TypeFlags::EMPTY;
+  normalizedPushBack(types_, flags_, type);
   min_ = 1;
   max_ = 1;
-
   return *this;
 }
 
@@ -308,10 +331,10 @@ StaticType &StaticType::operator=(const SequenceType *type)
   clear();
 
   if(!type) {
-    types_.push_back(&ItemType::ITEM);
+    normalizedPushBack(types_, flags_, &ItemType::ITEM);
     min_ = 0; max_ = UNLIMITED;
   } else if(type->getItemType()) {
-    types_.push_back(type->getItemType());
+    normalizedPushBack(types_, flags_, type->getItemType());
     switch(type->getOccurrenceIndicator()) {
     case SequenceType::EXACTLY_ONE:
       min_ = 1; max_ = 1; break;
@@ -343,11 +366,14 @@ void StaticType::release()
 void StaticType::clear()
 {
   types_.clear();
+  flags_ = TypeFlags::EMPTY;
   min_ = 0; max_ = 0;
 }
 
 bool StaticType::containsType(TypeFlags::Enum flags) const
 {
+  if((flags_ & flags) != 0) return true;
+
   ItemTypes::const_iterator i = types_.begin();
   for(; i != types_.end(); ++i) {
     if(flagsIntersect(*i, flags)) return true;
@@ -358,6 +384,9 @@ bool StaticType::containsType(TypeFlags::Enum flags) const
 bool StaticType::isType(TypeFlags::Enum flags) const
 {
   if(max_ == 0) return flags == 0;
+
+  if(((flags_ & flags) == 0) || (flags_ & ~flags) != 0)
+    return false;
 
   ItemTypes::const_iterator i = types_.begin();
   for(; i != types_.end(); ++i) {
@@ -370,11 +399,12 @@ bool StaticType::containsType(const StaticType &type) const
 {
   // Could be more accurate by using ItemType::isSubtypeOf(),
   // but this will do for now.
+  TypeFlags::Enum flags = type.flags_;
   ItemTypes::const_iterator i = type.types_.begin();
   for(; i != type.types_.end(); ++i) {
-    if(containsType(flagsForItemType(*i))) return true;
+    flags = flags | TypeFlags::flags(*i);
   }
-  return false;
+  return containsType(flags);
 }
 
 void StaticType::typeUnion(const StaticType &st)
@@ -382,9 +412,11 @@ void StaticType::typeUnion(const StaticType &st)
   min_ = (min_ < st.min_) ? min_ : st.min_;
   max_ = (max_ > st.max_) ? max_ : st.max_;
 
+  flags_ = flags_ | st.flags_;
+
   ItemTypes::const_iterator i = st.types_.begin();
   for(; i != st.types_.end(); ++i) {
-    normalizedPushBack(types_, *i);
+    normalizedPushBack(types_, flags_, *i);
   }
 }
 
@@ -395,9 +427,11 @@ void StaticType::typeConcat(const StaticType &st)
     max_ = UNLIMITED;
   else max_ += st.max_;
 
+  flags_ = flags_ | st.flags_;
+
   ItemTypes::const_iterator i = st.types_.begin();
   for(; i != st.types_.end(); ++i) {
-    normalizedPushBack(types_, *i);
+    normalizedPushBack(types_, flags_, *i);
   }
 }
 
@@ -405,14 +439,17 @@ bool StaticType::typeIntersect(TypeFlags::Enum st)
 {
   ItemTypes newTypes(XQillaAllocator<const ItemType*>(BasicMemoryManager::get()));
 
-  bool result = false;
+  bool result = (flags_ & (TypeFlags::Enum)~st) != 0;
+  TypeFlags::Enum newFlags = flags_ & st;
+
   ItemTypes::iterator i = types_.begin();
   for(;i != types_.end(); ++i) {
-    result = intersectItemType(*i, st, newTypes) || result;
+    result = intersectItemType(*i, st, newTypes, newFlags) || result;
   }
 
   types_ = newTypes;
-  if(types_.empty() || max_ == 0)
+  flags_ = newFlags;
+  if((flags_ == 0 && types_.empty()) || max_ == 0)
     clear();
 
   return result;
@@ -425,10 +462,10 @@ void StaticType::typeIntersect(const StaticType &st)
 
   // Could be more accurate by using ItemType::isSubtypeOf(),
   // but this will do for now.
-  TypeFlags::Enum flags = TypeFlags::EMPTY;
+  TypeFlags::Enum flags = st.flags_;
   ItemTypes::const_iterator i = st.types_.begin();
   for(; i != st.types_.end(); ++i) {
-    flags = flags | flagsForItemType(*i);
+    flags = flags | TypeFlags::flags(*i);
   }
   typeIntersect(flags);
 }
@@ -473,19 +510,163 @@ void StaticType::setCardinality(unsigned int min, unsigned int max)
   min_ = min;
   max_ = max;
 
-  if(max_ > 0 && types_.empty()) types_.push_back(&ItemType::ITEM);
+  if(max_ > 0 && flags_ == 0 && types_.empty())
+    flags_ = TypeFlags::ITEM;
   else if(max_ == 0) clear();
 }
 
 void StaticType::typeToBuf(XMLBuffer &result) const
 {
-  if(types_.empty() || max_ == 0) {
+  if((flags_ == 0 && types_.empty()) || max_ == 0) {
     result.append(X("empty-sequence()"));
     return;
   }
 
   int count = 0;
   XMLBuffer buf;
+
+  TypeFlags::Enum flags = flags_;
+  if(flags == TypeFlags::ITEM) {
+    if(count++) buf.append(X(" | "));
+    buf.append(X("item()"));
+    flags = TypeFlags::EMPTY;
+  }
+  if((flags & TypeFlags::ANY_ATOMIC_TYPE) == TypeFlags::ANY_ATOMIC_TYPE) {
+    if(count++) buf.append(X(" | "));
+    buf.append(X("xs:anyAtomicType"));
+    flags = flags & (TypeFlags::Enum)~TypeFlags::ANY_ATOMIC_TYPE;
+  }
+  if((flags & TypeFlags::NODE) == TypeFlags::NODE) {
+    if(count++) buf.append(X(" | "));
+    buf.append(X("node()"));
+    flags = flags & (TypeFlags::Enum)~TypeFlags::NODE;
+  }
+
+  if((flags & TypeFlags::DOCUMENT) != 0) {
+    if(count++) buf.append(X(" | "));
+    buf.append(X("document-node()"));
+  }
+  if((flags & TypeFlags::ELEMENT) != 0) {
+    if(count++) buf.append(X(" | "));
+    buf.append(X("element()"));
+  }
+  if((flags & TypeFlags::ATTRIBUTE) != 0) {
+    if(count++) buf.append(X(" | "));
+    buf.append(X("attribute()"));
+  }
+  if((flags & TypeFlags::TEXT) != 0) {
+    if(count++) buf.append(X(" | "));
+    buf.append(X("text()"));
+  }
+  if((flags & TypeFlags::PI) != 0) {
+    if(count++) buf.append(X(" | "));
+    buf.append(X("processing-instruction()"));
+  }
+  if((flags & TypeFlags::COMMENT) != 0) {
+    if(count++) buf.append(X(" | "));
+    buf.append(X("comment()"));
+  }
+  if((flags & TypeFlags::NAMESPACE) != 0) {
+    if(count++) buf.append(X(" | "));
+    buf.append(X("namespace()"));
+  }
+  if((flags & TypeFlags::FUNCTION) != 0) {
+    if(count++) buf.append(X(" | "));
+    buf.append(X("function(*)"));
+  }
+  if((flags & TypeFlags::EXPRESSION) != 0) {
+    if(count++) buf.append(X(" | "));
+    buf.append(X("xqilla:expression"));
+  }
+
+  if((flags & TypeFlags::ANY_URI) != 0) {
+    if(count++) buf.append(X(" | "));
+    buf.append(X("xs:anyURI"));
+  }
+  if((flags & TypeFlags::BASE_64_BINARY) != 0) {
+    if(count++) buf.append(X(" | "));
+    buf.append(X("xs:base64Binary"));
+  }
+  if((flags & TypeFlags::BOOLEAN) != 0) {
+    if(count++) buf.append(X(" | "));
+    buf.append(X("xs:boolean"));
+  }
+  if((flags & TypeFlags::DATE) != 0) {
+    if(count++) buf.append(X(" | "));
+    buf.append(X("xs:date"));
+  }
+  if((flags & TypeFlags::DATE_TIME) != 0) {
+    if(count++) buf.append(X(" | "));
+    buf.append(X("xs:dateTime"));
+  }
+  if((flags & TypeFlags::DAY_TIME_DURATION) != 0) {
+    if(count++) buf.append(X(" | "));
+    buf.append(X("xs:dayTimeDuration"));
+  }
+  if((flags & TypeFlags::DECIMAL) != 0) {
+    if(count++) buf.append(X(" | "));
+    buf.append(X("xs:decimal"));
+  }
+  if((flags & TypeFlags::DOUBLE) != 0) {
+    if(count++) buf.append(X(" | "));
+    buf.append(X("xs:double"));
+  }
+  if((flags & TypeFlags::DURATION) != 0) {
+    if(count++) buf.append(X(" | "));
+    buf.append(X("xs:duration"));
+  }
+  if((flags & TypeFlags::FLOAT) != 0) {
+    if(count++) buf.append(X(" | "));
+    buf.append(X("xs:float"));
+  }
+  if((flags & TypeFlags::G_DAY) != 0) {
+    if(count++) buf.append(X(" | "));
+    buf.append(X("xs:gDay"));
+  }
+  if((flags & TypeFlags::G_MONTH) != 0) {
+    if(count++) buf.append(X(" | "));
+    buf.append(X("xs:gMonth"));
+  }
+  if((flags & TypeFlags::G_MONTH_DAY) != 0) {
+    if(count++) buf.append(X(" | "));
+    buf.append(X("xs:gMonthDay"));
+  }
+  if((flags & TypeFlags::G_YEAR) != 0) {
+    if(count++) buf.append(X(" | "));
+    buf.append(X("xs:gYear"));
+  }
+  if((flags & TypeFlags::G_YEAR_MONTH) != 0) {
+    if(count++) buf.append(X(" | "));
+    buf.append(X("xs:gYearMonth"));
+  }
+  if((flags & TypeFlags::HEX_BINARY) != 0) {
+    if(count++) buf.append(X(" | "));
+    buf.append(X("xs:hexBinary"));
+  }
+  if((flags & TypeFlags::NOTATION) != 0) {
+    if(count++) buf.append(X(" | "));
+    buf.append(X("xs:NOTATION"));
+  }
+  if((flags & TypeFlags::QNAME) != 0) {
+    if(count++) buf.append(X(" | "));
+    buf.append(X("xs:QName"));
+  }
+  if((flags & TypeFlags::STRING) != 0) {
+    if(count++) buf.append(X(" | "));
+    buf.append(X("xs:string"));
+  }
+  if((flags & TypeFlags::TIME) != 0) {
+    if(count++) buf.append(X(" | "));
+    buf.append(X("xs:time"));
+  }
+  if((flags & TypeFlags::UNTYPED_ATOMIC) != 0) {
+    if(count++) buf.append(X(" | "));
+    buf.append(X("xs:untypedAtomic"));
+  }
+  if((flags & TypeFlags::YEAR_MONTH_DURATION) != 0) {
+    if(count++) buf.append(X(" | "));
+    buf.append(X("xs:yearMonthDuration"));
+  }
 
   ItemTypes::const_iterator i = types_.begin();
   for(; i != types_.end(); ++i) {

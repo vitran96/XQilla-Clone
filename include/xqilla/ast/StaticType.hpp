@@ -89,6 +89,8 @@ struct XQILLA_API TypeFlags
 
     EMPTY               = 0
   };
+
+  static Enum flags(const ItemType *type);
 };
 
 XQILLA_API TypeFlags::Enum operator|(TypeFlags::Enum a, TypeFlags::Enum b);
@@ -178,6 +180,7 @@ public:
   bool isType(TypeFlags::Enum type) const;
 
   const ItemTypes &getTypes() const { return types_; }
+  TypeFlags::Enum getFlags() const { return flags_; }
   unsigned int getMin() const { return min_; }
   unsigned int getMax() const { return max_; }
 
@@ -187,6 +190,7 @@ private:
   StaticType(const StaticType &o); // No copy constructor
 
   ItemTypes types_;
+  TypeFlags::Enum flags_;
   unsigned int min_;
   unsigned int max_;
 };

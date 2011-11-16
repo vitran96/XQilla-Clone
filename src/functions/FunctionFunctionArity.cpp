@@ -51,16 +51,18 @@ ASTNode *FunctionFunctionArity::staticTypingImpl(StaticContext *context)
   if(context) {
     int arity = -1;
     const StaticAnalysis &sa = _args[0]->getStaticAnalysis();
-    const StaticType::ItemTypes &types = sa.getStaticType().getTypes();
-    StaticType::ItemTypes::const_iterator i = types.begin();
-    for(; i != types.end(); ++i) {
-      if((*i)->getItemTestType() == ItemType::TEST_FUNCTION) {
-        if((*i)->getFunctionSignature() &&
-           (arity == -1 || arity == (int)(*i)->getFunctionSignature()->numArgs())) {
-          arity = (*i)->getFunctionSignature()->numArgs();
-        } else {
-          arity = -1;
-          break;
+    if((sa.getStaticType().getFlags() & TypeFlags::FUNCTION) == 0) {
+      const StaticType::ItemTypes &types = sa.getStaticType().getTypes();
+      StaticType::ItemTypes::const_iterator i = types.begin();
+      for(; i != types.end(); ++i) {
+        if((*i)->getItemTestType() == ItemType::TEST_FUNCTION) {
+          if((*i)->getFunctionSignature() &&
+             (arity == -1 || arity == (int)(*i)->getFunctionSignature()->numArgs())) {
+            arity = (*i)->getFunctionSignature()->numArgs();
+          } else {
+            arity = -1;
+            break;
+          }
         }
       }
     }

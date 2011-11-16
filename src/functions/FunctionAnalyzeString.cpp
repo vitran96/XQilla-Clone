@@ -188,18 +188,22 @@ ASTNode *FunctionXQillaAnalyzeString::staticTypingImpl(StaticContext *context)
 
   _src.getStaticType() = StaticType::EMPTY;
 
-  const StaticType::ItemTypes &types = _args[2]->getStaticAnalysis().getStaticType().getTypes();
-  StaticType::ItemTypes::const_iterator i = types.begin();
-  for(; i != types.end(); ++i) {
-    if((*i)->getItemTestType() == ItemType::TEST_FUNCTION) {
-      if((*i)->getFunctionSignature()) {
-        if((*i)->getFunctionSignature()->numArgs() == 2) {
-          StaticType tmp((*i)->getFunctionSignature()->returnType, BasicMemoryManager::get());
-          _src.getStaticType().typeUnion(tmp);
+  if((_args[2]->getStaticAnalysis().getStaticType().getFlags() & TypeFlags::FUNCTION) != 0) {
+    _src.getStaticType() = StaticType::ITEM_STAR;
+  } else {
+    const StaticType::ItemTypes &types = _args[2]->getStaticAnalysis().getStaticType().getTypes();
+    StaticType::ItemTypes::const_iterator i = types.begin();
+    for(; i != types.end(); ++i) {
+      if((*i)->getItemTestType() == ItemType::TEST_FUNCTION) {
+        if((*i)->getFunctionSignature()) {
+          if((*i)->getFunctionSignature()->numArgs() == 2) {
+            StaticType tmp((*i)->getFunctionSignature()->returnType, BasicMemoryManager::get());
+            _src.getStaticType().typeUnion(tmp);
+          }
+        } else {
+          _src.getStaticType() = StaticType::ITEM_STAR;
+          break;
         }
-      } else {
-        _src.getStaticType() = StaticType::ITEM_STAR;
-        break;
       }
     }
   }
