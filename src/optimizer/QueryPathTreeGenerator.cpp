@@ -1084,6 +1084,26 @@ ASTNode *QueryPathTreeGenerator::optimizeTypeswitch(XQTypeswitch *item)
   return item;
 }
 
+ASTNode *QueryPathTreeGenerator::optimizeSwitch(XQSwitch *item)
+{
+  PathResult result;
+
+  generate(item->getExpression());
+
+  XQSwitch::Cases &clauses = item->getCases();
+  for(XQSwitch::Cases::iterator i = clauses.begin(); i != clauses.end(); ++i) {
+    for(VectorOfASTNodes::iterator v = (*i)->getValues().begin(); v != (*i)->getValues().end(); ++v) {
+      generate(*v);
+    }
+    result.join(generate((*i)->getExpression()));
+  }
+
+  result.join(generate(item->getDefault()));
+
+  push(result);
+  return item;
+}
+
 ASTNode *QueryPathTreeGenerator::optimizeDOMConstructor(XQDOMConstructor *item)
 {
   PathResult result;

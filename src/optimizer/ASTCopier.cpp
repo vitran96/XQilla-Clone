@@ -421,6 +421,27 @@ ASTNode *ASTCopier::optimizeTypeswitch(XQTypeswitch *item)
   COPY_IMPL();
 }
 
+ASTNode *ASTCopier::optimizeSwitch(XQSwitch *item)
+{
+  XQSwitch *result = new (mm_) XQSwitch(item->getExpression(), mm_);
+
+  XQSwitch::Cases &clauses = item->getCases();
+  for(XQSwitch::Cases::iterator i = clauses.begin(); i != clauses.end(); ++i) {
+    XQSwitch::Case *newCase = new (mm_) XQSwitch::Case(mm_);
+    for(VectorOfASTNodes::iterator v = (*i)->getValues().begin(); v != (*i)->getValues().end(); ++v) {
+      newCase->getValues().push_back(*v);
+    }
+    newCase->setExpression((*i)->getExpression());
+    newCase->setLocationInfo(*i);
+    result->getCases().push_back(newCase);
+  }
+
+  result->setDefault(item->getDefault());
+
+  ASTVisitor::optimizeSwitch(result);
+  COPY_IMPL();
+}
+
 ASTNode *ASTCopier::optimizeFunctionCall(XQFunctionCall *item)
 {
   VectorOfASTNodes *newArgs = new (mm_) VectorOfASTNodes(XQillaAllocator<ASTNode*>(mm_));

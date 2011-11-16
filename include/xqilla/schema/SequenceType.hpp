@@ -207,6 +207,7 @@ class XQILLA_API SequenceType : public LocationInfo
 public:
   static const SequenceType ANY_ATOMIC_TYPE;
   static const SequenceType ITEM_STAR;
+  static const SequenceType ITEM_QUESTION;
 
   /**
    * Number of occurrences of the ItemType.

@@ -107,18 +107,19 @@ am_libxqilla_la_OBJECTS = ReferenceCounted.lo BaseMemoryManager.lo \
 	XQFunctionDeref.lo XQPartialApply.lo XQFunctionRef.lo \
 	XQGlobalVariable.lo XQTypeAlias.lo XQRewriteRule.lo \
 	XQOrderingChange.lo XQQuantified.lo XQValidate.lo \
-	XQTypeswitch.lo ConvertFunctionArg.lo XQDocumentOrder.lo \
-	XQPredicate.lo XQReturn.lo XQTupleConstructor.lo \
-	XQTupleMember.lo TupleNode.lo ContextTuple.lo ForTuple.lo \
-	LetTuple.lo WhereTuple.lo CountTuple.lo OrderByTuple.lo \
-	XQNamespaceBinding.lo XQCallTemplate.lo XQApplyTemplates.lo \
-	ASTDebugHook.lo DebugHookDecorator.lo TupleDebugHook.lo \
-	InputParser.lo InteractiveDebugger.lo StackFrame.lo \
-	ContentSequenceFilter.lo EventGenerator.lo EventSerializer.lo \
-	NoInheritFilter.lo NSFixupFilter.lo QueryPathTreeFilter.lo \
-	FTContains.lo FTWords.lo FTOr.lo FTAnd.lo FTMildnot.lo \
-	FTUnaryNot.lo DefaultTokenizer.lo DefaultTokenStore.lo \
-	FTOrder.lo FTDistance.lo FTScope.lo FTContent.lo FTWindow.lo \
+	XQTypeswitch.lo XQSwitch.lo ConvertFunctionArg.lo \
+	XQDocumentOrder.lo XQPredicate.lo XQReturn.lo \
+	XQTupleConstructor.lo XQTupleMember.lo TupleNode.lo \
+	ContextTuple.lo ForTuple.lo LetTuple.lo WhereTuple.lo \
+	CountTuple.lo OrderByTuple.lo XQNamespaceBinding.lo \
+	XQCallTemplate.lo XQApplyTemplates.lo ASTDebugHook.lo \
+	DebugHookDecorator.lo TupleDebugHook.lo InputParser.lo \
+	InteractiveDebugger.lo StackFrame.lo ContentSequenceFilter.lo \
+	EventGenerator.lo EventSerializer.lo NoInheritFilter.lo \
+	NSFixupFilter.lo QueryPathTreeFilter.lo FTContains.lo \
+	FTWords.lo FTOr.lo FTAnd.lo FTMildnot.lo FTUnaryNot.lo \
+	DefaultTokenizer.lo DefaultTokenStore.lo FTOrder.lo \
+	FTDistance.lo FTScope.lo FTContent.lo FTWindow.lo \
 	XQillaBuilderImpl.lo XQillaDocumentImpl.lo \
 	XQillaExpressionImpl.lo XQillaNSResolverImpl.lo \
 	XQillaXMLGrammarPoolImpl.lo XPathDocumentImpl.lo \
@@ -549,6 +550,7 @@ src/ast/XQOrderingChange.cpp \
 src/ast/XQQuantified.cpp \
 src/ast/XQValidate.cpp \
 src/ast/XQTypeswitch.cpp \
+src/ast/XQSwitch.cpp \
 src/ast/ConvertFunctionArg.cpp \
 src/ast/XQDocumentOrder.cpp \
 src/ast/XQPredicate.cpp \
@@ -1490,6 +1492,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XQRewriteRule.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XQSequence.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XQStep.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XQSwitch.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XQTextConstructor.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XQTreatAs.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XQTupleConstructor.Plo@am__quote@
@@ -2301,6 +2304,13 @@ XQTypeswitch.lo: src/ast/XQTypeswitch.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='src/ast/XQTypeswitch.cpp' object='XQTypeswitch.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o XQTypeswitch.lo `test -f 'src/ast/XQTypeswitch.cpp' || echo '$(srcdir)/'`src/ast/XQTypeswitch.cpp
+
+XQSwitch.lo: src/ast/XQSwitch.cpp
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT XQSwitch.lo -MD -MP -MF $(DEPDIR)/XQSwitch.Tpo -c -o XQSwitch.lo `test -f 'src/ast/XQSwitch.cpp' || echo '$(srcdir)/'`src/ast/XQSwitch.cpp
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/XQSwitch.Tpo $(DEPDIR)/XQSwitch.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='src/ast/XQSwitch.cpp' object='XQSwitch.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o XQSwitch.lo `test -f 'src/ast/XQSwitch.cpp' || echo '$(srcdir)/'`src/ast/XQSwitch.cpp
 
 ConvertFunctionArg.lo: src/ast/ConvertFunctionArg.cpp
 @am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ConvertFunctionArg.lo -MD -MP -MF $(DEPDIR)/ConvertFunctionArg.Tpo -c -o ConvertFunctionArg.lo `test -f 'src/ast/ConvertFunctionArg.cpp' || echo '$(srcdir)/'`src/ast/ConvertFunctionArg.cpp

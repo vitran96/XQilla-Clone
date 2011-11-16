@@ -254,6 +254,30 @@ ASTNode *ASTReleaser::optimizeTypeswitch(XQTypeswitch *item)
   RELEASE_IMPL();
 }
 
+ASTNode *ASTReleaser::optimizeSwitch(XQSwitch *item)
+{
+  ASTVisitor::optimizeSwitch(item);
+
+  // Release the clauses and vector
+#if defined(_MSC_VER) || defined(__xlC__)
+  typedef XQSwitch::Cases ClauseVector;
+  ClauseVector &clauses = item->getCases();
+#else
+  std::vector<XQSwitch::Case*,XQillaAllocator<XQSwitch::Case*> > &clauses = item->getCases();
+#endif
+  for(XQSwitch::Cases::iterator i = clauses.begin(); i != clauses.end(); ++i) {
+    (*i)->getValues().~VectorOfASTNodes();
+    item->getMemoryManager()->deallocate(*i);
+  }
+#if defined(_MSC_VER) || defined(__xlC__)
+  clauses.~ClauseVector();
+#else
+  clauses.~vector<XQSwitch::Case*, XQillaAllocator<XQSwitch::Case*> >();
+#endif
+
+  RELEASE_IMPL();
+}
+
 ASTNode *ASTReleaser::optimizeFunctionCall(XQFunctionCall *item)
 {
   ASTVisitor::optimizeFunctionCall(item);

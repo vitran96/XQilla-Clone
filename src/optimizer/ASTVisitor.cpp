@@ -165,6 +165,8 @@ ASTNode *ASTVisitor::optimize(ASTNode *item)
     return optimizeQuantified((XQQuantified *)item);
   case ASTNode::TYPESWITCH:
     return optimizeTypeswitch((XQTypeswitch *)item);
+  case ASTNode::SWITCH:
+    return optimizeSwitch((XQSwitch *)item);
   case ASTNode::VALIDATE:
     return optimizeValidate((XQValidate *)item);
   case ASTNode::FUNCTION_CALL:
@@ -404,6 +406,23 @@ ASTNode *ASTVisitor::optimizeTypeswitch(XQTypeswitch *item)
 
   const_cast<XQTypeswitch::Case *>(item->getDefaultCase())->
     setExpression(optimize(item->getDefaultCase()->getExpression()));
+
+  return item;
+}
+
+ASTNode *ASTVisitor::optimizeSwitch(XQSwitch *item)
+{
+  item->setExpression(optimize(const_cast<ASTNode *>(item->getExpression())));
+
+  XQSwitch::Cases &clauses = item->getCases();
+  for(XQSwitch::Cases::iterator i = clauses.begin(); i != clauses.end(); ++i) {
+    for(VectorOfASTNodes::iterator v = (*i)->getValues().begin(); v != (*i)->getValues().end(); ++v) {
+      (*v) = optimize(*v);
+    }
+    (*i)->setExpression(optimize((*i)->getExpression()));
+  }
+
+  item->setDefault(optimize(const_cast<ASTNode *>(item->getDefault())));
 
   return item;
 }

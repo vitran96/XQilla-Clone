@@ -192,6 +192,8 @@ bool AnyAtomicType::isInstanceOfType(const XMLCh* targetTypeURI, const XMLCh* ta
 
 AnyAtomicType::AtomicObjectType AnyAtomicType::getSortType() const
 {
+  if(this == 0) return NumAtomicObjectTypes;
+
   switch(getPrimitiveTypeIndex()) {
   case ANY_URI:
   case UNTYPED_ATOMIC:

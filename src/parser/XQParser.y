@@ -44,6 +44,7 @@
 #include <xqilla/ast/XQTextConstructor.hpp>
 #include <xqilla/ast/XQQuantified.hpp>
 #include <xqilla/ast/XQTypeswitch.hpp>
+#include <xqilla/ast/XQSwitch.hpp>
 #include <xqilla/ast/XQValidate.hpp>
 #include <xqilla/ast/XQGlobalVariable.hpp>
 #include <xqilla/ast/XQTypeAlias.hpp>
@@ -534,6 +535,7 @@ namespace XQParser {
 %token <str> _EVERY_              "every"
 %token <str> _SATISFIES_            "satisfies"
 %token <str> _TYPESWITCH_            "typeswitch"
+%token <str> _SWITCH_            "switch"
 %token <str> _CASE_              "case"
 %token <str> _CASE_S_              "case (followed by (in)sensitive)"
 %token <str> _AS_                "as"
@@ -725,6 +727,7 @@ namespace XQParser {
 %type <astNode>      RangeExpr AdditiveExpr MultiplicativeExpr UnionExpr QuantifiedExpr StringLiteral Literal ContextItemExpr
 %type <astNode>      UnaryExpr ValidateExpr CastExpr TreatExpr IntersectExceptExpr ParenthesizedExpr PrimaryExpr FunctionCall CarrotApply
 %type <astNode>      RelativePathExpr StepExpr AxisStep PostfixExpr TypeswitchExpr ValueExpr PathExpr NumericLiteral IntegerLiteral 
+%type <astNode>      SwitchExpr SwitchCaseClauseList
 %type <astNode>      CastableExpr Constructor ComputedConstructor DirElemConstructor DirCommentConstructor DirPIConstructor  
 %type <astNode>      CompElemConstructor CompTextConstructor CompPIConstructor CompCommentConstructor OrderedExpr UnorderedExpr
 %type <astNode>      CompAttrConstructor CompDocConstructor DoubleLiteral InstanceofExpr DirectConstructor 
@@ -756,6 +759,7 @@ namespace XQParser {
 %type <itemList>        DirElementContent DirAttributeList QuotAttrValueContent AposAttrValueContent DirAttributeValue FunctionCallArgumentList
 %type <itemList>        ContentExpr LiteralDirAttributeValue LiteralQuotAttrValueContent LiteralAposAttrValueContent AttrValueTemplate_XSLT Pattern_XSLT
 %type <itemList>        LiteralResultElementAttrs_XSLT
+%type <switchCase>      SwitchCaseClause
 %type <predicates>      PatternStepPredicateList_XSLT
 %type <axis>            ForwardAxis ReverseAxis
 %type <nodeTest>        NodeTest NameTest Wildcard PatternAxis_XSLT
@@ -3374,6 +3378,7 @@ ExprSingle:
     FLWORExpr
   | QuantifiedExpr
   | TypeswitchExpr
+  | SwitchExpr
   | IfExpr
   | InsertExpr
   | DeleteExpr
@@ -3763,6 +3768,45 @@ CaseClauseVariable:
   | _DOLLAR_ VarName _AS_
   {
     $$ = $2;
+  }
+  ;
+
+// [70]   SwitchExpr        ::= "switch" "(" Expr ")" SwitchCaseClause+ "default" "return" ExprSingle
+// [71]   SwitchCaseClause  ::= ("case" SwitchCaseOperand)+ "return" ExprSingle
+// [72]   SwitchCaseOperand ::= ExprSingle
+SwitchExpr:
+  SwitchCaseClauseList _DEFAULT_ _RETURN_ ExprSingle
+  {
+    $$ = $1;
+    ((XQSwitch*)$$)->setDefault($4);
+  }
+;
+
+SwitchCaseClauseList:
+  SwitchCaseClauseList SwitchCaseClause _RETURN_ ExprSingle
+  {
+    $$ = $1;
+    $2->setExpression($4);
+    ((XQSwitch*)$$)->getCases().push_back($2);
+  }
+  | _SWITCH_ _LPAR_ Expr _RPAR_ SwitchCaseClause _RETURN_ ExprSingle
+  {
+    $$ = WRAP(@1, new (MEMMGR) XQSwitch($3, MEMMGR));
+    $5->setExpression($7);
+    ((XQSwitch*)$$)->getCases().push_back($5);
+  }
+  ;
+
+SwitchCaseClause:
+  _CASE_ ExprSingle
+  {
+    $$ = WRAP(@1, new (MEMMGR) XQSwitch::Case(MEMMGR));
+    $$->getValues().push_back($2);
+  }
+  | SwitchCaseClause _CASE_ ExprSingle
+  {
+    $$ = $1;
+    $$->getValues().push_back($3);
   }
   ;
 
@@ -6512,7 +6556,7 @@ PrimaryExpr:
 QNameValue:
 FunctionName | _ATTRIBUTE_ | _COMMENT_ | _DOCUMENT_NODE_ | _ELEMENT_ | _ITEM_ | _IF_ | _NODE_ |
 _PROCESSING_INSTRUCTION_ | _SCHEMA_ATTRIBUTE_ | _SCHEMA_ELEMENT_ | _TEXT_ | _TYPESWITCH_ | _EMPTY_SEQUENCE_ |
-_NAMESPACE_NODE_
+_NAMESPACE_NODE_ | _SWITCH_
   ;
 
 FunctionName:

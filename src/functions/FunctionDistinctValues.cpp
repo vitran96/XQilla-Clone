@@ -124,7 +124,7 @@ int AnyAtomicType::compare(const AnyAtomicType::Ptr &b, const Collation *collati
   default: break;
   }
 
-  assert(false);
+  // They are both null
   return 0;
 }
 

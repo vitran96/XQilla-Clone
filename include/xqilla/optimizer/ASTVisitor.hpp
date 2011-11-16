@@ -46,6 +46,7 @@
 #include <xqilla/ast/XQGlobalVariable.hpp>
 #include <xqilla/ast/XQRewriteRule.hpp>
 #include <xqilla/ast/XQTypeswitch.hpp>
+#include <xqilla/ast/XQSwitch.hpp>
 #include <xqilla/ast/XQValidate.hpp>
 #include <xqilla/ast/XQOrderingChange.hpp>
 #include <xqilla/ast/XQAtomize.hpp>
@@ -132,6 +133,7 @@
   virtual ASTNode *optimizeTupleMember(XQTupleMember *item); \
   virtual ASTNode *optimizeQuantified(XQQuantified *item); \
   virtual ASTNode *optimizeTypeswitch(XQTypeswitch *item); \
+  virtual ASTNode *optimizeSwitch(XQSwitch *item); \
   virtual ASTNode *optimizeValidate(XQValidate *item); \
   virtual ASTNode *optimizeFunctionCall(XQFunctionCall *item); \
   virtual ASTNode *optimizeDOMConstructor(XQDOMConstructor *item); \

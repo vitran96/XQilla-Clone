@@ -91,6 +91,7 @@ typedef struct yyltype
 #include <xqilla/functions/XQUserFunction.hpp>
 #include <xqilla/functions/FunctionSignature.hpp>
 #include <xqilla/ast/XQTypeswitch.hpp>
+#include <xqilla/ast/XQSwitch.hpp>
 #include <xqilla/ast/XQPredicate.hpp>
 #include <xqilla/fulltext/FTSelection.hpp>
 #include <xqilla/fulltext/FTWords.hpp>
@@ -136,6 +137,7 @@ typedef union {
   TemplateArguments *templateArgs;
   XQTypeswitch::Case *caseClause;
   XQTypeswitch::Cases *caseClauses;
+  XQSwitch::Case *switchCase;
   OrderByTuple::Modifiers orderByModifier;
   VectorOfStrings* stringList;
   FTSelection *ftselection;

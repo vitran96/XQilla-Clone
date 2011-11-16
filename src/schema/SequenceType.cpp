@@ -107,6 +107,7 @@ const ItemType ItemType::EXPRESSION(ItemType::TEST_EXPRESSION, staticDocumentCac
 
 const SequenceType SequenceType::ANY_ATOMIC_TYPE((ItemType*)&ItemType::ANY_ATOMIC_TYPE);
 const SequenceType SequenceType::ITEM_STAR((ItemType*)&ItemType::ITEM, SequenceType::STAR);
+const SequenceType SequenceType::ITEM_QUESTION((ItemType*)&ItemType::ITEM, SequenceType::QUESTION_MARK);
 
 SequenceType::SequenceType(ItemType* test, OccurrenceIndicator occur)
   : m_pItemType(test),

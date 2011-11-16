@@ -67,6 +67,7 @@ protected:
   virtual ASTNode *optimizeCastAs(XQCastAs *item);
   virtual ASTNode *optimizeFunctionCoercion(XQFunctionCoercion *item);
   virtual ASTNode *optimizeTypeswitch(XQTypeswitch *item);
+  virtual ASTNode *optimizeSwitch(XQSwitch *item);
   virtual ASTNode *optimizePartialApply(XQPartialApply *item);
   virtual ASTNode *optimizeFunctionRef(XQFunctionRef *item);
   virtual ASTNode *optimizeFunctionConversion(XQFunctionConversion *item);

@@ -591,6 +591,13 @@ void XQLexer::undoLessThan()
     RECOGNIZE_VALUE(_QNAME_, yytext);
   }
 }
+<INITIAL>"switch" {
+  if(isXQuery() && isVersion3()) {
+    RECOGNIZE_VALUE(_SWITCH_, yytext);
+  } else {
+    RECOGNIZE_VALUE(_QNAME_, yytext);
+  }
+}
 
 <INITIAL>"ft-option" {
   if(isFullText()) {

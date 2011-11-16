@@ -261,6 +261,7 @@ xqilla/ast/XQRewriteRule.hpp \
 xqilla/ast/XQOrderingChange.hpp \
 xqilla/ast/XQQuantified.hpp \
 xqilla/ast/XQTypeswitch.hpp \
+xqilla/ast/XQSwitch.hpp \
 xqilla/ast/XQValidate.hpp \
 xqilla/ast/XQAtomize.hpp \
 xqilla/ast/XQEffectiveBooleanValue.hpp \

@@ -370,6 +370,9 @@ void ASTToXML::getElementName(ASTNode *item, XMLBuffer &buf)
   case ASTNode::TYPESWITCH:
     buf.append(X("Typeswitch"));
     break;
+  case ASTNode::SWITCH:
+    buf.append(X("Switch"));
+    break;
   case ASTNode::VALIDATE:
     buf.append(X("Validate"));
     break;
@@ -820,9 +823,10 @@ ASTNode *ASTToXML::optimizeTypeswitch(XQTypeswitch *item)
   return item;
 }
 
+static const XMLCh s_Case[] = { 'C', 'a', 's', 'e', 0 };
+
 void ASTToXML::optimizeCase(const XQTypeswitch::Case *cse)
 {
-  static const XMLCh s_Case[] = { 'C', 'a', 's', 'e', 0 };
   static const XMLCh s_Default[] = { 'D', 'e', 'f', 'a', 'u', 'l', 't', 0 };
 
   if(!hasChildren_) newline();
@@ -848,6 +852,38 @@ void ASTToXML::optimizeCase(const XQTypeswitch::Case *cse)
   newline();
 
   hasChildren_ = true;
+}
+
+ASTNode *ASTToXML::optimizeSwitch(XQSwitch *item)
+{
+  optimize(item->getExpression());
+
+  XQSwitch::Cases &clauses = item->getCases();
+  for(XQSwitch::Cases::iterator i = clauses.begin(); i != clauses.end(); ++i) {
+    if(!hasChildren_) newline();
+    indent();
+    events_->startElementEvent(0, 0, s_Case);
+
+    {
+      AutoReset<unsigned int> resetIndent(indent_);
+      ++indent_;
+      hasChildren_ = false;
+
+      for(VectorOfASTNodes::iterator v = (*i)->getValues().begin(); v != (*i)->getValues().end(); ++v) {
+        optimize(*v);
+      }
+      optimize((*i)->getExpression());
+    }
+
+    if(hasChildren_) indent();
+    events_->endElementEvent(0, 0, s_Case, 0, 0);
+    newline();
+
+    hasChildren_ = true;
+  }
+
+  optimize(item->getDefault());
+  return item;
 }
 
 ASTNode *ASTToXML::optimizeValidate(XQValidate *item)
