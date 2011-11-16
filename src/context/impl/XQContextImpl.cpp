@@ -677,28 +677,25 @@ void XQContextImpl::setDefaultCollation(const XMLCh* URI)
 
 Collation* XQContextImpl::getCollation(const XMLCh* URI, const LocationInfo *location) const
 {
-  if(!XMLUri::isValidURI(false, URI))
-  {
-    const XMLCh* baseURI=getBaseURI();
-    if(baseURI && *baseURI)
-    {
-      try
-      {
-        XMLUri base(baseURI, getMemoryManager());
-        XMLUri full(&base, URI, getMemoryManager());
-        URI = getMemoryManager()->getPooledString(full.getUriText());
-      }
-      catch(XMLException &e)
-      {
-        //if can't build, assume it's because there was an invalid base URI, so use the original URI
-      }
-    }
-  }
-  for(std::vector<Collation*, XQillaAllocator<Collation*> >::const_iterator it= _collations.begin(); it!=_collations.end(); ++it)
+  std::vector<Collation*, XQillaAllocator<Collation*> >::const_iterator it = _collations.begin();
+  for(; it!=_collations.end(); ++it)
     if(XPath2Utils::equals((*it)->getCollationName(), URI))
       return (*it);
-  const XMLCh* msg = XPath2Utils::concatStrings(X("The requested collation ('"), URI, X("') is not defined [err:FOCH0002]"), getMemoryManager());
 
+  const XMLCh* baseURI=getBaseURI();
+  if(baseURI && *baseURI) {
+    try {
+      XMLUri base(baseURI, getMemoryManager());
+      XMLUri full(&base, URI, getMemoryManager());
+      URI = getMemoryManager()->getPooledString(full.getUriText());
+
+      for(it = _collations.begin(); it!=_collations.end(); ++it)
+        if(XPath2Utils::equals((*it)->getCollationName(), URI))
+          return (*it);
+    } catch(XMLException &e) {}
+  }
+
+  const XMLCh* msg = XPath2Utils::concatStrings(X("The requested collation ('"), URI, X("') is not defined [err:FOCH0002]"), getMemoryManager());
   XQThrow3(ContextException, X("XQContextImpl::getCollation"), msg, location);
   return NULL;
 }
