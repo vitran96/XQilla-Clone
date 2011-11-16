@@ -27,10 +27,9 @@
 #include <xqilla/framework/XQillaExport.hpp>
 
 #include <xqilla/context/VariableTypeStore.hpp>
-#include <xqilla/context/impl/VariableStoreTemplate.hpp>
-#include <xqilla/context/Scope.hpp>
-#include <xqilla/context/VarHashEntry.hpp>
-#include <xqilla/framework/StringPool.hpp>
+#include <xqilla/utils/IHashMap.hpp>
+
+#include <vector>
 
 class XPath2MemoryManager;
 
@@ -68,7 +67,22 @@ public:
   virtual const VariableType *getVar(const XMLCh* namespaceURI, const XMLCh* name) const;
 
 private:
-  VariableStoreTemplate<VariableType> _store;
+  struct XQILLA_API VarEntry
+  {
+    const XMLCh *uri, *name;
+
+    bool operator==(const VarEntry &o) const
+    {
+      return XPath2Utils::equals(name, o.name) && XPath2Utils::equals(uri, o.uri) ;
+    }
+    inline size_t hash() const
+    {
+      return DefaultHashFunctor<const XMLCh*>()(name);
+    }
+  };
+  typedef IHashMap<VarEntry,VariableType> VarMap;
+  VarMap global_;
+  std::vector<VarMap> scopes_;
 };
 
 #endif

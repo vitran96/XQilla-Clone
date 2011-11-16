@@ -33,6 +33,7 @@ class ArgumentSpec;
 class XQILLA_API VariableType
 {
 public:
+  VariableType() : properties(0), type(0), global(0) {}
   VariableType(unsigned p, const StaticType *t, XQGlobalVariable *g)
     : properties(p), type(t), global(g) {}
   VariableType(const ArgumentSpec *aspec);

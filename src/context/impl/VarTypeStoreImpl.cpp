@@ -20,7 +20,6 @@
 #include "../../config/xqilla_config.h"
 #include <assert.h>
 #include "VarTypeStoreImpl.hpp"
-#include <xqilla/context/impl/VarHashEntryImpl.hpp>
 #include <xqilla/utils/XPath2NSUtils.hpp>
 #include <xqilla/utils/XStr.hpp>
 #include <xqilla/functions/FunctionSignature.hpp>
@@ -41,7 +40,6 @@ VariableType::VariableType(const ArgumentSpec *aspec)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 VarTypeStoreImpl::VarTypeStoreImpl(XPath2MemoryManager* memMgr)
-  : _store(memMgr)
 {
 }
 
@@ -52,39 +50,45 @@ VarTypeStoreImpl::~VarTypeStoreImpl()
 
 void VarTypeStoreImpl::clear()
 {
-  _store.clear();
+  global_ = VarMap();
+  scopes_.clear();
 }
 
 void VarTypeStoreImpl::addLocalScope()
 {
-  _store.addScope(Scope<VariableType>::LOCAL_SCOPE);
+  scopes_.push_back(global_);
 }
 
 void VarTypeStoreImpl::addLogicalBlockScope()
 {
-  _store.addScope(Scope<VariableType>::LOGICAL_BLOCK_SCOPE);
+  if(scopes_.empty()) scopes_.push_back(global_);
+  else scopes_.push_back(scopes_.back());
 }
 
 void VarTypeStoreImpl::removeScope()
 {
-  _store.removeScope();
+  scopes_.pop_back();
 }
 
 void VarTypeStoreImpl::declareGlobalVar(const XMLCh* namespaceURI, const XMLCh* name,
                                         const VariableType &vtype)
 {
-  _store.setGlobalVar(namespaceURI, name, vtype);
+  VarEntry entry = { namespaceURI, name };
+  global_.put(entry, vtype);
 }
 
 void VarTypeStoreImpl::declareVar(const XMLCh* namespaceURI, const XMLCh* name,
                                   const VariableType &vtype)
 {
-  _store.declareVar(namespaceURI, name, vtype);
+  VarEntry entry = { namespaceURI, name };
+  if(scopes_.empty()) global_.put(entry, vtype);
+  else scopes_.back().put(entry, vtype);
 }
 
 const VariableType *VarTypeStoreImpl::getVar(const XMLCh* namespaceURI, const XMLCh* name) const
 {
-  VarHashEntry<VariableType>* result = _store.getVar(namespaceURI, name);
-  return result ? &result->getValue() : 0;
+  VarEntry entry = { namespaceURI, name };
+  if(scopes_.empty()) return global_.get(entry);
+  return scopes_.back().get(entry);
 }
 

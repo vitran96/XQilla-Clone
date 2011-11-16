@@ -29,6 +29,7 @@
 #include <xqilla/dom-api/impl/XQillaNSResolverImpl.hpp>
 #include "../context/impl/VarTypeStoreImpl.hpp"
 #include <xqilla/items/impl/ATDecimalOrDerivedImpl.hpp>
+#include <xqilla/framework/StringPool.hpp>
 
 #include <iostream>
 
