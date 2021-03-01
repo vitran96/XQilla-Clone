@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,17 +27,17 @@ class AnyAtomicType;
 class XQILLA_API ArithmeticOperator : public XQOperator
 {
 public:
-  ArithmeticOperator(whichType type, const XMLCh *opName, const VectorOfASTNodes &args, XPath2MemoryManager* memMgr);
+  ArithmeticOperator(const XMLCh* opName, const VectorOfASTNodes &args, XPath2MemoryManager* memMgr);
 
   virtual ASTNode* staticResolution(StaticContext *context);
   virtual ASTNode *staticTypingImpl(StaticContext *context);
   Result createResult(DynamicContext* context, int flags=0) const;
 
-  virtual void calculateStaticType(StaticContext *context) = 0;
+  virtual void calculateStaticType() = 0;
   virtual Item::Ptr execute(const AnyAtomicType::Ptr &arg1, const AnyAtomicType::Ptr &arg2, DynamicContext *context) const = 0;
 
 protected:
-  void calculateStaticTypeForNumerics(const StaticType &arg0, const StaticType &arg1, const StaticContext *context);
+  void calculateStaticTypeForNumerics(const StaticType &arg0, const StaticType &arg1);
 };
 
 #endif

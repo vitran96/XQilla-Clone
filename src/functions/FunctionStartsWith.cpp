@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,10 +76,19 @@ BoolResult FunctionStartsWith::boolResult(DynamicContext* context) const
 	if(XMLString::stringLen(find)==0)
 		return true;
 
-  Collation* collation;
-  if(getNumArgs()>2) collation = context->getCollation(getParamNumber(3,context)->
-    next(context)->asString(context), this);
-  else collation = context->getDefaultCollation(this);
+	Collation* collation=NULL;
+	if(getNumArgs()>2) {
+    Sequence collArg = getParamNumber(3,context)->toSequence(context);
+    const XMLCh* collName = collArg.first()->asString(context);
+    try {
+      context->getItemFactory()->createAnyURI(collName, context);
+    } catch(XPath2ErrorException &e) {
+      XQThrow(FunctionException, X("FunctionEndsWith::createSequence"), X("Invalid collationURI"));  
+    }
+	  collation=context->getCollation(collName, this);
+  }
+	else
+		collation=context->getDefaultCollation(this);
 
 	// Returns a boolean indicating whether or not the value of $operand1 ends with a string that is equal to the value 
 	// of $operand2 according to the specified collation

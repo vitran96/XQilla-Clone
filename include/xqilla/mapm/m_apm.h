@@ -26,7 +26,6 @@
 #ifndef M__APM__INCLUDED
 #define M__APM__INCLUDED
 
-#include <stdint.h>     /* defines uint32_t etc */
 #include <xqilla/framework/XQillaExport.hpp>
 
 #ifdef __cplusplus
@@ -96,7 +95,6 @@ extern	void	m_apm_trim_mem_usage(void);
 extern	void	m_apm_set_string(M_APM, char *);
 extern	void	m_apm_set_double(M_APM, double);
 extern	void	m_apm_set_long(M_APM, long);
-extern	void	m_apm_set_u64(M_APM, uint64_t);
 
 extern double m_apm_get_double(M_APM atmp);
 
@@ -321,7 +319,6 @@ public:
 	MAPM(double d); /* Constructor from double-precision float */
 	MAPM(int l); /* Constructor from int */
 	MAPM(long l); /* Constructor from long int */
-	MAPM(uint64_t l); /* Constructor from uint64_t */
 	/* Destructor */
 	~MAPM();
 

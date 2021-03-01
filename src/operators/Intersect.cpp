@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,14 +29,12 @@
 #include <xqilla/exceptions/StaticErrorException.hpp>
 #include <xqilla/runtime/Sequence.hpp>
 
-#include <xercesc/util/XMLUniDefs.hpp>
-
 XERCES_CPP_NAMESPACE_USE;
 
 const XMLCh Intersect::name[]={ chLatin_i, chLatin_n, chLatin_t, chLatin_e, chLatin_r, chLatin_s, chLatin_e, chLatin_c, chLatin_t, chNull };
 
 Intersect::Intersect(const VectorOfASTNodes &args, XPath2MemoryManager* memMgr)
-  : XQOperator(INTERSECT, name, args, memMgr),
+  : XQOperator(name, args, memMgr),
     sortAdded_(false)
 {
 }
@@ -54,9 +52,8 @@ ASTNode* Intersect::staticResolution(StaticContext *context)
   }
 
   for(VectorOfASTNodes::iterator i = _args.begin(); i != _args.end(); ++i) {
-    ItemType *itemType = new (mm) ItemType(ItemType::TEST_NODE);
-    itemType->setLocationInfo(this);
-    SequenceType *seqType = new (mm) SequenceType(itemType, SequenceType::STAR);
+    SequenceType *seqType = new (mm) SequenceType(new (mm) SequenceType::ItemType(SequenceType::ItemType::TEST_NODE),
+                                                  SequenceType::STAR);
     seqType->setLocationInfo(this);
 
     *i = new (mm) XQTreatAs(*i, seqType, mm);
@@ -82,7 +79,7 @@ ASTNode *Intersect::staticTypingImpl(StaticContext *context)
 
   _src.add(_args[1]->getStaticAnalysis());
 
-  _src.getStaticType().typeIntersect(_args[1]->getStaticAnalysis().getStaticType());
+  _src.getStaticType().typeNodeIntersect(_args[1]->getStaticAnalysis().getStaticType());
   _src.getStaticType().multiply(0, 1);
 
   if(_args[1]->getStaticAnalysis().isUpdating()) {

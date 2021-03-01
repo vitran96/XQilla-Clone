@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,11 +28,11 @@
 #include <xqilla/items/Node.hpp>
 #include <xqilla/items/DatatypeFactory.hpp>
 
-XQOperator::XQOperator(whichType type, const XMLCh *opName, const VectorOfASTNodes &args, XPath2MemoryManager* memMgr)
-  : ASTNodeImpl(type, memMgr),
-    _args(args),
-    _opName(opName)
+XQOperator::XQOperator(const XMLCh* opName, const VectorOfASTNodes &args, XPath2MemoryManager* memMgr)
+  : ASTNodeImpl(OPERATOR, memMgr),
+  _args(args)
 {
+  _opName=opName;
 }
 
 void XQOperator::addArgument(ASTNode* arg)
@@ -63,36 +63,11 @@ unsigned int XQOperator::getNumArgs() const
   return (unsigned int)_args.size();
 }
 
-const VectorOfASTNodes &XQOperator::getArguments() const {
-  return _args;
+const XMLCh* XQOperator::getOperatorName() const
+{
+  return _opName;
 }
 
-bool XQOperator::isInstance(ASTNode *ast)
-{
-  switch(ast->getType()) {
-  case AND:
-  case DIVIDE:
-  case EQUALS:
-  case EXCEPT:
-  case GENERAL_COMP:
-  case GREATER_THAN:
-  case GREATER_THAN_EQUAL:
-  case INTEGER_DIVIDE:
-  case INTERSECT:
-  case LESS_THAN:
-  case LESS_THAN_EQUAL:
-  case MINUS:
-  case MOD:
-  case MULTIPLY:
-  case NODE_COMPARISON:
-  case NOT_EQUALS:
-  case ORDER_COMPARISON:
-  case OR:
-  case PLUS:
-  case UNARY_MINUS:
-  case UNION:
-    return true;
-  default:
-    return false;
-  }
+const VectorOfASTNodes &XQOperator::getArguments() const {
+  return _args;
 }

@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,8 +42,12 @@ TupleNode *TupleDebugHook::staticResolution(StaticContext *context)
 
 TupleNode *TupleDebugHook::staticTypingImpl(StaticContext *context)
 {
-  src_.clear();
-  src_.copy(parent_->getStaticAnalysis());
+  return this;
+}
+
+TupleNode *TupleDebugHook::staticTypingTeardown(StaticContext *context, StaticAnalysis &usedSrc)
+{
+  parent_ = parent_->staticTypingTeardown(context, usedSrc);
   return this;
 }
 
@@ -117,11 +121,6 @@ public:
       if(dl) dl->error(ex, &frame_, context);
     }
     return false;
-  }
-
-  virtual void createTuple(DynamicContext *context, size_t capacity, TupleImpl::Ptr &result) const
-  {
-    parent_->createTuple(context, capacity, result);
   }
 
 private:

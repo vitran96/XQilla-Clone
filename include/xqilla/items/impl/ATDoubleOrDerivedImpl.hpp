@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,10 +28,18 @@
 
 class XQILLA_API ATDoubleOrDerivedImpl : public ATDoubleOrDerived 
 {
-public:
-  ATDoubleOrDerivedImpl(const XMLCh* typeURI, const XMLCh* typeName, const XMLCh* value, const StaticContext* context);
-  ATDoubleOrDerivedImpl(const XMLCh* typeURI, const XMLCh* typeName, double value);
 
+public:
+
+  /* constructor */
+  ATDoubleOrDerivedImpl(const XMLCh* typeURI, const XMLCh* typeName, const XMLCh* value, const StaticContext* context);
+
+  /* constructor */
+  ATDoubleOrDerivedImpl(const XMLCh* typeURI, const XMLCh* typeName, const MAPM value, const StaticContext* context);
+
+  /** destructor -- do nothing*/
+  virtual ~ATDoubleOrDerivedImpl() { };
+  
   virtual void *getInterface(const XMLCh *name) const;
 
   /* Get the name of the primitive type (basic type) of this type
@@ -51,10 +59,6 @@ public:
   virtual Numeric::Ptr promoteTypeIfApplicable(AnyAtomicType::AtomicObjectType typeIndex,
                                                const DynamicContext* context) const;
   
-  virtual bool equals(const AnyAtomicType::Ptr &target, const DynamicContext* context) const;
-  virtual bool lessThan(const Numeric::Ptr &other, const DynamicContext* context) const;
-  virtual bool greaterThan(const Numeric::Ptr &other, const DynamicContext* context) const;
-
   /** Returns a Numeric object which is the sum of this and other */
   virtual Numeric::Ptr add(const Numeric::Ptr &other, const DynamicContext* context) const;
 
@@ -132,7 +136,9 @@ public:
 
   /* Is this xs:double infinite? */
   virtual bool isInfinite() const;
-  virtual bool isInteger() const;
+
+  /* Get the primitive index associated with this type */
+  virtual AnyAtomicType::AtomicObjectType getPrimitiveTypeIndex() const;
 
   /* Get the primitive index associated with this type */
   static AnyAtomicType::AtomicObjectType getTypeIndex(); 
@@ -140,31 +146,48 @@ public:
   /* Get the primitive type name */
   static const XMLCh* getPrimitiveName();
 
-  virtual MAPM asMAPM() const;
-  virtual State getState() const;
+  virtual const MAPM &asMAPM() const { return _double; }
 
-  virtual double asDouble() const { return value_; }
-  virtual float asFloat() const { return (float)value_; }
-  virtual int asInt() const { return (int)value_; }
+  virtual State getState() const { return _state; }
 
-  static bool isNegative(double v);
-  static State getState(double v);
-  static const XMLCh* asString(double v, const DynamicContext *context);
+  /* The significant digits */
+  static int g_nSignificantDigits;
+  static bool g_bEnforceIEEE;
 
-  static double parseDouble(const XMLCh* const value);
+  static MAPM parseDouble(const XMLCh* const value, State &state);
 
 private:
+
   /* set the value of this decimal */
   void setDouble(const XMLCh* const value);
 
+  /* returns a new infinity ATDoubleOrDerived*/
+  ATDoubleOrDerived::Ptr infinity(const DynamicContext* context) const;
+
+  /* returns a new negative infinity ATDoubleOrDerived*/
+  ATDoubleOrDerived::Ptr negInfinity(const DynamicContext* context) const;
+
+  /* returns a NaN ATDoubleOrDerived*/
+  ATDoubleOrDerived::Ptr notANumber(const DynamicContext* context) const;
+
+  /* returns a -0 ATDoubleOrDerived*/
+  ATDoubleOrDerived::Ptr negZero(const DynamicContext* context) const;
+  
+  /*returns a ATDoubleOrDerived of value value*/
+  ATDoubleOrDerived::Ptr newDouble(MAPM value, const DynamicContext* context) const;
+
   /*The value of this double*/
-  double value_;
+  MAPM _double;
+
+  /* is it NaN, INF, NegINF, or just a double (NUM) */
+  State _state;
 
   /* the name of this type */
-  const XMLCh* typeName_;
+  const XMLCh* _typeName;
 
   /* the uri of this type */
-  const XMLCh* typeURI_; 
+  const XMLCh* _typeURI;
+ 
 };
 
-#endif
+#endif // _ATDOUBLEORDERIVEDIMPL_HPP

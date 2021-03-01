@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ class Multiply;
 class Divide;
 class And;
 class Or;
-class XQRewriteRule;
 
 class XQILLA_API PartialEvaluator : public ASTVisitor
 {
@@ -41,21 +40,30 @@ protected:
   virtual void optimize(XQQuery *query);
   virtual ASTNode *optimize(ASTNode *item);
   virtual XQUserFunction *optimizeFunctionDef(XQUserFunction *item);
-  virtual XQRewriteRule *optimizeRewriteRule(XQRewriteRule *item);
   virtual ASTNode *optimizeUserFunction(XQUserFunctionInstance *item);
   virtual ASTNode *optimizeFunctionDeref(XQFunctionDeref *item);
   virtual ASTNode *optimizePartialApply(XQPartialApply *item);
   virtual ASTNode *optimizeFunctionCoercion(XQFunctionCoercion *item);
   virtual ASTNode *optimizeReturn(XQReturn *item);
+  virtual ASTNode *optimizeIf(XQIf *item);
   virtual ASTNode *optimizeQuantified(XQQuantified *item);
+  virtual ASTNode *optimizePredicate(XQPredicate *item);
+  virtual ASTNode *optimizeEffectiveBooleanValue(XQEffectiveBooleanValue *item);
+  virtual ASTNode *optimizeOperator(XQOperator *item);
   virtual ASTNode *optimizeNamespaceBinding(XQNamespaceBinding *item);
   virtual ASTNode *optimizeInlineFunction(XQInlineFunction *item);
   virtual ASTNode *optimizeFunction(XQFunction *item);
   virtual ASTNode *optimizeTypeswitch(XQTypeswitch *item);
+  virtual ASTNode *optimizeTreatAs(XQTreatAs *item);
+
+  ASTNode *optimizePlus(Plus *item);
+  ASTNode *optimizeMinus(Minus *item);
+  ASTNode *optimizeMultiply(Multiply *item);
+  ASTNode *optimizeDivide(Divide *item);
+  ASTNode *optimizeAnd(And *item);
+  ASTNode *optimizeOr(Or *item);
 
   bool checkSizeLimit(const ASTNode *oldAST, const ASTNode *newAST);
-
-  HashMap<int, XQRewriteRule*> *rules_;
 
   DynamicContext *context_;
   size_t functionInlineLimit_;

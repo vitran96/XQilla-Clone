@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,7 +62,7 @@ ASTNode *XQAtomize::staticTypingImpl(StaticContext *context)
               "to be an updating expression [err:XUST0001]"));
   }
 
-  if(!_src.getStaticType().containsType(TypeFlags::NODE|TypeFlags::ANY_ATOMIC_TYPE) &&
+  if(_src.getStaticType().isType(StaticType::FUNCTION_TYPE) &&
      _src.getStaticType().getMin() > 0) {
     XMLBuffer buf;
     buf.set(X("Sequence does not match type (xs:anyAtomicType | node())*"));
@@ -72,27 +72,26 @@ ASTNode *XQAtomize::staticTypingImpl(StaticContext *context)
     XQThrow(XPath2TypeMatchException, X("XQAtomize::staticTyping"), buf.getRawBuffer());
   }
 
-  if(!_src.getStaticType().containsType(TypeFlags::NODE|TypeFlags::FUNCTION)) {
+  if(!_src.getStaticType().containsType(StaticType::NODE_TYPE|StaticType::FUNCTION_TYPE)) {
     // If the expression has no nodes, this function does nothing
     return substitute(expr_);
   }
 
-  // Remove types other than node and atomic
-  _src.getStaticType().typeIntersect(TypeFlags::NODE | TypeFlags::ANY_ATOMIC_TYPE);
-
   if(doPSVI_) {
-    if(_src.getStaticType().substitute(TypeFlags::ELEMENT | TypeFlags::ATTRIBUTE,
-                                       StaticType::ANY_ATOMIC_TYPE))
-      _src.getStaticType().setCardinality(0, StaticType::UNLIMITED);
+    _src.getStaticType().substitute(StaticType::ELEMENT_TYPE | StaticType::ATTRIBUTE_TYPE,
+                                    StaticType(StaticType::ANY_ATOMIC_TYPE, 0, StaticType::UNLIMITED));
   } else {
-    _src.getStaticType().substitute(TypeFlags::ELEMENT | TypeFlags::ATTRIBUTE,
-                                    StaticType::UNTYPED_ATOMIC);
+    _src.getStaticType().substitute(StaticType::ELEMENT_TYPE | StaticType::ATTRIBUTE_TYPE,
+                                    StaticType::UNTYPED_ATOMIC_TYPE);
   }
 
-  _src.getStaticType().substitute(TypeFlags::DOCUMENT | TypeFlags::TEXT,
-                                  StaticType::UNTYPED_ATOMIC);
-  _src.getStaticType().substitute(TypeFlags::NAMESPACE | TypeFlags::COMMENT |
-                                  TypeFlags::PI, StaticType::STRING);
+  _src.getStaticType().substitute(StaticType::DOCUMENT_TYPE | StaticType::TEXT_TYPE,
+                                  StaticType::UNTYPED_ATOMIC_TYPE);
+  _src.getStaticType().substitute(StaticType::NAMESPACE_TYPE | StaticType::COMMENT_TYPE |
+                                  StaticType::PI_TYPE, StaticType::STRING_TYPE);
+
+  // Remove function types
+  _src.getStaticType() &= StaticType(StaticType::NODE_TYPE | StaticType::ANY_ATOMIC_TYPE, 0, StaticType::UNLIMITED);
 
   return this;
 }
@@ -117,11 +116,11 @@ Item::Ptr AtomizeResult::next(DynamicContext *context)
       _parent = 0;
       return 0;
     }
-    if(result->getType() == Item::NODE) {
+    if(result->isNode()) {
       _sub = ((Node*)result.get())->dmTypedValue(context);
       result = _sub->next(context);
     }
-    else if(result->getType() != Item::ATOMIC) {
+    else if(result->isFunction()) {
       XMLBuffer buf;
       buf.set(X("Sequence does not match type (xs:anyAtomicType | node())*"));
       buf.append(X(" - found item of type "));

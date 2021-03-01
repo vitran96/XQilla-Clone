@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,14 +39,10 @@
 #include <xqilla/ast/XQContextItem.hpp>
 #include <xqilla/ast/XQDOMConstructor.hpp>
 #include <xqilla/ast/XQReturn.hpp>
-#include <xqilla/ast/XQTupleConstructor.hpp>
-#include <xqilla/ast/XQTupleMember.hpp>
 #include <xqilla/ast/XQQuantified.hpp>
 #include <xqilla/ast/XQFunctionCall.hpp>
 #include <xqilla/ast/XQGlobalVariable.hpp>
-#include <xqilla/ast/XQRewriteRule.hpp>
 #include <xqilla/ast/XQTypeswitch.hpp>
-#include <xqilla/ast/XQSwitch.hpp>
 #include <xqilla/ast/XQValidate.hpp>
 #include <xqilla/ast/XQOrderingChange.hpp>
 #include <xqilla/ast/XQAtomize.hpp>
@@ -67,7 +63,6 @@
 #include <xqilla/ast/XQFunctionDeref.hpp>
 #include <xqilla/ast/XQPartialApply.hpp>
 #include <xqilla/ast/XQMap.hpp>
-#include <xqilla/ast/XQExprSubstitution.hpp>
 
 #include <xqilla/ast/ContextTuple.hpp>
 #include <xqilla/ast/ForTuple.hpp>
@@ -108,15 +103,12 @@
 #define ALL_ASTVISITOR_METHODS() \
   virtual XQGlobalVariable *optimizeGlobalVar(XQGlobalVariable *item); \
   virtual XQUserFunction *optimizeFunctionDef(XQUserFunction *item); \
-  virtual XQRewriteRule *optimizeRewriteRule(XQRewriteRule *item); \
 \
   virtual ASTNode *optimizeUnknown(ASTNode *item); \
   virtual ASTNode *optimizeFunction(XQFunction *item); \
   virtual ASTNode *optimizeLiteral(XQLiteral *item); \
   virtual ASTNode *optimizeQNameLiteral(XQQNameLiteral *item); \
-  virtual ASTNode *optimizeDecimalLiteral(XQDecimalLiteral *item); \
-  virtual ASTNode *optimizeFloatLiteral(XQFloatLiteral *item); \
-  virtual ASTNode *optimizeDoubleLiteral(XQDoubleLiteral *item); \
+  virtual ASTNode *optimizeNumericLiteral(XQNumericLiteral *item); \
   virtual ASTNode *optimizeNav(XQNav *item); \
   virtual ASTNode *optimizeSequence(XQSequence *item); \
   virtual ASTNode *optimizeStep(XQStep *item); \
@@ -129,11 +121,8 @@
   virtual ASTNode *optimizeOperator(XQOperator *item); \
   virtual ASTNode *optimizeContextItem(XQContextItem *item); \
   virtual ASTNode *optimizeReturn(XQReturn *item); \
-  virtual ASTNode *optimizeTupleConstructor(XQTupleConstructor *item); \
-  virtual ASTNode *optimizeTupleMember(XQTupleMember *item); \
   virtual ASTNode *optimizeQuantified(XQQuantified *item); \
   virtual ASTNode *optimizeTypeswitch(XQTypeswitch *item); \
-  virtual ASTNode *optimizeSwitch(XQSwitch *item); \
   virtual ASTNode *optimizeValidate(XQValidate *item); \
   virtual ASTNode *optimizeFunctionCall(XQFunctionCall *item); \
   virtual ASTNode *optimizeDOMConstructor(XQDOMConstructor *item); \
@@ -163,7 +152,6 @@
   virtual ASTNode *optimizeFunctionDeref(XQFunctionDeref *item); \
   virtual ASTNode *optimizePartialApply(XQPartialApply *item); \
   virtual ASTNode *optimizeMap(XQMap *item); \
-  virtual ASTNode *optimizeExprSubstitution(XQExprSubstitution *item); \
 \
   virtual ASTNode *optimizeUDelete(UDelete *item); \
   virtual ASTNode *optimizeURename(URename *item); \

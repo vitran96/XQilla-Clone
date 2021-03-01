@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,12 +32,10 @@
 #include <xqilla/exceptions/StaticErrorException.hpp>
 #include <xqilla/runtime/ClosureResult.hpp>
 
-#include <xercesc/util/XMLUniDefs.hpp>
-
 /*static*/ const XMLCh Union::name[]={ XERCES_CPP_NAMESPACE_QUALIFIER chLatin_U, XERCES_CPP_NAMESPACE_QUALIFIER chLatin_n, XERCES_CPP_NAMESPACE_QUALIFIER chLatin_i, XERCES_CPP_NAMESPACE_QUALIFIER chLatin_o, XERCES_CPP_NAMESPACE_QUALIFIER chLatin_n, XERCES_CPP_NAMESPACE_QUALIFIER chNull };
 
 Union::Union(const VectorOfASTNodes &args, XPath2MemoryManager* memMgr)
-  : XQOperator(UNION, name, args, memMgr),
+  : XQOperator(name, args, memMgr),
     sortAdded_(false)
 {
 }
@@ -54,9 +52,8 @@ ASTNode* Union::staticResolution(StaticContext *context)
   }
 
   for(VectorOfASTNodes::iterator i = _args.begin(); i != _args.end(); ++i) {
-    ItemType *itemType = new (mm) ItemType(ItemType::TEST_NODE);
-    itemType->setLocationInfo(this);
-    SequenceType *seqType = new (mm) SequenceType(itemType, SequenceType::STAR);
+    SequenceType *seqType = new (mm) SequenceType(new (mm) SequenceType::ItemType(SequenceType::ItemType::TEST_NODE),
+                                                  SequenceType::STAR);
     seqType->setLocationInfo(this);
 
     *i = new (mm) XQTreatAs(*i, seqType, mm);

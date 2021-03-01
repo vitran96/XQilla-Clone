@@ -1,8 +1,8 @@
 This directory and the tools here are used to generate Windows
 project files for the main XQilla library and related projects.
 
-Both VC7.1 and VC8 files are generated.  The
-latter can be opened using Visual Studio 2005 (8) and
+VC9 files are generated.  The
+latter can be opened using Visual Studio 2008 (9) and
 later releases as well.
 
 The process:
@@ -13,7 +13,7 @@ The process:
 
 2.  Run the script, s_win32, which calls the script
     s_projects to generate project files.  These files
-    land in ../Win32Projects/{VC7.1,VC8}.  s_projects requires that
+    land in ../Win32Projects/{VC9,VC10,VC11}.  s_projects requires that
     the xqilla command line utility be in your PATH, because it
     uses XQuery and the input XML document (xqilla.template.xml)
     to generate the project files.

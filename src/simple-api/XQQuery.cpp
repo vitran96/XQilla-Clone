@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,8 +33,6 @@
 #include <xqilla/exceptions/StaticErrorException.hpp>
 #include <xqilla/items/Node.hpp>
 #include <xqilla/ast/XQGlobalVariable.hpp>
-#include <xqilla/ast/XQTypeAlias.hpp>
-#include <xqilla/ast/XQRewriteRule.hpp>
 #include <xqilla/ast/XQSequence.hpp>
 #include <xqilla/ast/StaticAnalysis.hpp>
 #include <xqilla/runtime/Result.hpp>
@@ -67,85 +65,37 @@ XERCES_CPP_NAMESPACE_USE
 
 ModuleCache::ModuleCache(MemoryManager *mm)
   : byURI_(11, true, mm),
-    byNamespace_(11, true, mm),
-    ordered_(XQillaAllocator<XQQuery*>(mm)),
-    funcIndex_(23, true, mm),
-    varIndex_(23, true, mm)
+    byNamespace_(11, false, mm),
+    ordered_(XQillaAllocator<XQQuery*>(mm))
 {
-}
-
-ModuleCache::~ModuleCache()
-{
-  // Delete from byURI_
-  ModuleMap::iterator en = byURI_.begin();
-  for(; en != byURI_.end(); ++en) {
-    delete en.getValue();
-  }
 }
 
 void ModuleCache::put(XQQuery *module)
 {
   assert(!byURI_.get(module->getFile()));
 
-  byURI_.put(module->getFile(), module);
+  byURI_.put((void*)module->getFile(), module);
 
-  XQQuery * const *found = byNamespace_.get(module->getModuleTargetNamespace());
-  if(found) {
-    XQQuery *cached = *found;
+  XQQuery *cached = byNamespace_.get(module->getModuleTargetNamespace());
+  if(cached) {
     while(cached->getNext() != 0) {
       cached = cached->getNext();
     }
     cached->setNext(module);
   }
   else {
-    byNamespace_.put(module->getModuleTargetNamespace(), module);
+    byNamespace_.put((void*)module->getModuleTargetNamespace(), module);
   }
 }
 
 XQQuery *ModuleCache::getByURI(const XMLCh *uri) const
 {
-  XQQuery * const *found = byURI_.get(uri);
-  return found ? *found : 0;
+  return (XQQuery*)byURI_.get(uri);
 }
 
 XQQuery *ModuleCache::getByNamespace(const XMLCh *ns) const
 {
-  XQQuery * const *found = byNamespace_.get(ns);
-  return found ? *found : 0;
-}
-
-XQQuery *ModuleCache::findModuleForFunction(const XQUserFunction *item) const
-{
-  if(funcIndex_.isEmpty()) {
-    ModuleMap::iterator i = const_cast<ModuleMap&>(byURI_).begin();
-    ModuleMap::iterator end = const_cast<ModuleMap&>(byURI_).end();
-    for(; i != end; ++i) {
-      UserFunctions::const_iterator itFn = i.getValue()->getFunctions().begin();
-      UserFunctions::const_iterator endFn = i.getValue()->getFunctions().end();
-      for(; itFn != endFn; ++itFn)
-        funcIndex_.put(*itFn, i.getValue());
-    }
-  }
-
-  XQQuery * const *found = funcIndex_.get(item);
-  return found ? *found : 0;  
-}
-
-XQQuery *ModuleCache::findModuleForVariable(const XQGlobalVariable *item) const
-{
-  if(varIndex_.isEmpty()) {
-    ModuleMap::iterator i = const_cast<ModuleMap&>(byURI_).begin();
-    ModuleMap::iterator end = const_cast<ModuleMap&>(byURI_).end();
-    for(; i != end; ++i) {
-      GlobalVariables::const_iterator itG = i.getValue()->getVariables().begin();
-      GlobalVariables::const_iterator endG = i.getValue()->getVariables().end();
-      for(; itG != endG; ++itG)
-        varIndex_.put(*itG, i.getValue());
-    }
-  }
-
-  XQQuery * const *found = varIndex_.get(item);
-  return found ? *found : 0;  
+  return (XQQuery*)byNamespace_.get(ns);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -163,8 +113,6 @@ XQQuery::XQQuery(DynamicContext *context, bool contextOwned, ModuleCache *module
     m_userDefFns(XQillaAllocator<XQUserFunction*>(memMgr)),
     m_delayedFunctions(XQillaAllocator<DelayedFuncFactory*>(memMgr)),
     m_userDefVars(XQillaAllocator<XQGlobalVariable*>(memMgr)),
-    m_aliases(XQillaAllocator<XQTypeAlias*>(memMgr)),
-    m_rwrules(XQillaAllocator<XQRewriteRule*>(memMgr)),
     m_importedModules(XQillaAllocator<XQQuery*>(memMgr)),
     m_moduleCache(moduleCache ? moduleCache : new (memMgr) ModuleCache(memMgr)),
     m_moduleCacheOwned(moduleCache == 0),
@@ -258,6 +206,64 @@ void XQQuery::execute(EventHandler *events, const XMLCh *templateQName, DynamicC
   execute(events, context);
 }
 
+XQQuery *XQQuery::findModuleForFunction(const XMLCh *uri, const XMLCh *name, int numArgs)
+{
+  UserFunctions::iterator itFn = m_userDefFns.begin();
+  for(; itFn != m_userDefFns.end(); ++itFn) {
+    if(*itFn && XPath2Utils::equals(name, (*itFn)->getName()) &&
+       XPath2Utils::equals(uri, (*itFn)->getURI()) &&
+       (*itFn)->getMinArgs() == (size_t)numArgs) {
+      return this;
+    }
+  }
+
+  ImportedModules::const_iterator modIt;
+  for(modIt = m_importedModules.begin(); modIt != m_importedModules.end(); ++modIt) {
+    if(XPath2Utils::equals(uri, (*modIt)->getModuleTargetNamespace())) {
+      XQQuery *module = *modIt;
+      for(; module; module = module->getNext()) {
+        itFn = module->m_userDefFns.begin();
+        for(; itFn != module->m_userDefFns.end(); ++itFn) {
+          if(*itFn && XPath2Utils::equals(name, (*itFn)->getName()) &&
+             (*itFn)->getMinArgs() == (size_t)numArgs) {
+            return module;
+          }
+        }
+      }
+    }
+  }
+
+  return 0;
+}
+
+XQQuery *XQQuery::findModuleForVariable(const XMLCh *uri, const XMLCh *name)
+{
+  GlobalVariables::iterator itVar = m_userDefVars.begin();
+  for(; itVar != m_userDefVars.end(); ++itVar) {
+    if(*itVar && XPath2Utils::equals(name, (*itVar)->getVariableLocalName()) &&
+       XPath2Utils::equals(uri, (*itVar)->getVariableURI())) {
+      return this;
+    }
+  }
+
+  ImportedModules::const_iterator modIt;
+  for(modIt = m_importedModules.begin(); modIt != m_importedModules.end(); ++modIt) {
+    if(XPath2Utils::equals(uri, (*modIt)->getModuleTargetNamespace())) {
+      XQQuery *module = *modIt;
+      for(; module; module = module->getNext()) {
+        itVar = module->m_userDefVars.begin();
+        for(; itVar != module->m_userDefVars.end(); ++itVar) {
+          if(*itVar && XPath2Utils::equals(name, (*itVar)->getVariableLocalName())) {
+            return module;
+          }
+        }
+      }
+    }
+  }
+
+  return 0;
+}
+
 static void duplicateVariableError(const XQGlobalVariable *existing, const XQGlobalVariable *bad,
                                    MessageListener *mlistener)
 {
@@ -279,17 +285,18 @@ void XQQuery::staticResolution()
 
   // Statically resolve all the modules
   if(m_moduleCacheOwned) {
-    ModuleMap::iterator en = m_moduleCache->byURI_.begin();
-    for(; en != m_moduleCache->byURI_.end(); ++en) {
-      if(en.getValue() != this)
-        en.getValue()->staticResolution();
+
+    RefHashTableOfEnumerator<XQQuery> en(&m_moduleCache->byURI_);
+    while(en.hasMoreElements()) {
+      XQQuery *module = &en.nextElement();
+      if(module != this)
+        module->staticResolution();
     }
   }
 
   // Deal with the module imports
   ImportedModules::const_iterator modIt;
   GlobalVariables::iterator itVar;
-  TypeAliases::iterator itAlias;
   for(modIt = m_importedModules.begin(); modIt != m_importedModules.end(); ++modIt) {
     XQQuery *module = *modIt;
 
@@ -315,7 +322,7 @@ void XQQuery::staticResolution()
         if((*itFn)->isTemplate()) {
           m_context->addTemplate(*itFn);
         }
-        else if((*itFn)->getName() && !(*itFn)->getSignature()->isPrivate()) {
+        else if((*itFn)->getName() && (*itFn)->getSignature()->privateOption != FunctionSignature::OP_TRUE) {
           m_context->addCustomFunction(*itFn);
         }
       }
@@ -333,24 +340,7 @@ void XQQuery::staticResolution()
         if(existing) duplicateVariableError(existing, *itVar, mlistener);
         nsVars.put((void*)(*itVar)->getVariableLocalName(), *itVar);
       }
-
-      // Add the imported module's type aliases into my context
-      for(itAlias = module->m_aliases.begin(); itAlias != module->m_aliases.end(); ++itAlias) {
-        m_context->addTypeAlias(*itAlias);
-      }
     }
-  }
-
-  // Run staticResolutionStage1 on the type aliases to resolve their names -
-  // then add them to the context
-  for(itAlias = m_aliases.begin(); itAlias != m_aliases.end(); ++itAlias) {
-    (*itAlias)->resolveName(m_context);
-    m_context->addTypeAlias(*itAlias);
-  }
-
-  // Run staticResolutionStage2 on the type aliases to resolve their SequenceTypes
-  for(itAlias = m_aliases.begin(); itAlias != m_aliases.end(); ++itAlias) {
-    (*itAlias)->staticResolution(m_context);
   }
 
   // Run staticResolutionStage1 on the user defined functions,
@@ -396,12 +386,6 @@ void XQQuery::staticResolution()
 
   // Run static resolution on the query body
   if(m_query) m_query = m_query->staticResolution(m_context);
-
-  // Run static resolution on the rewrite rules
-  RewriteRules::iterator itRule;
-  for(itRule = m_rwrules.begin(); itRule != m_rwrules.end(); ++itRule) {
-    (*itRule)->staticResolution(m_context);
-  }
 }
 
 bool XQQuery::staticTypingOnce(StaticTyper *styper)
@@ -449,9 +433,7 @@ void XQQuery::staticTyping(StaticTyper *styper)
     for(; module; module = module->getNext()) {
       for(varIt = module->m_userDefVars.begin(); varIt != module->m_userDefVars.end(); ++varIt) {
         varStore->declareGlobalVar((*varIt)->getVariableURI(), (*varIt)->getVariableLocalName(),
-                                   VariableType((*varIt)->getStaticAnalysis().getProperties(),
-                                                &(*varIt)->getStaticAnalysis().getStaticType(),
-                                                *varIt));
+                                   (*varIt)->getStaticAnalysis(), *varIt);
       }
     }
   }
@@ -460,9 +442,7 @@ void XQQuery::staticTyping(StaticTyper *styper)
   for(varIt = m_userDefVars.begin(); varIt != m_userDefVars.end(); ++varIt) {
     (*varIt)->resetStaticTypingOnce();
     varStore->declareGlobalVar((*varIt)->getVariableURI(), (*varIt)->getVariableLocalName(),
-                               VariableType((*varIt)->getStaticAnalysis().getProperties(),
-                                            &(*varIt)->getStaticAnalysis().getStaticType(),
-                                            *varIt));
+                               (*varIt)->getStaticAnalysis(), *varIt);
   }
 
   UserFunctions::const_iterator i, j;
@@ -488,23 +468,15 @@ void XQQuery::staticTyping(StaticTyper *styper)
   // Run staticTyping on the user defined functions,
   // which calculates a better type for them
   for(i = m_userDefFns.begin(); i != m_userDefFns.end(); ++i) {
+    for(j = m_userDefFns.begin(); j != m_userDefFns.end(); ++j) {
+      (*j)->resetStaticTypingOnce();
+    }
+
     (*i)->staticTypingOnce(m_context, styper);
   }
 
   // Run staticTyping on the query body
   if(m_query) m_query = m_query->staticTyping(m_context, styper);
-
-  // Run staticTyping on the rewrite rules
-  RewriteRules::iterator itRule;
-  for(itRule = m_rwrules.begin(); itRule != m_rwrules.end(); ++itRule) {
-    (*itRule)->staticTyping(m_context, styper);
-  }
-
-  // Run staticTyping on any imported modules not already done
-  for(modIt = m_importedModules.begin(); modIt != m_importedModules.end(); ++modIt) {
-    if((*modIt)->m_staticTyped == BEFORE)
-      (*modIt)->staticTypingOnce(styper);
-  }
 }
 
 std::string XQQuery::getQueryPlan() const
@@ -551,16 +523,6 @@ void XQQuery::addDelayedFunction(const XMLCh *uri, const XMLCh *name, size_t num
 void XQQuery::addVariable(XQGlobalVariable* varDef)
 {
   m_userDefVars.push_back(varDef);
-}
-
-void XQQuery::addTypeAlias(XQTypeAlias *alias)
-{
-  m_aliases.push_back(alias);
-}
-
-void XQQuery::addRewriteRule(XQRewriteRule *rule)
-{
-  m_rwrules.push_back(rule);
 }
 
 void XQQuery::setIsLibraryModule(bool bIsModule/*=true*/)

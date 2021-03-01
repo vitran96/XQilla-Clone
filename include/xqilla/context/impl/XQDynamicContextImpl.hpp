@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -176,9 +176,6 @@ public:
 
   virtual void setXMLEntityResolver(XERCES_CPP_NAMESPACE_QUALIFIER XMLEntityResolver* const handler);
   virtual XERCES_CPP_NAMESPACE_QUALIFIER XMLEntityResolver* getXMLEntityResolver() const;
-
-  virtual void addTypeAlias(XQTypeAlias *alias);
-  virtual const XQTypeAlias *getTypeAlias(const XMLCh *uri, const XMLCh *name) const;
 
   virtual void setModuleResolver(ModuleResolver *resolver);
   virtual ModuleResolver *getModuleResolver() const;
@@ -418,12 +415,10 @@ inline void XQDynamicContextImpl::setDoLintWarnings(bool enabled)
 { XQThrow2(ContextException,X("XQDynamicContextImpl"), X("You cannot change the static context when using a proxying dynamic context")); }
 inline void XQDynamicContextImpl::setModule(XQQuery *module)
 { XQThrow2(ContextException,X("XQDynamicContextImpl"), X("You cannot change the static context when using a proxying dynamic context")); }
-inline void XQDynamicContextImpl::addTypeAlias(XQTypeAlias *alias)
-{ XQThrow2(ContextException,X("XQDynamicContextImpl"), X("You cannot change the static context when using a proxying dynamic context")); }
-
 
 
 inline const StaticType &XQDynamicContextImpl::getContextItemType() const { XQThrow2(ContextException,X("XQDynamicContextImpl"), X("The static context is not available from a proxying dynamic context")); }
+inline const XMLCh* XQDynamicContextImpl::getDefaultFuncNS() const { XQThrow2(ContextException,X("XQDynamicContextImpl"), X("The static context is not available from a proxying dynamic context")); }
 inline StaticContext::NodeSetOrdering XQDynamicContextImpl::getNodeSetOrdering() const { XQThrow2(ContextException,X("XQDynamicContextImpl"), X("The static context is not available from a proxying dynamic context")); }
 inline ModuleResolver * XQDynamicContextImpl::getModuleResolver() const { XQThrow2(ContextException,X("XQDynamicContextImpl"), X("The static context is not available from a proxying dynamic context")); }
 inline ExternalFunctionResolver * XQDynamicContextImpl::getExternalFunctionResolver() const { XQThrow2(ContextException,X("XQDynamicContextImpl"), X("The static context is not available from a proxying dynamic context")); }
@@ -438,7 +433,6 @@ inline XQQuery *XQDynamicContextImpl::getModule() const { XQThrow2(ContextExcept
 
 inline void XQDynamicContextImpl::setFTCase(FTCaseOption option){ XQThrow2(ContextException,X("XQDynamicContextImpl"), X("The static context is not available from a proxying dynamic context")); }
 inline XQDynamicContextImpl::FTCaseOption XQDynamicContextImpl::getFTCase(){ XQThrow2(ContextException,X("XQDynamicContextImpl"), X("The static context is not available from a proxying dynamic context")); }
-inline const XQTypeAlias *XQDynamicContextImpl::getTypeAlias(const XMLCh *uri, const XMLCh *name) const{ XQThrow2(ContextException,X("XQDynamicContextImpl"), X("The static context is not available from a proxying dynamic context")); }
 
 inline XQilla::Language XQDynamicContextImpl::getLanguage() const { return _staticContext->getLanguage(); }
 inline const XMLCh* XQDynamicContextImpl::getBaseURI() const { return _staticContext->getBaseURI(); }
@@ -449,6 +443,5 @@ inline bool XQDynamicContextImpl::getPreserveNamespaces() const { return _static
 inline StaticContext::ConstructionMode XQDynamicContextImpl::getConstructionMode() const { return _staticContext->getConstructionMode(); }
 inline const UserFunctions &XQDynamicContextImpl::getTemplateRules() const { return _staticContext->getTemplateRules(); }
 inline const XQUserFunction *XQDynamicContextImpl::lookUpNamedTemplate(const XMLCh *uri, const XMLCh *name) const { return _staticContext->lookUpNamedTemplate(uri, name); }
-inline const XMLCh* XQDynamicContextImpl::getDefaultFuncNS() const { return _staticContext->getDefaultFuncNS(); }
 
 #endif

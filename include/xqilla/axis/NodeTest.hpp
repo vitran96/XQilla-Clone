@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,9 +53,9 @@ public:
   void staticResolution(StaticContext *context, const LocationInfo *location);
 
   ///gets the sequence type used to match the nodes
-  ItemType* getItemType() const;
+  SequenceType::ItemType* getItemType() const;
   ///set function for private member
-  void setItemType(ItemType* type);
+  void setItemType(SequenceType::ItemType* type);
   
   ///gets the name of the node we are selecting
   const XMLCh* getNodeName() const;
@@ -134,7 +134,7 @@ protected:
   const XMLCh* _name,*_uri,*_prefix;
   const XMLCh* _type;
   bool _wildcardName, _wildcardNamespace, _wildcardType, _usePrefix, _hasChildren;
-  ItemType* _itemType;
+  SequenceType::ItemType* _itemType;
 };
 
 #endif

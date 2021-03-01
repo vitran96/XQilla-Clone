@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,8 +40,6 @@ XQLexer::XQLexer(XPath2MemoryManager* memMgr, const XMLCh *queryFile, const XMLC
 {
   if((m_language & XQilla::XPATH2) != 0) {
     firstToken_ = _LANG_XPATH2_;
-  } else if((m_language & XQilla::CARROT) != 0) {
-    firstToken_ = _LANG_CARROT_;
   } else {
     firstToken_ = _LANG_XQUERY_;
   }

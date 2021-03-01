@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@ ASTNode *FunctionDocument::staticTypingImpl(StaticContext *context)
                      StaticAnalysis::PEER | StaticAnalysis::SUBTREE | StaticAnalysis::ONENODE);
 
   // TBD Change if we support fragment identifiers - jpcs
-  _src.getStaticType() = StaticType::DOCUMENT_STAR;
+  _src.getStaticType() = StaticType(StaticType::DOCUMENT_TYPE, 0, StaticType::UNLIMITED);
   _src.availableDocumentsUsed(true);
 
   return this;

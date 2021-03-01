@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,8 @@
 class XQILLA_API XQPromoteUntyped : public ASTNodeImpl
 {
 public:
-  XQPromoteUntyped(ASTNode* expr, const ItemType *type, XPath2MemoryManager* memMgr);
+  XQPromoteUntyped(ASTNode* expr, const XMLCh *uri, const XMLCh *name, XPath2MemoryManager* memMgr);
+  XQPromoteUntyped(ASTNode* expr, const XMLCh *uri, const XMLCh *name, bool isPrimitive, AnyAtomicType::AtomicObjectType typeIndex, XPath2MemoryManager* memMgr);
 
   virtual Result createResult(DynamicContext* context, int flags=0) const;
   virtual ASTNode* staticResolution(StaticContext *context);
@@ -34,11 +35,16 @@ public:
 
   ASTNode *getExpression() const { return expr_; }
   void setExpression(ASTNode *expr) { expr_ = expr; }
-  const ItemType *getItemType() const { return type_; }
+  const XMLCh *getTypeURI() const { return uri_; }
+  const XMLCh *getTypeName() const { return name_; }
+  bool getIsPrimitive() const { return isPrimitive_; }
+  AnyAtomicType::AtomicObjectType getTypeIndex() const { return typeIndex_; }  
 
 protected:
   ASTNode* expr_;
-  const ItemType *type_;
+  const XMLCh *uri_, *name_;
+  bool isPrimitive_;
+  AnyAtomicType::AtomicObjectType typeIndex_;
 };
 
 class PromoteUntypedResult : public ResultImpl
@@ -63,7 +69,8 @@ private:
 class XQILLA_API XQPromoteNumeric : public ASTNodeImpl
 {
 public:
-  XQPromoteNumeric(ASTNode* expr, const ItemType *type, XPath2MemoryManager* memMgr);
+  XQPromoteNumeric(ASTNode* expr, const XMLCh *uri, const XMLCh *name, XPath2MemoryManager* memMgr);
+  XQPromoteNumeric(ASTNode* expr, const XMLCh *uri, const XMLCh *name, AnyAtomicType::AtomicObjectType typeIndex, XPath2MemoryManager* memMgr);
 
   virtual Result createResult(DynamicContext* context, int flags=0) const;
   virtual ASTNode* staticResolution(StaticContext *context);
@@ -71,11 +78,14 @@ public:
 
   ASTNode *getExpression() const { return expr_; }
   void setExpression(ASTNode *expr) { expr_ = expr; }
-  const ItemType *getItemType() const { return type_; }
+  const XMLCh *getTypeURI() const { return uri_; }
+  const XMLCh *getTypeName() const { return name_; }
+  AnyAtomicType::AtomicObjectType getTypeIndex() const { return typeIndex_; }
 
 protected:
   ASTNode* expr_;
-  const ItemType *type_;
+  const XMLCh *uri_, *name_;
+  AnyAtomicType::AtomicObjectType typeIndex_;
 };
 
 class PromoteNumericResult : public ResultImpl
@@ -96,7 +106,7 @@ private:
 class XQILLA_API XQPromoteAnyURI : public ASTNodeImpl
 {
 public:
-  XQPromoteAnyURI(ASTNode* expr, const ItemType *type, XPath2MemoryManager* memMgr);
+  XQPromoteAnyURI(ASTNode* expr, const XMLCh *uri, const XMLCh *name, XPath2MemoryManager* memMgr);
 
   virtual Result createResult(DynamicContext* context, int flags=0) const;
   virtual ASTNode* staticResolution(StaticContext *context);
@@ -104,11 +114,12 @@ public:
 
   ASTNode *getExpression() const { return expr_; }
   void setExpression(ASTNode *expr) { expr_ = expr; }
-  const ItemType *getItemType() const { return type_; }
+  const XMLCh *getTypeURI() const { return uri_; }
+  const XMLCh *getTypeName() const { return name_; }
 
 protected:
   ASTNode* expr_;
-  const ItemType *type_;
+  const XMLCh *uri_, *name_;
 };
 
 class PromoteAnyURIResult : public ResultImpl

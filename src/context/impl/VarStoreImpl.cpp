@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@
 #include <xqilla/runtime/Result.hpp>
 #include <xqilla/utils/XPath2Utils.hpp>
 #include <xqilla/context/DynamicContext.hpp>
-#include <xqilla/ast/StaticAnalysis.hpp>
 
 XERCES_CPP_NAMESPACE_USE;
 using namespace std;
@@ -108,13 +107,15 @@ void VarStoreImpl::clear()
 
 void VarStoreImpl::cacheVariableStore(const StaticAnalysis &src, const VariableStore *toCache)
 {
-  StaticAnalysis::VarIterator i, end;
-  src.variablesUsed(i, end);
-
-  for(; i != end; ++i) {
-    store_ = new VarEntry(i.getKey().uri, i.getKey().name, toCache->getVar(i.getKey().uri, i.getKey().name),
-                          ResultBufferImpl::UNLIMITED_COUNT, store_);
+  for(int i = 0; i < StaticAnalysis::HASH_SIZE; ++i) {
+    StaticAnalysis::VarEntry *entry = src.variablesUsed()[i];
+    while(entry) {
+      store_ = new VarEntry(entry->uri, entry->name, toCache->getVar(entry->uri, entry->name),
+                            ResultBufferImpl::UNLIMITED_COUNT, store_);
+      entry = entry->prev;
+    }
   }
+  if (parent_ == 0) parent_ = toCache;
 }
 
 VarStoreImpl::VarEntry::VarEntry(const XMLCh *u, const XMLCh *n, const Result &r, unsigned int readCount, VarEntry *p)

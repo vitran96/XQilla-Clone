@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,12 +47,12 @@ ASTNode *FunctionNodeName::staticTypingImpl(StaticContext *context)
   calculateSRCForArguments(context);
 
   if(_args[0]->getStaticAnalysis().getStaticType().getMin() == 1 &&
-     _args[0]->getStaticAnalysis().getStaticType().isType(TypeFlags::ELEMENT | TypeFlags::ATTRIBUTE |
-                                                          TypeFlags::PI | TypeFlags::NAMESPACE)) {
-    _src.getStaticType() = StaticType::QNAME;
+     _args[0]->getStaticAnalysis().getStaticType().isType(StaticType::ELEMENT_TYPE | StaticType::ATTRIBUTE_TYPE |
+                                                          StaticType::PI_TYPE | StaticType::NAMESPACE_TYPE)) {
+    _src.getStaticType() = StaticType::QNAME_TYPE;
   }
   else {
-    _src.getStaticType() = StaticType::QNAME_QUESTION;
+    _src.getStaticType() = StaticType(StaticType::QNAME_TYPE, 0, 1);
   }
 
   return this;

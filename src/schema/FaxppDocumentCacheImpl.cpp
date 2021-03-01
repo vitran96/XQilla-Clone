@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -208,7 +208,7 @@ void FaxppDocumentCacheImpl::parseDocument(InputSource &srcToUse, EventHandler *
   XPath2MemoryManager *mm = context->getMemoryManager();
 
   if(validator_ == 0) {
-    validator_ = new (memMgr_) SchemaValidatorFilter(/*strictValidation*/false, 0, getGrammarResolver(), memMgr_, 0);
+    validator_ = new (memMgr_) SchemaValidatorFilter(/*strictValidation*/false, 0, grammarResolver_, memMgr_, 0);
   }
 
   if(doPSVI_) {
@@ -338,10 +338,10 @@ void FaxppDocumentCacheImpl::parseDocument(InputSource &srcToUse, EventHandler *
 DocumentCache *FaxppDocumentCacheImpl::createDerivedCache(MemoryManager *memMgr) const
 {
   // lock the grammar pool, so we can share it across threads
-  getGrammarResolver()->getGrammarPool()->lockPool();
+  grammarResolver_->getGrammarPool()->lockPool();
 
   // Construct a new FaxppDocumentCacheImpl, based on this one
-  return new (memMgr) FaxppDocumentCacheImpl(memMgr, getGrammarResolver()->getGrammarPool());
+  return new (memMgr) FaxppDocumentCacheImpl(memMgr, grammarResolver_->getGrammarPool());
 }
 
 #endif

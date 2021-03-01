@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,6 @@
 #include <xqilla/framework/XPath2MemoryManagerImpl.hpp>
 
 XPath2MemoryManagerImpl::XPath2MemoryManagerImpl()
-#ifdef WIN_USE_HEAP
-  : fHeap(HeapCreate(HEAP_NO_SERIALIZE,128*1024,0))
-#endif
 {
   initialise();
 }
@@ -31,9 +28,6 @@ XPath2MemoryManagerImpl::XPath2MemoryManagerImpl()
 XPath2MemoryManagerImpl::~XPath2MemoryManagerImpl() 
 {
   releaseAll();
-#ifdef WIN_USE_HEAP
-  HeapDestroy(fHeap);
-#endif
 }
 
 #ifdef WIN_USE_HEAP
@@ -58,6 +52,18 @@ void XPath2MemoryManagerImpl::deallocate(void* p)
   --objectsAllocated_;
   totalMemoryAllocated_ -= HeapSize(fHeap,HEAP_NO_SERIALIZE,p);
   HeapFree(fHeap,HEAP_NO_SERIALIZE,p);
+}
+
+void XPath2MemoryManagerImpl::initialise()
+{
+  fHeap=HeapCreate(HEAP_NO_SERIALIZE,128*1024,0);
+  BaseMemoryManager::initialise();
+}
+
+void XPath2MemoryManagerImpl::releaseAll()
+{
+  BaseMemoryManager::releaseAll();
+  HeapDestroy(fHeap);
 }
 
 #else

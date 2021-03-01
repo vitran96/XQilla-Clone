@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,12 +26,10 @@
 #include <xqilla/context/impl/CodepointCollation.hpp>
 #include <xqilla/exceptions/XPath2ErrorException.hpp>
 
-#include <xercesc/util/XMLUniDefs.hpp>
-
 /*static*/ const XMLCh GreaterThanEqual::name[]={ XERCES_CPP_NAMESPACE_QUALIFIER chLatin_G, XERCES_CPP_NAMESPACE_QUALIFIER chLatin_E, XERCES_CPP_NAMESPACE_QUALIFIER chNull };
 
 GreaterThanEqual::GreaterThanEqual(const VectorOfASTNodes &args, XPath2MemoryManager* memMgr)
-  : ComparisonOperator(GREATER_THAN_EQUAL, name, args, memMgr)
+  : ComparisonOperator(name, args, memMgr)
 {
 }
 

@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ ASTNode *XQDocumentOrder::staticTypingImpl(StaticContext *context)
     _src.getStaticType().setCardinality(1, _src.getStaticType().getMax());
 
   // Check if nodes will be returned
-  if(!_src.getStaticType().containsType(TypeFlags::NODE)) {
+  if(!_src.getStaticType().containsType(StaticType::NODE_TYPE)) {
     return substitute(expr_);
   }
 
@@ -97,7 +97,7 @@ Item::Ptr UniqueNodesResult::next(DynamicContext *context)
   Item::Ptr result = parent_->next(context);
 
   if(nTypeOfItemsInLastStep_ == 0 && result.notNull())
-	  nTypeOfItemsInLastStep_ = result->getType() == Item::NODE ? 1 : 2;
+	  nTypeOfItemsInLastStep_ = result->isNode() ? 1 : 2;
 
   if(nTypeOfItemsInLastStep_ == 1) {
 	  while(result.notNull()) {

@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,36 +22,26 @@
 
 #include <xqilla/items/ATQNameOrDerived.hpp>
 #include <xqilla/items/ATBooleanOrDerived.hpp>
+#include <xqilla/ast/XQStep.hpp>
 
 class DynamicContext;
 class XPath2MemoryManager;
 class Sequence;
 class Result;
 class NodeTest;
-class LocationInfo;
 
 class XQILLA_API Node : public Item
 {
 public:
   typedef RefCountPointer<const Node> Ptr;
 
-  enum Axis {
-    ANCESTOR,
-    ANCESTOR_OR_SELF,
-    ATTRIBUTE,
-    CHILD,
-    DESCENDANT,
-    DESCENDANT_OR_SELF,
-    FOLLOWING,
-    FOLLOWING_SIBLING,
-    NAMESPACE,
-    PARENT,
-    PRECEDING,
-    PRECEDING_SIBLING,
-    SELF
-  };
+  /** Returns true, since this Item is a Node */
+  virtual bool isNode() const;
 
-  virtual Type getType() const { return NODE; }
+  /** Returns false, since this Item is a Node */
+  virtual bool isAtomicValue() const;
+
+  virtual bool isFunction() const;
 
   virtual void typeToBuffer(DynamicContext *context, XERCES_CPP_NAMESPACE_QUALIFIER XMLBuffer &buffer) const;
 
@@ -120,7 +110,7 @@ public:
    * Forward axis results should be in document order.
    * Reverse axis results should be in reverse document order.
    */
-  virtual Result getAxisResult(Axis axis, const NodeTest *nodeTest, const DynamicContext *context, const LocationInfo *info) const = 0;
+  virtual Result getAxisResult(XQStep::Axis axis, const NodeTest *nodeTest, const DynamicContext *context, const LocationInfo *info) const = 0;
 
   /** Returns if the node is an id node or not */
   virtual ATBooleanOrDerived::Ptr dmIsId(const DynamicContext* context) const = 0;

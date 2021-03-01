@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -150,10 +150,11 @@ void XQGlobalVariable::staticResolution(StaticContext* context)
 
   // Set up a default StaticType
   if(m_Type != 0) {
-    _src.getStaticType() = m_Type;
+    bool isPrimitive;
+    m_Type->getStaticType(_src.getStaticType(), context, isPrimitive, m_Type);
   }
   else {
-    _src.getStaticType() = StaticType::ITEM_STAR;
+    _src.getStaticType() = StaticType(StaticType::ITEM_TYPE, 0, StaticType::UNLIMITED);
   }
   _src.setProperties(0);
 }
@@ -191,11 +192,6 @@ void XQGlobalVariable::staticTypingOnce(StaticContext* context, StaticTyper *sty
     // Static type the global variables from this module which we depend on
     GlobalVariables::iterator it = globalsUsed.begin();
     for(; it != globalsUsed.end(); ++it) {
-      if(*it == this) {
-        XQThrow(StaticErrorException,X("XQGlobalVariable::staticTypingOnce"),
-                X("The initializing expression of a global variable cannot reference itself [err:XPST0008]"));        
-      }
-
       // XQuery 1.0 doesn't allow forward references
       XQQuery *module = context->getModule();
       if(!module->getVersion3()) {
@@ -237,6 +233,9 @@ void XQGlobalVariable::staticTyping(StaticContext* context, StaticTyper *styper)
   if(m_Value != NULL) {
     XQUserFunction::staticTypeFunctionCalls(m_Value, context, styper);
 
+    // Add UNDEFINEDVAR to properties, since variables aren't in scope for themselves
+    _src.setProperties(_src.getProperties() | StaticAnalysis::UNDEFINEDVAR);
+
     m_Value = m_Value->staticTyping(context, styper);
     _src.copy(m_Value->getStaticAnalysis());
 
@@ -249,16 +248,16 @@ void XQGlobalVariable::staticTyping(StaticContext* context, StaticTyper *styper)
 
   if(m_Value == 0 || !required_) {
     if(m_Type != 0) {
-      _src.getStaticType() = m_Type;
+      bool isPrimitive;
+      m_Type->getStaticType(_src.getStaticType(), context, isPrimitive, m_Type);
     }
     else {
-      _src.getStaticType() = StaticType::ITEM_STAR;
+      _src.getStaticType() = StaticType(StaticType::ITEM_TYPE, 0, StaticType::UNLIMITED);
     }
     _src.setProperties(0);
   }
 
-  varStore->declareGlobalVar(m_szURI, m_szLocalName,
-                             VariableType(_src.getProperties(), &_src.getStaticType(), this));
+  varStore->declareGlobalVar(m_szURI, m_szLocalName, _src, this);
 }
 
 const XMLCh* XQGlobalVariable::getVariableName() const

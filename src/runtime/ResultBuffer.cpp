@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,14 +43,18 @@ ResultBuffer::ResultBuffer(ResultBufferImpl *impl, unsigned start)
 {
 }
 
-ResultBuffer::ResultBuffer()
-  : _impl(0),
-    _start(0)
-{
-}
-
-Result ResultBuffer::createResult() const
+Result ResultBuffer::createResult()
 {
   if(_impl.isNull()) return 0;
-  return _impl->createResult(_start);
+
+  Result result = _impl->createResult(_start);
+
+  if(_impl->getMaxReadCount() != ResultBufferImpl::UNLIMITED_COUNT &&
+     _impl->incrementReadCount() >= _impl->getMaxReadCount()) {
+    // We've reached the maximum read count, so noone
+    // else will want to read from this ResultBuffer
+    _impl = 0;
+  }
+
+  return result;
 }

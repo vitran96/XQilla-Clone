@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,14 +33,27 @@ class XQILLA_API Numeric : public AnyAtomicType
 public:
   typedef RefCountPointer<const Numeric> Ptr;
 
-  /** is this type numeric?  Return true */
+  /* is this type numeric?  Return true */
   virtual bool isNumericValue() const { return true; };
 
-  /** Promote this to the given type, if possible */
+  /* Get the name of the primitive type (basic type) of this type
+   * (ie "decimal" for xs:decimal) */
+  virtual const XMLCh* getPrimitiveTypeName() const = 0;
+
+  /* Get the namespace URI for this type */
+  virtual const XMLCh* getTypeURI() const = 0;
+
+  /* Get the name of this type  (ie "integer" for xs:integer) */
+  virtual const XMLCh* getTypeName() const = 0;
+
+  /* returns the XMLCh* (canonical) representation of this type */
+  virtual const XMLCh* asString(const DynamicContext* context) const = 0;
+
+  /* Promote this to the given type, if possible */
   virtual Numeric::Ptr promoteTypeIfApplicable(AnyAtomicType::AtomicObjectType typeIndex,
                                                const DynamicContext* context) const = 0;
-
-  /** returns true if the two Numeric values are equal 
+  
+  /* returns true if the two Numeric values are equal 
    * false otherwise */
   virtual bool equals(const AnyAtomicType::Ptr &target, const DynamicContext* context) const;
 
@@ -53,7 +66,6 @@ public:
   /** Returns less than 0 if this is less that other,
       0 if they are the same, and greater than 0 otherwise */
   virtual int compare(const Numeric::Ptr &other, const DynamicContext *context) const;
-  virtual size_t hash(const Collation *collation, const DynamicContext *context) const;
 
   /** Returns a Numeric object which is the sum of this and other */
   virtual Numeric::Ptr add(const Numeric::Ptr &other, const DynamicContext* context) const = 0;
@@ -140,9 +152,8 @@ public:
 
   virtual AnyAtomicType::AtomicObjectType getPrimitiveTypeIndex() const = 0;
 
-  virtual MAPM asMAPM() const = 0;
+  virtual const MAPM &asMAPM() const = 0;
   virtual double asDouble() const;
-  virtual float asFloat() const;
   virtual int asInt() const;
 
   enum State {
@@ -166,14 +177,15 @@ public:
   static void checkDoubleLimits(Numeric::State &state, MAPM &value);
 
   static const XMLCh *asDecimalString(const MAPM &value, int significantDigits, const StaticContext* context);
-
-  static void hashMAPM(const MAPM &m, uint32_t *pc, uint32_t *pb);
+  static const XMLCh *asDoubleString(State state, const MAPM &value, int significantDigits, const StaticContext* context);
 
 protected:
   virtual AnyAtomicType::Ptr castAsInternal(AtomicObjectType targetIndex, const XMLCh* targetURI,
                                             const XMLCh* targetType, const DynamicContext* context) const;
 
   const XMLCh *asDecimalString(int significantDigits, const StaticContext* context) const;
+  const XMLCh *asDoubleString(int significantDigits, const StaticContext* context) const;
+  
 };
 
-#endif
+#endif //  __NUMERIC_HPP

@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,6 @@ public:
   /** Returns less than 0 if this is less that other,
       0 if they are the same, and greater than 0 otherwise */
   virtual int compare(const ATGYearOrDerived::Ptr &other, const DynamicContext *context) const;
-  virtual size_t hash(const Collation *collation, const DynamicContext *context) const;
  
   /** Returns true if a timezone is defined for this.  False otherwise.*/
   virtual bool hasTimezone() const;

@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,36 +26,27 @@
 #include <xqilla/items/ATDurationOrDerived.hpp>
 #include <xqilla/items/ATDecimalOrDerived.hpp>
 #include <xqilla/items/AnyAtomicType.hpp>
-#include <xqilla/framework/BasicMemoryManager.hpp>
-
-#include <xercesc/util/XMLUniDefs.hpp>
 
 /*static*/ const XMLCh Multiply::name[]={ XERCES_CPP_NAMESPACE_QUALIFIER chLatin_M, XERCES_CPP_NAMESPACE_QUALIFIER chLatin_u, XERCES_CPP_NAMESPACE_QUALIFIER chLatin_l, XERCES_CPP_NAMESPACE_QUALIFIER chNull };
 
 Multiply::Multiply(const VectorOfASTNodes &args, XPath2MemoryManager* memMgr)
-  : ArithmeticOperator(MULTIPLY, name, args, memMgr)
+  : ArithmeticOperator(name, args, memMgr)
 {
   // Nothing to do
 }
 
-void Multiply::calculateStaticType(StaticContext *context)
+void Multiply::calculateStaticType()
 {
   const StaticType &arg0 = _args[0]->getStaticAnalysis().getStaticType();
   const StaticType &arg1 = _args[1]->getStaticAnalysis().getStaticType();
 
-  calculateStaticTypeForNumerics(arg0, arg1, context);
+  calculateStaticTypeForNumerics(arg0, arg1);
 
   // Multiplying a duration by a number
-  if(arg0.containsType(TypeFlags::DAY_TIME_DURATION|TypeFlags::YEAR_MONTH_DURATION) && arg1.containsType(TypeFlags::NUMERIC)) {
-    StaticType tmp(BasicMemoryManager::get()); tmp = arg0;
-    tmp.typeIntersect(TypeFlags::DAY_TIME_DURATION|TypeFlags::YEAR_MONTH_DURATION);
-    _src.getStaticType().typeUnion(tmp);
-  }
-  if(arg0.containsType(TypeFlags::NUMERIC) && arg1.containsType(TypeFlags::DAY_TIME_DURATION|TypeFlags::YEAR_MONTH_DURATION)) {
-    StaticType tmp(BasicMemoryManager::get()); tmp = arg1;
-    tmp.typeIntersect(TypeFlags::DAY_TIME_DURATION|TypeFlags::YEAR_MONTH_DURATION);
-    _src.getStaticType().typeUnion(tmp);
-  }
+  if(arg0.containsType(StaticType::DAY_TIME_DURATION_TYPE|StaticType::YEAR_MONTH_DURATION_TYPE) && arg1.containsType(StaticType::NUMERIC_TYPE))
+    _src.getStaticType() |= arg0 & (StaticType::DAY_TIME_DURATION_TYPE|StaticType::YEAR_MONTH_DURATION_TYPE);
+  if(arg0.containsType(StaticType::NUMERIC_TYPE) && arg1.containsType(StaticType::DAY_TIME_DURATION_TYPE|StaticType::YEAR_MONTH_DURATION_TYPE))
+    _src.getStaticType() |= arg1 & (StaticType::DAY_TIME_DURATION_TYPE|StaticType::YEAR_MONTH_DURATION_TYPE);
 }
 
 Item::Ptr Multiply::execute(const AnyAtomicType::Ptr &atom1, const AnyAtomicType::Ptr &atom2, DynamicContext *context) const

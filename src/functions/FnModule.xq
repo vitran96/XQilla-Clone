@@ -1,10 +1,6 @@
-xquery version "3.0";
-
 (:
  : Copyright (c) 2004-2009
  :     Oracle. All rights reserved.
- : Copyright (c) 2010-2011
- :     John Snelson. All rights reserved.
  :
  : Licensed under the Apache License, Version 2.0 (the "License");
  : you may not use this file except in compliance with the License.
@@ -21,10 +17,6 @@ xquery version "3.0";
 
 module namespace fn = "http://www.w3.org/2005/xpath-functions";
 
-declare namespace rw = "http://xqilla.sourceforge.net/rewrite";
-declare namespace math = "http://www.w3.org/2005/xpath-functions/math";
-declare namespace emath = "http://exslt.org/math";
-
 declare function data($a as item()*) as xs:anyAtomicType*
 {
   $a
@@ -33,27 +25,24 @@ declare function data($a as item()*) as xs:anyAtomicType*
 (:----------------------------------------------------------------------------------------------------:)
 (: String functions :)
 
-declare %xqilla:inline
-function string-join($seq as xs:string*) as xs:string
+declare function string-join($seq as xs:string*) as xs:string
 {
   string-join($seq, "")
 };
 
-declare %xqilla:inline
-function string-join($seq as xs:string*, $join as xs:string) as xs:string
+declare function string-join($seq as xs:string*, $join as xs:string) as xs:string
 {
   if(empty($seq)) then ""
   else string-join-helper($seq, $join)
 };
 
-declare %private function string-join-helper($seq as xs:string*, $join as xs:string) as xs:string
+declare private function string-join-helper($seq as xs:string*, $join as xs:string) as xs:string
 {
   if(empty(tail($seq))) then head($seq)
   else concat(head($seq), $join, string-join-helper(tail($seq), $join))
 };
 
-declare %xqilla:inline
-function substring-before($arg1 as xs:string?, $arg2 as xs:string?) as xs:string
+declare function substring-before($arg1 as xs:string?, $arg2 as xs:string?) as xs:string
 {
   substring-before($arg1, $arg2, default-collation())
 };
@@ -69,8 +58,7 @@ declare function substring-before($arg1 as xs:string?, $arg2 as xs:string?, $col
       string-index-of($arg1, 1, 1 + string-length($arg1) - $arg2len, $arg2, $arg2len, $collation) - 1)
 };
 
-declare %xqilla:inline
-function substring-after($arg1 as xs:string?, $arg2 as xs:string?) as xs:string
+declare function substring-after($arg1 as xs:string?, $arg2 as xs:string?) as xs:string
 {
   substring-after($arg1, $arg2, default-collation())
 };
@@ -86,7 +74,7 @@ declare function substring-after($arg1 as xs:string?, $arg2 as xs:string?, $coll
     if($index eq 0) then "" else substring($arg1, $index + $arg2len)
 };
 
-declare %private function string-index-of($str as xs:string, $index as xs:decimal, $endindex as xs:decimal,
+declare private function string-index-of($str as xs:string, $index as xs:decimal, $endindex as xs:decimal,
   $tofind as xs:string, $tofindlen as xs:decimal, $collation as xs:string) as xs:decimal
 {
   if($index gt $endindex) then 0
@@ -94,8 +82,7 @@ declare %private function string-index-of($str as xs:string, $index as xs:decima
   else string-index-of($str, $index + 1, $endindex, $tofind, $tofindlen, $collation)
 };
 
-declare %xqilla:inline
-function codepoint-equal($arg1 as xs:string?, $arg2 as xs:string?) as xs:boolean?
+declare function codepoint-equal($arg1 as xs:string?, $arg2 as xs:string?) as xs:boolean?
 {
   compare($arg1, $arg2, "http://www.w3.org/2005/xpath-functions/collation/codepoint") eq 0
 };
@@ -113,7 +100,7 @@ declare function translate($arg as xs:string?, $mapString as xs:string, $transSt
   )
 };
 
-declare %private function codepoint-in-utf8($c as xs:integer) as xs:integer+
+declare private function codepoint-in-utf8($c as xs:integer) as xs:integer+
 {
   if($c < 128) then $c
   else if($c < 2048) then (
@@ -133,7 +120,7 @@ declare %private function codepoint-in-utf8($c as xs:integer) as xs:integer+
   )
 };
 
-declare %private function percent-encode($c as xs:integer) as xs:integer+
+declare private function percent-encode($c as xs:integer) as xs:integer+
 {
   (: Codepoint for "%" :)
   let $percent := 37
@@ -240,63 +227,25 @@ declare function in-scope-prefixes($element as element()) as xs:string*
 (:----------------------------------------------------------------------------------------------------:)
 (: Boolean functions :)
 
-declare %xqilla:inline
-function true() as xs:boolean
+declare function true() as xs:boolean
 {
   xs:boolean("1")
 };
 
-declare %xqilla:inline
-function false() as xs:boolean
+declare function false() as xs:boolean
 {
   xs:boolean("0")
 };
 
-declare %xqilla:inline
-function boolean($arg as item()*) as xs:boolean
+declare function boolean($arg as item()*) as xs:boolean
 {
   $arg and true()
 };
 
-declare option rw:rule "fn:EBVFold: boolean(~e)
--> false() where rw:subtype(~e, 'empty-sequence()')
--> exists(~e) where rw:subtype(~e, 'node()*')
--> ~e where rw:subtype(~e, 'xs:boolean?')";
-
-declare %xqilla:inline
-function exists($arg as item()*) as xs:boolean
+declare function exists($arg as item()*) as xs:boolean
 {
   not(empty($arg))
 };
-
-declare option rw:rule "fn:CountEqZero:
-count(~e) eq 0 -> empty(~e)";
-declare option rw:rule "fn:CountNeZero:
-count(~e) ne 0 -> exists(~e)";
-declare option rw:rule "fn:CountGtZero:
-count(~e) gt 0 -> exists(tail(~e))";
-
-declare option rw:rule "fn:FnEmptyFold: empty(~e)
--> false() where rw:subtype(~e, 'item()+')
--> true() where rw:subtype(~e, 'empty-sequence()')";
-
-declare option rw:rule "fn:AndTrueFold:  ~e and true()  -> ~e";
-declare option rw:rule "fn:AndFalseFold: ~e and false() -> false()";
-declare option rw:rule "fn:OrTrueFold:   ~e or  true()  -> true()";
-declare option rw:rule "fn:OrFalseFold:  ~e or  false() -> ~e";
-
-declare option rw:rule "fn:PredTypeAnalysis: ~e[~p]
--> ~e[boolean(~p)] where (rw:never-subtype(~p, 'xs:decimal') and rw:never-subtype(~p, 'xs:float') and
-  rw:never-subtype(~p, 'xs:double') and rw:never-subtype(~p, 'xs:boolean'))";
-(: TBD Better static typing for fn:subsequence() - jpcs :)
-(: TBD Check for reverse predicates - jpcs :)
-(: -> subsequence(~e, ~p, 1) where not(rw:uses-focus(~p)) and :)
-(:   (rw:subtype(~p, 'xs:decimal') or rw:subtype(~p, 'xs:float') or :)
-(:    rw:subtype(~p, 'xs:double'))"; :)
-
-declare option rw:rule "fn:PredTrueFold: ~e[true()] -> ~e";
-declare option rw:rule "fn:PredFalseFold: ~e[false()] -> ()";
-declare option rw:rule "fn:PredEmptyFold: ()[~e] -> ()";
 
 (:----------------------------------------------------------------------------------------------------:)
 (: Sequence functions :)
@@ -323,22 +272,20 @@ declare function exactly-one($arg as item()*) as item()
   default return error(xs:QName("err:FORG0005"), "Sequence contains more then one item")
 };
 
-declare %xqilla:inline
-function index-of($seq as xs:anyAtomicType*, $search as xs:anyAtomicType) as xs:integer*
+declare function index-of($seq as xs:anyAtomicType*, $search as xs:anyAtomicType) as xs:integer*
 {
   (: Check for NaN :)
   if($search ne $search) then () else index-of-helper($seq, $search, default-collation())
 };
 
-declare %xqilla:inline
-function index-of($seq as xs:anyAtomicType*, $search as xs:anyAtomicType,
+declare function index-of($seq as xs:anyAtomicType*, $search as xs:anyAtomicType,
    $collation as xs:string) as xs:integer*
 {
   (: Check for NaN :)
   if($search ne $search) then () else index-of-helper($seq, $search, $collation)
 };
 
-declare %private function index-of-helper($seq as xs:anyAtomicType*, $search as xs:anyAtomicType,
+declare private function index-of-helper($seq as xs:anyAtomicType*, $search as xs:anyAtomicType,
   $collation as xs:string) as xs:integer*
 {
   for $s at $p in $seq
@@ -353,8 +300,7 @@ declare function insert-before($target as item()*, $position as xs:integer, $ins
   else (head($target), insert-before(tail($target), $position - 1, $inserts))
 };
 
-declare %xqilla:inline
-function remove($target as item()*, $position as xs:integer) as item()*
+declare function remove($target as item()*, $position as xs:integer) as item()*
 {
   $target[position() ne $position]
 };
@@ -365,9 +311,7 @@ declare function reverse($seq as item()*) as item()*
   else (reverse(tail($seq)), head($seq))
 };
 
-
-declare %xqilla:inline
-function subsequence($sourceSeq as item()*, $startingLoc as xs:double) as item()*
+declare function subsequence($sourceSeq as item()*, $startingLoc as xs:double) as item()*
 {
   let $s := round($startingLoc)
   return
@@ -375,8 +319,7 @@ function subsequence($sourceSeq as item()*, $startingLoc as xs:double) as item()
     else xqilla:drop($sourceSeq, $s - 1)
 };
 
-declare %xqilla:inline
-function subsequence($sourceSeq as item()*, $startingLoc as xs:double,
+declare function subsequence($sourceSeq as item()*, $startingLoc as xs:double,
   $length as xs:double) as item()*
 {
   let $s := round($startingLoc)
@@ -385,24 +328,13 @@ function subsequence($sourceSeq as item()*, $startingLoc as xs:double,
     else take(xqilla:drop($sourceSeq, $s - 1), round($length))
 };
 
-(: TBD %xqilla:type("($A*, xs:double) as $A*") - jpcs:)
-declare %private (: %xqilla:inline-if-constant("start") :)
-function subsequence-helper($seq as item()*, $start as xs:double) as item()*
-{
-  if($start le 1) then $seq
-  else subsequence-helper(tail($seq), $start - 1)
-};
-
-(: TBD %xqilla:type("($A*, xs:double) as $A*") - jpcs:)
-declare %private
-function take($seq as item()*, $num as xs:double) as item()*
+declare private function take($seq as item()*, $num as xs:double) as item()*
 {
   if($num le 0 or empty($seq)) then ()
   else (head($seq), take(tail($seq), $num - 1))
 };
 
-declare %xqilla:inline
-function deep-equal($parameter1 as item()*, $parameter2 as item()*) as xs:boolean
+declare function deep-equal($parameter1 as item()*, $parameter2 as item()*) as xs:boolean
 {
   deep-equal($parameter1, $parameter2, default-collation())
 };
@@ -437,14 +369,12 @@ declare function deep-equal($p1 as item()*, $p2 as item()*, $collation as xs:str
     default return deep-equal-error()
 };
 
-declare %private %xqilla:inline
-function deep-equal-error()
+declare private function deep-equal-error()
 {
   error(xs:QName("err:FOTY0015"), "An argument to fn:deep-equal() contains a function item")
 };
 
-declare %private
-function deep-equal-nodes($p1 as node()*, $p2 as node()*, $collation as xs:string) as xs:boolean
+declare private function deep-equal-nodes($p1 as node()*, $p2 as node()*, $collation as xs:string) as xs:boolean
 {
   if(empty($p1)) then empty($p2) else
   if(empty($p2)) then false() else
@@ -519,14 +449,12 @@ function deep-equal-nodes($p1 as node()*, $p2 as node()*, $collation as xs:strin
 (:----------------------------------------------------------------------------------------------------:)
 (: Aggregate functions :)
 
-declare %xqilla:inline
-function avg($arg as xs:anyAtomicType*) as xs:anyAtomicType?
+declare function avg($arg as xs:anyAtomicType*) as xs:anyAtomicType?
 {
   sum($arg, ()) div count($arg)
 };
 
-declare %xqilla:inline
-function sum($arg as xs:anyAtomicType*) as xs:anyAtomicType
+declare function sum($arg as xs:anyAtomicType*) as xs:anyAtomicType
 {
   sum($arg, 0)
 };
@@ -543,7 +471,7 @@ declare function sum($arg as xs:anyAtomicType*, $zero as xs:anyAtomicType?) as x
   default return error(xs:QName("err:FORG0006"), "Invalid argument to fn:sum() function")
 };
 
-declare %private function numeric-sum($arg as xs:anyAtomicType*, $result as xs:anyAtomicType) as xs:anyAtomicType
+declare private function numeric-sum($arg as xs:anyAtomicType*, $result as xs:anyAtomicType) as xs:anyAtomicType
 {
   typeswitch(head($arg))
   case empty-sequence() return $result
@@ -553,7 +481,7 @@ declare %private function numeric-sum($arg as xs:anyAtomicType*, $result as xs:a
   default return error(xs:QName("err:FORG0006"), "Invalid argument to fn:sum() function")
 };
 
-declare %private function yearMonthDuration-sum($arg as xs:anyAtomicType*, $result as xs:yearMonthDuration) as xs:yearMonthDuration
+declare private function yearMonthDuration-sum($arg as xs:anyAtomicType*, $result as xs:yearMonthDuration) as xs:yearMonthDuration
 {
   typeswitch(head($arg))
   case empty-sequence() return $result
@@ -561,7 +489,7 @@ declare %private function yearMonthDuration-sum($arg as xs:anyAtomicType*, $resu
   default return error(xs:QName("err:FORG0006"), "Invalid argument to fn:sum() function")
 };
 
-declare %private function dayTimeDuration-sum($arg as xs:anyAtomicType*, $result as xs:dayTimeDuration) as xs:dayTimeDuration
+declare private function dayTimeDuration-sum($arg as xs:anyAtomicType*, $result as xs:dayTimeDuration) as xs:dayTimeDuration
 {
   typeswitch(head($arg))
   case empty-sequence() return $result
@@ -569,8 +497,7 @@ declare %private function dayTimeDuration-sum($arg as xs:anyAtomicType*, $result
   default return error(xs:QName("err:FORG0006"), "Invalid argument to fn:sum() function")
 };
 
-declare %xqilla:inline
-function max($arg as xs:anyAtomicType*) as xs:anyAtomicType?
+declare function max($arg as xs:anyAtomicType*) as xs:anyAtomicType?
 {
   max($arg, default-collation())
 };
@@ -592,7 +519,7 @@ declare function max($arg as xs:anyAtomicType*, $collation as xs:string) as xs:a
   default return error(xs:QName("err:FORG0006"), "Uncomparable items in argument to fn:max() function")
 };
 
-declare %private function double-max($arg as xs:anyAtomicType*, $result as xs:double) as xs:double
+declare private function double-max($arg as xs:anyAtomicType*, $result as xs:double) as xs:double
 {
   typeswitch(head($arg))
   case empty-sequence() return $result
@@ -602,7 +529,7 @@ declare %private function double-max($arg as xs:anyAtomicType*, $result as xs:do
   default return error(xs:QName("err:FORG0006"), "Uncomparable items in argument to fn:max() function")
 };
 
-declare %private function float-max($arg as xs:anyAtomicType*, $result as xs:float) as xs:anyAtomicType
+declare private function float-max($arg as xs:anyAtomicType*, $result as xs:float) as xs:anyAtomicType
 {
   typeswitch(head($arg))
   case empty-sequence() return $result
@@ -613,7 +540,7 @@ declare %private function float-max($arg as xs:anyAtomicType*, $result as xs:flo
   default return error(xs:QName("err:FORG0006"), "Uncomparable items in argument to fn:max() function")
 };
 
-declare %private function decimal-max($arg as xs:anyAtomicType*, $result as xs:decimal) as xs:anyAtomicType
+declare private function decimal-max($arg as xs:anyAtomicType*, $result as xs:decimal) as xs:anyAtomicType
 {
   typeswitch(head($arg))
   case empty-sequence() return $result
@@ -623,7 +550,7 @@ declare %private function decimal-max($arg as xs:anyAtomicType*, $result as xs:d
   default return error(xs:QName("err:FORG0006"), "Uncomparable items in argument to fn:max() function")
 };
 
-declare %private function string-max($arg as xs:anyAtomicType*, $result as xs:string, $collation as xs:string) as xs:string
+declare private function string-max($arg as xs:anyAtomicType*, $result as xs:string, $collation as xs:string) as xs:string
 {
   typeswitch(head($arg))
   case empty-sequence() return $result
@@ -632,7 +559,7 @@ declare %private function string-max($arg as xs:anyAtomicType*, $result as xs:st
   default return error(xs:QName("err:FORG0006"), "Uncomparable items in argument to fn:max() function")
 };
 
-declare %private function boolean-max($arg as xs:anyAtomicType*, $result as xs:boolean) as xs:boolean
+declare private function boolean-max($arg as xs:anyAtomicType*, $result as xs:boolean) as xs:boolean
 {
   typeswitch(head($arg))
   case empty-sequence() return $result
@@ -640,7 +567,7 @@ declare %private function boolean-max($arg as xs:anyAtomicType*, $result as xs:b
   default return error(xs:QName("err:FORG0006"), "Uncomparable items in argument to fn:max() function")
 };
 
-declare %private function date-max($arg as xs:anyAtomicType*, $result as xs:date) as xs:date
+declare private function date-max($arg as xs:anyAtomicType*, $result as xs:date) as xs:date
 {
   typeswitch(head($arg))
   case empty-sequence() return $result
@@ -648,7 +575,7 @@ declare %private function date-max($arg as xs:anyAtomicType*, $result as xs:date
   default return error(xs:QName("err:FORG0006"), "Uncomparable items in argument to fn:max() function")
 };
 
-declare %private function time-max($arg as xs:anyAtomicType*, $result as xs:time) as xs:time
+declare private function time-max($arg as xs:anyAtomicType*, $result as xs:time) as xs:time
 {
   typeswitch(head($arg))
   case empty-sequence() return $result
@@ -656,7 +583,7 @@ declare %private function time-max($arg as xs:anyAtomicType*, $result as xs:time
   default return error(xs:QName("err:FORG0006"), "Uncomparable items in argument to fn:max() function")
 };
 
-declare %private function dateTime-max($arg as xs:anyAtomicType*, $result as xs:dateTime) as xs:dateTime
+declare private function dateTime-max($arg as xs:anyAtomicType*, $result as xs:dateTime) as xs:dateTime
 {
   typeswitch(head($arg))
   case empty-sequence() return $result
@@ -664,7 +591,7 @@ declare %private function dateTime-max($arg as xs:anyAtomicType*, $result as xs:
   default return error(xs:QName("err:FORG0006"), "Uncomparable items in argument to fn:max() function")
 };
 
-declare %private function yearMonthDuration-max($arg as xs:anyAtomicType*, $result as xs:yearMonthDuration) as xs:yearMonthDuration
+declare private function yearMonthDuration-max($arg as xs:anyAtomicType*, $result as xs:yearMonthDuration) as xs:yearMonthDuration
 {
   typeswitch(head($arg))
   case empty-sequence() return $result
@@ -672,7 +599,7 @@ declare %private function yearMonthDuration-max($arg as xs:anyAtomicType*, $resu
   default return error(xs:QName("err:FORG0006"), "Uncomparable items in argument to fn:max() function")
 };
 
-declare %private function dayTimeDuration-max($arg as xs:anyAtomicType*, $result as xs:dayTimeDuration) as xs:dayTimeDuration
+declare private function dayTimeDuration-max($arg as xs:anyAtomicType*, $result as xs:dayTimeDuration) as xs:dayTimeDuration
 {
   typeswitch(head($arg))
   case empty-sequence() return $result
@@ -680,8 +607,7 @@ declare %private function dayTimeDuration-max($arg as xs:anyAtomicType*, $result
   default return error(xs:QName("err:FORG0006"), "Uncomparable items in argument to fn:max() function")
 };
 
-declare %xqilla:inline
-function min($arg as xs:anyAtomicType*) as xs:anyAtomicType?
+declare function min($arg as xs:anyAtomicType*) as xs:anyAtomicType?
 {
   min($arg, default-collation())
 };
@@ -703,7 +629,7 @@ declare function min($arg as xs:anyAtomicType*, $collation as xs:string) as xs:a
   default return error(xs:QName("err:FORG0006"), "Uncomparable items in argument to fn:min() function")
 };
 
-declare %private function double-min($arg as xs:anyAtomicType*, $result as xs:double) as xs:double
+declare private function double-min($arg as xs:anyAtomicType*, $result as xs:double) as xs:double
 {
   typeswitch(head($arg))
   case empty-sequence() return $result
@@ -713,7 +639,7 @@ declare %private function double-min($arg as xs:anyAtomicType*, $result as xs:do
   default return error(xs:QName("err:FORG0006"), "Uncomparable items in argument to fn:min() function")
 };
 
-declare %private function float-min($arg as xs:anyAtomicType*, $result as xs:float) as xs:anyAtomicType
+declare private function float-min($arg as xs:anyAtomicType*, $result as xs:float) as xs:anyAtomicType
 {
   typeswitch(head($arg))
   case empty-sequence() return $result
@@ -724,7 +650,7 @@ declare %private function float-min($arg as xs:anyAtomicType*, $result as xs:flo
   default return error(xs:QName("err:FORG0006"), "Uncomparable items in argument to fn:min() function")
 };
 
-declare %private function decimal-min($arg as xs:anyAtomicType*, $result as xs:decimal) as xs:anyAtomicType
+declare private function decimal-min($arg as xs:anyAtomicType*, $result as xs:decimal) as xs:anyAtomicType
 {
   typeswitch(head($arg))
   case empty-sequence() return $result
@@ -734,7 +660,7 @@ declare %private function decimal-min($arg as xs:anyAtomicType*, $result as xs:d
   default return error(xs:QName("err:FORG0006"), "Uncomparable items in argument to fn:min() function")
 };
 
-declare %private function string-min($arg as xs:anyAtomicType*, $result as xs:string, $collation as xs:string) as xs:string
+declare private function string-min($arg as xs:anyAtomicType*, $result as xs:string, $collation as xs:string) as xs:string
 {
   typeswitch(head($arg))
   case empty-sequence() return $result
@@ -743,7 +669,7 @@ declare %private function string-min($arg as xs:anyAtomicType*, $result as xs:st
   default return error(xs:QName("err:FORG0006"), "Uncomparable items in argument to fn:min() function")
 };
 
-declare %private function boolean-min($arg as xs:anyAtomicType*, $result as xs:boolean) as xs:boolean
+declare private function boolean-min($arg as xs:anyAtomicType*, $result as xs:boolean) as xs:boolean
 {
   typeswitch(head($arg))
   case empty-sequence() return $result
@@ -751,7 +677,7 @@ declare %private function boolean-min($arg as xs:anyAtomicType*, $result as xs:b
   default return error(xs:QName("err:FORG0006"), "Uncomparable items in argument to fn:min() function")
 };
 
-declare %private function date-min($arg as xs:anyAtomicType*, $result as xs:date) as xs:date
+declare private function date-min($arg as xs:anyAtomicType*, $result as xs:date) as xs:date
 {
   typeswitch(head($arg))
   case empty-sequence() return $result
@@ -759,7 +685,7 @@ declare %private function date-min($arg as xs:anyAtomicType*, $result as xs:date
   default return error(xs:QName("err:FORG0006"), "Uncomparable items in argument to fn:min() function")
 };
 
-declare %private function time-min($arg as xs:anyAtomicType*, $result as xs:time) as xs:time
+declare private function time-min($arg as xs:anyAtomicType*, $result as xs:time) as xs:time
 {
   typeswitch(head($arg))
   case empty-sequence() return $result
@@ -767,7 +693,7 @@ declare %private function time-min($arg as xs:anyAtomicType*, $result as xs:time
   default return error(xs:QName("err:FORG0006"), "Uncomparable items in argument to fn:min() function")
 };
 
-declare %private function dateTime-min($arg as xs:anyAtomicType*, $result as xs:dateTime) as xs:dateTime
+declare private function dateTime-min($arg as xs:anyAtomicType*, $result as xs:dateTime) as xs:dateTime
 {
   typeswitch(head($arg))
   case empty-sequence() return $result
@@ -775,7 +701,7 @@ declare %private function dateTime-min($arg as xs:anyAtomicType*, $result as xs:
   default return error(xs:QName("err:FORG0006"), "Uncomparable items in argument to fn:min() function")
 };
 
-declare %private function yearMonthDuration-min($arg as xs:anyAtomicType*, $result as xs:yearMonthDuration) as xs:yearMonthDuration
+declare private function yearMonthDuration-min($arg as xs:anyAtomicType*, $result as xs:yearMonthDuration) as xs:yearMonthDuration
 {
   typeswitch(head($arg))
   case empty-sequence() return $result
@@ -783,7 +709,7 @@ declare %private function yearMonthDuration-min($arg as xs:anyAtomicType*, $resu
   default return error(xs:QName("err:FORG0006"), "Uncomparable items in argument to fn:min() function")
 };
 
-declare %private function dayTimeDuration-min($arg as xs:anyAtomicType*, $result as xs:dayTimeDuration) as xs:dayTimeDuration
+declare private function dayTimeDuration-min($arg as xs:anyAtomicType*, $result as xs:dayTimeDuration) as xs:dayTimeDuration
 {
   typeswitch(head($arg))
   case empty-sequence() return $result
@@ -792,62 +718,15 @@ declare %private function dayTimeDuration-min($arg as xs:anyAtomicType*, $result
 };
 
 (:----------------------------------------------------------------------------------------------------:)
-(: Map functions :)
+(: XQuery 1.1 functions :)
 
-declare %xqilla:inline
-function map-get($map as map(), $key as xs:anyAtomicType) as item()*
-{
-  $map($key)
-};
-
-declare function map-keys($map as map()) as xs:anyAtomicType*
-{
-  map(map-get(?, "key"), map-entries($map))
-};
-
-declare function map-fold(
-  $f as function(item()*, xs:anyAtomicType, item()*) as item()*,
-  $z as item()*,
-  $map as map()
-) as item()*
-{
-  fold-left(function($r, $e as map()) { $f($r, $e("key"), $e("value")) },
-    $z, map-entries($map))
-};
-
-declare %private 
-function map-put($map as map(), $entry as map()) as map()
-{
-  map-put($map, $entry("key"), $entry("value"))
-};
-
-declare %xqilla:inline
-function map-new($maps as map()*) as map()
-{
-  if(empty($maps)) then empty-map() else
-  fold-left(map-put#2, head($maps), map(map-entries#1, tail($maps)))
-};
-
-declare %xqilla:inline
-function map-new($maps as map()*, $collation as xs:string) as map()
-{
-  fold-left(map-put#2, empty-map($collation), map(map-entries#1, $maps))
-};
-
-(:----------------------------------------------------------------------------------------------------:)
-(: XQuery 3.0 functions :)
+(: TBD These should probably only be imported if we're parsing XQuery 1.1 - jpcs :)
 
 declare function map($f as function(item()) as item()*, $seq as item()*) as item()*
 {
   if(empty($seq)) then ()
   else ($f(head($seq)), map($f, tail($seq)))
 };
-
-declare option rw:rule "fn:MapMapFusion:
-map(~f, map(~g, ~e)) -> map(function($a) { map(~f,~g($a)) }, ~e)";
-
-declare option rw:rule "fn:MapSingleton:
-map(~f, ~e) where rw:subtype(~e, 'item()') -> ~f(~e)";
 
 declare function filter($f as function(item()) as xs:boolean, $seq as item()*) as item()*
 {
@@ -881,53 +760,4 @@ declare function map-pairs($f as function(item(), item()) as item()*, $seq1 as i
      map-pairs($f, tail($seq1), tail($seq2))
    )
 };
-
-declare %xqilla:inline
-function round($arg as xs:anyAtomicType?, $precision as xs:integer) as xs:anyAtomicType?
-{
-  let $factor := emath:power(10, $precision)
-  return round($arg * $factor) div $factor
-};
-
-declare %xqilla:inline
-function round-half-to-even($arg as xs:anyAtomicType?, $precision as xs:integer) as xs:anyAtomicType?
-{
-  let $factor := math:exp10($precision)
-  return round-half-to-even($arg * $factor) div $factor
-};
-
-declare %xqilla:inline
-function has-children($node as node()?) as xs:boolean
-{
-  exists($node/child::node())
-};
-
-declare %xqilla:inline
-function innermost($nodes as node()*) as node()*
-{
-  $nodes except $nodes/ancestor::node()
-};
-
-declare %xqilla:inline
-function outermost($nodes as node()*) as node()*
-{
-  $nodes[not(ancestor::node() intersect $nodes)]
-};
-
-(: TBD needs default argument of context item - jpcs :)
-(: declare %xqilla:inline :)
-(: function element-with-id($arg as xs:string*) as element()* :)
-(: { :)
-(: }; :)
-
-declare %xqilla:inline
-function element-with-id($arg as xs:string*, $node as node()) as element()*
-{
-  for $e in id($arg, $node)
-  return typeswitch($e)
-    case element(*, xs:ID) return $e/..
-    default return $e
-};
-
-(:----------------------------------------------------------------------------------------------------:)
 

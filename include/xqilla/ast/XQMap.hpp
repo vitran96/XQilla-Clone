@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ public:
   const XMLCh *getURI() const { return uri_; }
   const XMLCh *getName() const { return name_; }
 
-  StaticType &getVarType() { return varType_; }
+  const StaticAnalysis &getVarSRC() const { return varSrc_; }
 
   virtual ASTNode *staticResolution(StaticContext *context);
   virtual ASTNode *staticTypingImpl(StaticContext *context);
@@ -50,7 +50,7 @@ private:
 
   const XMLCh *uri_;
   const XMLCh *name_;
-  StaticType varType_;
+  StaticAnalysis varSrc_;
 };
 
 class XQILLA_API MapResult : public ResultImpl, public VariableStore

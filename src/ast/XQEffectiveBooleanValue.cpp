@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ ASTNode *XQEffectiveBooleanValue::staticTypingImpl(StaticContext *context)
   _src.clear();
 
   _src.add(expr_->getStaticAnalysis());
-  _src.getStaticType() = &ItemType::BOOLEAN;
+  _src.getStaticType() = StaticType::BOOLEAN_TYPE;
 
   if(expr_->getStaticAnalysis().isUpdating()) {
     XQThrow(StaticErrorException,X("XQEffectiveBooleanValue::staticTyping"),
@@ -58,7 +58,7 @@ ASTNode *XQEffectiveBooleanValue::staticTypingImpl(StaticContext *context)
   }
 
   if(expr_->getStaticAnalysis().getStaticType().getMin() >= 2 &&
-     !expr_->getStaticAnalysis().getStaticType().containsType(TypeFlags::NODE)) {
+     !expr_->getStaticAnalysis().getStaticType().containsType(StaticType::NODE_TYPE)) {
     XQThrow(XPath2TypeMatchException, X("XQEffectiveBooleanValue::staticTyping"),
             X("Effective Boolean Value cannot be extracted from this type [err:FORG0006]"));
   }
@@ -69,7 +69,7 @@ ASTNode *XQEffectiveBooleanValue::staticTypingImpl(StaticContext *context)
 static inline bool getEffectiveBooleanValueInternal(const Item::Ptr &first, const Item::Ptr &second, DynamicContext* context, const LocationInfo *info)
 {
   // If its operand is a singleton value ...
-  if(second.isNull() && first->getType() == Item::ATOMIC) {
+  if(second.isNull() && first->isAtomicValue()) {
     const AnyAtomicType::Ptr atom=first;
     // ... of type xs:boolean or derived from xs:boolean, fn:boolean returns the value of its operand unchanged.
     if(atom->getPrimitiveTypeIndex() == AnyAtomicType::BOOLEAN)
@@ -105,7 +105,7 @@ bool XQEffectiveBooleanValue::get(const Item::Ptr &first, const Item::Ptr &secon
   }
 
   // If its operand is a sequence whose first item is a node, fn:boolean returns true.
-  if(first->getType() == Item::NODE)
+  if(first->isNode())
     return true;
 
   return getEffectiveBooleanValueInternal(first, second, context, info);
@@ -119,7 +119,7 @@ BoolResult XQEffectiveBooleanValue::boolResult(DynamicContext* context) const
   if(first.isNull()) {
     result = false;
   }
-  else if(first->getType() == Item::NODE) {
+  else if(first->isNode()) {
     result = true;
   }
   else {

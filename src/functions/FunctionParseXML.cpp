@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ ASTNode *FunctionParseXML::staticTypingImpl(StaticContext *context)
 
   _src.setProperties(StaticAnalysis::DOCORDER | StaticAnalysis::GROUPED |
                      StaticAnalysis::PEER | StaticAnalysis::SUBTREE | StaticAnalysis::ONENODE);
-  _src.getStaticType() = StaticType::DOCUMENT_QUESTION;
+  _src.getStaticType() = StaticType(StaticType::DOCUMENT_TYPE, 0, 1);
   _src.creative(true);
 
   return this;

@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,7 +74,7 @@ public:
   virtual Result dmNamespaceNodes(const DynamicContext* context, const LocationInfo *info) const;
   virtual Result dmChildren(const DynamicContext *context, const LocationInfo *info) const;
 
-  virtual Result getAxisResult(Node::Axis axis, const NodeTest *nodeTest, const DynamicContext *context, const LocationInfo *info) const;
+  virtual Result getAxisResult(XQStep::Axis axis, const NodeTest *nodeTest, const DynamicContext *context, const LocationInfo *info) const;
 
   virtual ATBooleanOrDerived::Ptr dmIsId(const DynamicContext* context) const;
   virtual ATBooleanOrDerived::Ptr dmIsIdRefs(const DynamicContext* context) const;

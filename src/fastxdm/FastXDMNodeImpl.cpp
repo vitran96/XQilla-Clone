@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -127,7 +127,7 @@ Sequence FastXDMNodeImpl::dmBaseURI(const DynamicContext* context) const
       xmlBase.setNodeUri(XMLUni::fgXMLURIName);
       xmlBase.setTypeWildcard();
 
-      Item::Ptr item = getAxisResult(Node::ATTRIBUTE, &xmlBase, const_cast<DynamicContext*>(context), 0)->
+      Item::Ptr item = getAxisResult(XQStep::ATTRIBUTE, &xmlBase, const_cast<DynamicContext*>(context), 0)->
         next(const_cast<DynamicContext*>(context));
       if(item.notNull()) {
         const XMLCh *uri = ((Node*)item.get())->dmStringValue(context);
@@ -289,7 +289,7 @@ public:
     test.setNameWildcard();
     test.setTypeWildcard();
 
-    Item::Ptr found = node_->getAxisResult(Node::NAMESPACE, &test, context_, 0)->next(context_);
+    Item::Ptr found = node_->getAxisResult(XQStep::NAMESPACE, &test, context_, 0)->next(context_);
     if(found.notNull()) {
       return ((Node*)found.get())->dmStringValue(context_);
     }
@@ -557,7 +557,7 @@ static inline Item::Ptr testNode(const FastXDMDocument::Ptr &document, const Fas
 {
   if(nodeTest == 0) return new FastXDMNodeImpl(document, node);
 
-  ItemType *itemType = nodeTest->getItemType();
+  SequenceType::ItemType *itemType = nodeTest->getItemType();
   if(itemType != 0) {
     Node::Ptr result = new FastXDMNodeImpl(document, node);
     if(itemType->matches(result, context)) {
@@ -606,7 +606,7 @@ static inline Item::Ptr testNode(const FastXDMDocument::Ptr &document, const Fas
 static inline Item::Ptr testAttribute(const FastXDMDocument::Ptr &document, const FastXDMDocument::Attribute *attr, const NodeTest *nodeTest, DynamicContext *context)
 {
   if(nodeTest != 0) {
-      ItemType *itemType = nodeTest->getItemType();
+      SequenceType::ItemType *itemType = nodeTest->getItemType();
       if(itemType != 0) {
         Node::Ptr result = new FastXDMAttributeNodeImpl(document, attr);
         if(itemType->matches(result, context)) {
@@ -1124,58 +1124,58 @@ Result FastXDMNodeImpl::dmChildren(const DynamicContext *context, const Location
   return 0;
 }
 
-Result FastXDMNodeImpl::getAxisResult(Node::Axis axis, const NodeTest *nodeTest, const DynamicContext *context, const LocationInfo *info) const
+Result FastXDMNodeImpl::getAxisResult(XQStep::Axis axis, const NodeTest *nodeTest, const DynamicContext *context, const LocationInfo *info) const
 {
   switch(axis) {
-  case Node::ANCESTOR: {
+  case XQStep::ANCESTOR: {
     return new FastXDMAncestorAxis(info, document_, node_, nodeTest);
   }
-  case Node::ANCESTOR_OR_SELF: {
+  case XQStep::ANCESTOR_OR_SELF: {
     return new FastXDMAncestorOrSelfAxis(info, document_, node_, nodeTest);
   }
-  case Node::ATTRIBUTE: {
+  case XQStep::ATTRIBUTE: {
     if(node_->nodeKind == FastXDMDocument::ELEMENT && node_->data.element.attributes.ptr != 0) {
       return new FastXDMAttributeAxis(info, document_, node_, nodeTest);
     }
     break;
   }
-  case Node::CHILD: {
+  case XQStep::CHILD: {
     if(node_->nodeKind == FastXDMDocument::ELEMENT || node_->nodeKind == FastXDMDocument::DOCUMENT) {
       return new FastXDMChildAxis(info, document_, node_, nodeTest);
     }
     break;
   }
-  case Node::DESCENDANT: {
+  case XQStep::DESCENDANT: {
     if(node_->nodeKind == FastXDMDocument::ELEMENT || node_->nodeKind == FastXDMDocument::DOCUMENT) {
       return new FastXDMDescendantAxis(info, document_, node_, nodeTest);
     }
     break;
   }
-  case Node::DESCENDANT_OR_SELF: {
+  case XQStep::DESCENDANT_OR_SELF: {
     return new FastXDMDescendantOrSelfAxis(info, document_, node_, nodeTest);
   }
-  case Node::FOLLOWING: {
+  case XQStep::FOLLOWING: {
     return new FastXDMFollowingAxis(info, document_, node_, nodeTest);
   }
-  case Node::FOLLOWING_SIBLING: {
+  case XQStep::FOLLOWING_SIBLING: {
     return new FastXDMFollowingSiblingAxis(info, document_, node_, nodeTest);
   }
-  case Node::NAMESPACE: {
+  case XQStep::NAMESPACE: {
     if(node_->nodeKind == FastXDMDocument::ELEMENT) {
       return new FastXDMNamespaceAxis(info, this, nodeTest);
     }
     break;
   }
-  case Node::PARENT: {
+  case XQStep::PARENT: {
     return new FastXDMParentAxis(info, document_, node_, nodeTest);
   }
-  case Node::PRECEDING: {
+  case XQStep::PRECEDING: {
     return new FastXDMPrecedingAxis(info, document_, node_, nodeTest);
   }
-  case Node::PRECEDING_SIBLING: {
+  case XQStep::PRECEDING_SIBLING: {
     return new FastXDMPrecedingSiblingAxis(info, document_, node_, nodeTest);
   }
-  case Node::SELF: {
+  case XQStep::SELF: {
     return new FastXDMSelfAxis(info, document_, node_, nodeTest);
   }
   }
@@ -1465,37 +1465,37 @@ Result FastXDMAttributeNodeImpl::dmChildren(const DynamicContext *context, const
   return 0;
 }
 
-Result FastXDMAttributeNodeImpl::getAxisResult(Node::Axis axis, const NodeTest *nodeTest, const DynamicContext *context, const LocationInfo *info) const
+Result FastXDMAttributeNodeImpl::getAxisResult(XQStep::Axis axis, const NodeTest *nodeTest, const DynamicContext *context, const LocationInfo *info) const
 {
   switch(axis) {
-  case Node::ANCESTOR: {
+  case XQStep::ANCESTOR: {
     if(attr_->owner.ptr == 0) return 0;
     return new FastXDMAncestorOrSelfAxis(info, document_, attr_->owner.ptr, nodeTest);
   }
-  case Node::ANCESTOR_OR_SELF: {
+  case XQStep::ANCESTOR_OR_SELF: {
     return new FastXDMAttributeAncestorOrSelfAxis(info, document_, attr_, nodeTest);
   }
-  case Node::FOLLOWING: {
+  case XQStep::FOLLOWING: {
     return new FastXDMFollowingAxis(info, document_, attr_, nodeTest);
   }
-  case Node::PARENT: {
+  case XQStep::PARENT: {
     if(attr_->owner.ptr == 0) return 0;
     return new FastXDMSelfAxis(info, document_, attr_->owner.ptr, nodeTest);
   }
-  case Node::PRECEDING: {
+  case XQStep::PRECEDING: {
     if(attr_->owner.ptr == 0) return 0;
     return new FastXDMPrecedingAxis(info, document_, attr_->owner.ptr, nodeTest);
   }
-  case Node::DESCENDANT_OR_SELF:
-  case Node::SELF: {
+  case XQStep::DESCENDANT_OR_SELF:
+  case XQStep::SELF: {
     return nodeTest->filterResult((Item::Ptr)this, info);
   }
-  case Node::ATTRIBUTE:
-  case Node::CHILD:
-  case Node::DESCENDANT:
-  case Node::FOLLOWING_SIBLING:
-  case Node::NAMESPACE:
-  case Node::PRECEDING_SIBLING:
+  case XQStep::ATTRIBUTE:
+  case XQStep::CHILD:
+  case XQStep::DESCENDANT:
+  case XQStep::FOLLOWING_SIBLING:
+  case XQStep::NAMESPACE:
+  case XQStep::PRECEDING_SIBLING:
     break;
   }
 
@@ -1757,45 +1757,45 @@ Result FastXDMNamespaceNodeImpl::dmChildren(const DynamicContext *context, const
   return 0;
 }
 
-Result FastXDMNamespaceNodeImpl::getAxisResult(Node::Axis axis, const NodeTest *nodeTest, const DynamicContext *context, const LocationInfo *info) const
+Result FastXDMNamespaceNodeImpl::getAxisResult(XQStep::Axis axis, const NodeTest *nodeTest, const DynamicContext *context, const LocationInfo *info) const
 {
   switch(axis) {
-  case Node::ANCESTOR: {
+  case XQStep::ANCESTOR: {
     if(owner_.notNull())
       return new FastXDMAncestorOrSelfAxis(info, owner_->getDocument(), owner_->getNode(), nodeTest);
     break;
   }
-  case Node::ANCESTOR_OR_SELF: {
+  case XQStep::ANCESTOR_OR_SELF: {
     if(owner_.notNull())
       return new FastXDMNamespaceAncestorOrSelfAxis(info, this, nodeTest);
     else 
       return nodeTest->filterResult((Item::Ptr)this, info);
   }
-  case Node::FOLLOWING: {
+  case XQStep::FOLLOWING: {
     if(owner_.notNull())
       return new FastXDMFollowingAxis(info, owner_->getDocument(), this, nodeTest);
     break;
   }
-  case Node::PARENT: {
+  case XQStep::PARENT: {
     if(owner_.notNull())
       return nodeTest->filterResult((Item::Ptr)owner_, info);
     break;
   }
-  case Node::PRECEDING: {
+  case XQStep::PRECEDING: {
     if(owner_.notNull())
       return new FastXDMPrecedingAxis(info, owner_->getDocument(), owner_->getNode(), nodeTest);
     break;
   }
-  case Node::DESCENDANT_OR_SELF:
-  case Node::SELF: {
+  case XQStep::DESCENDANT_OR_SELF:
+  case XQStep::SELF: {
     return nodeTest->filterResult((Item::Ptr)this, info);
   }
-  case Node::ATTRIBUTE:
-  case Node::CHILD:
-  case Node::DESCENDANT:
-  case Node::FOLLOWING_SIBLING:
-  case Node::NAMESPACE:
-  case Node::PRECEDING_SIBLING:
+  case XQStep::ATTRIBUTE:
+  case XQStep::CHILD:
+  case XQStep::DESCENDANT:
+  case XQStep::FOLLOWING_SIBLING:
+  case XQStep::NAMESPACE:
+  case XQStep::PRECEDING_SIBLING:
     break;
   }
 

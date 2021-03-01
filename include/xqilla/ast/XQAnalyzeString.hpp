@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,10 +67,6 @@ public:
                                 bool match, DynamicContext *context) = 0;
 
   virtual Item::Ptr next(DynamicContext *context);
-
-  static void getMatches(const XMLCh *input, const XMLCh *pattern, const XMLCh *options,
-                         XERCES_CPP_NAMESPACE_QUALIFIER MemoryManager *mm, const LocationInfo *location,
-                         XERCES_CPP_NAMESPACE_QUALIFIER RefVectorOf<XERCES_CPP_NAMESPACE_QUALIFIER Match> &matches);
 
 private:
   virtual const XMLCh *getGroup(int index) const;

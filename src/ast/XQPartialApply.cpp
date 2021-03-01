@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,6 @@
 #include <xqilla/schema/SequenceType.hpp>
 #include <xqilla/ast/XQTreatAs.hpp>
 #include <xqilla/utils/XPath2Utils.hpp>
-#include <xqilla/functions/FunctionSignature.hpp>
-#include <xqilla/framework/BasicMemoryManager.hpp>
 
 XERCES_CPP_NAMESPACE_USE;
 using namespace std;
@@ -43,9 +41,8 @@ ASTNode *XQPartialApply::staticResolution(StaticContext *context)
 {
   XPath2MemoryManager *mm = context->getMemoryManager();
 
-  ItemType *itemType = new (mm) ItemType(ItemType::TEST_FUNCTION);
-  itemType->setLocationInfo(this);
-  SequenceType *seqType = new (mm) SequenceType(itemType, SequenceType::EXACTLY_ONE);
+  SequenceType *seqType = new (mm) SequenceType(new (mm) SequenceType::ItemType(SequenceType::ItemType::TEST_FUNCTION),
+                                                SequenceType::EXACTLY_ONE);
   seqType->setLocationInfo(this);
 
   expr_ = new (mm) XQTreatAs(expr_, seqType, mm);
@@ -89,35 +86,21 @@ ASTNode *XQPartialApply::staticTypingImpl(StaticContext *context)
     }
   }
 
-  _src.getStaticType() = StaticType::EMPTY;
-  bool doneOne = false;
+  const StaticType &inType = expr_->getStaticAnalysis().getStaticType();
 
-  if((expr_->getStaticAnalysis().getStaticType().getFlags() & TypeFlags::FUNCTION) != 0) {
-    _src.getStaticType() = StaticType::FUNCTION;
-  } else {
-    const StaticType::ItemTypes &types = expr_->getStaticAnalysis().getStaticType().getTypes();
-    StaticType::ItemTypes::const_iterator i = types.begin();
-    for(; i != types.end(); ++i) {
-      if((*i)->getItemTestType() == ItemType::TEST_FUNCTION) {
-        if((*i)->getFunctionSignature()) {
-          if((*i)->getFunctionSignature()->numArgs() == args_->size()) {
-            FunctionSignature *newSig = new (getMemoryManager())
-              FunctionSignature((*i)->getFunctionSignature(), args_, getMemoryManager());
-            ItemType *type = new (getMemoryManager()) ItemType(newSig, (*i)->getDocumentCache());
-            type->setLocationInfo(this);
-            StaticType tmp(type, BasicMemoryManager::get());
-            if(doneOne) _src.getStaticType().typeUnion(tmp);
-            else { _src.getStaticType() = tmp; doneOne = true; }
-          }
-        } else {
-          _src.getStaticType() = StaticType::FUNCTION;
-          break;
-        }
-      } else if(ItemType::FUNCTION.isSubtypeOf(*i)) {
-        _src.getStaticType() = StaticType::ITEM_STAR;
-        break;
-      }
-    }
+  if(inType.getReturnType() == 0) {
+    _src.getStaticType() = StaticType::FUNCTION_TYPE;
+  }
+  else {
+    unsigned int minArgs = inType.getMinArgs();
+    unsigned int maxArgs = inType.getMaxArgs();
+
+    if(minArgs > argCount) minArgs -= argCount; else minArgs = 0;
+    if(maxArgs > argCount) maxArgs -= argCount; else maxArgs = 0;
+
+    // TBD Using getMemoryManager() might not be thread safe in DB XML - jpcs
+    _src.getStaticType() = StaticType(getMemoryManager(), minArgs, maxArgs,
+                                      *inType.getReturnType());
   }
 
   return this;

@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,8 +42,8 @@ public:
 
   const VectorOfASTNodes &getChildren() const { return _astNodes; }
 
-  static ASTNode *constantFold(Result &result, DynamicContext *context, XPath2MemoryManager* memMgr,
-                               const LocationInfo *location);
+  static XQSequence *constantFold(Result &result, DynamicContext *context, XPath2MemoryManager* memMgr,
+                                  const LocationInfo *location);
 
 private:
   VectorOfASTNodes _astNodes;

@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,6 @@
 #include <xqilla/items/Timezone.hpp>
 #include <xqilla/context/ItemFactory.hpp>
 #include <xqilla/utils/XPath2Utils.hpp>
-#include <xqilla/utils/lookup3.hpp>
 
 #include <limits.h>   // for INT_MIN and INT_MAX
 #include <stdlib.h>   // for atoi
@@ -215,8 +214,9 @@ AnyAtomicType::Ptr ATDateOrDerivedImpl::castAsInternal(AtomicObjectType targetIn
       }
       return context->getItemFactory()->createGYearOrDerived(targetURI, targetType, buf.getRawBuffer(), context);
     } 
+    case ANY_SIMPLE_TYPE:
     case UNTYPED_ATOMIC:
-      // untypedAtomic follows the same casting rules as string.
+      //anySimpleType and untypedAtomic follow the same casting rules as string.
     case STRING: {
       return context->getItemFactory()->createDerivedFromAtomicType(targetIndex, targetURI, targetType, asString(context), context);
 		} 
@@ -260,20 +260,6 @@ int ATDateOrDerivedImpl::compare(const ATDateOrDerived::Ptr &target, const Dynam
 {
   const ATDateOrDerivedImpl *other = (const ATDateOrDerivedImpl *)target.get();
   return tzNormalize(_hasTimezone, seconds_, context).compare(tzNormalize(other->_hasTimezone, other->seconds_, context));
-}
-
-size_t ATDateOrDerivedImpl::hash(const Collation *collation, const DynamicContext *context) const
-{
-  uint32_t pc = 0xF00BAA56, pb = 0xBADFACE2;
-
-  // Hash the sort type
-  uint32_t u32 = (uint32_t)getSortType();
-  hashword2(&u32, 1, &pc, &pb);
-
-  // Hash the normalized value
-  Numeric::hashMAPM(tzNormalize(_hasTimezone, seconds_, context), &pc, &pb);
-
-  return (size_t)pc + (((size_t)pb)<<32);
 }
 
 /** 

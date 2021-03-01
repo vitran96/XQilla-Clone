@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -206,7 +206,7 @@ void Sequence::sortIntoDocumentOrder(const DynamicContext *context)
   // we just check the first item.
   // Note that it is OK that we are asked to sort a sequence made of atomic values, as a path expression
   // can now return it, so we should not complain
-  if(isEmpty() || first()->getType() != Item::NODE) return;
+  if(isEmpty() || !first()->isNode()) return;
 
   // Sort
   std::sort(_itemList.begin(), _itemList.end(), lessThanCompareFn(context));

@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -99,7 +99,7 @@ ASTNode *XQContentSequence::staticTypingImpl(StaticContext *context)
 
   _src.copy(expr_->getStaticAnalysis());
 
-  if(!expr_->getStaticAnalysis().getStaticType().containsType(TypeFlags::DOCUMENT|TypeFlags::ANY_ATOMIC_TYPE)) {
+  if(!expr_->getStaticAnalysis().getStaticType().containsType(StaticType::DOCUMENT_TYPE|StaticType::ANY_ATOMIC_TYPE)) {
     ASTNode *pChild = expr_;
 
     // Not needed if the wrapped expression is a DOM_CONSTRUCTOR
@@ -110,12 +110,9 @@ ASTNode *XQContentSequence::staticTypingImpl(StaticContext *context)
     }
   }
 
-  _src.getStaticType().substitute(TypeFlags::ANY_ATOMIC_TYPE, StaticType::TEXT);
-  StaticType document_content(&ItemType::ELEMENT, 0, StaticType::UNLIMITED, BasicMemoryManager::get());
-  document_content.typeUnion(StaticType::TEXT_STAR);
-  document_content.typeUnion(StaticType::PI_STAR);
-  document_content.typeUnion(StaticType::COMMENT_STAR);
-  _src.getStaticType().substitute(TypeFlags::DOCUMENT, document_content);
+  _src.getStaticType().substitute(StaticType::ANY_ATOMIC_TYPE, StaticType::TEXT_TYPE);
+  _src.getStaticType().substitute(StaticType::DOCUMENT_TYPE, StaticType(StaticType::ELEMENT_TYPE | StaticType::TEXT_TYPE | StaticType::PI_TYPE |
+                                                                        StaticType::COMMENT_TYPE, 0, StaticType::UNLIMITED));
 
   _src.creative(true);
   return this;
@@ -132,7 +129,7 @@ EventGenerator::Ptr XQContentSequence::generateEvents(EventHandler *events, Dyna
   preserveNS = context->getPreserveNamespaces();
   preserveType = context->getConstructionMode() == StaticContext::CONSTRUCTION_MODE_PRESERVE;
 
-  if(!expr_->getStaticAnalysis().getStaticType().containsType(TypeFlags::DOCUMENT|TypeFlags::ANY_ATOMIC_TYPE)) {
+  if(!expr_->getStaticAnalysis().getStaticType().containsType(StaticType::DOCUMENT_TYPE|StaticType::ANY_ATOMIC_TYPE)) {
     return new ClosureEventGenerator(expr_, context, preserveNS, preserveType);
   }
 
@@ -166,7 +163,8 @@ ASTNode *XQDirectName::staticResolution(StaticContext *context)
     uri = context->getUriBoundToPrefix(prefix, this);
   }
 
-  return (new (mm) XQQNameLiteral((ItemType*)&ItemType::QNAME, uri, prefix,
+  return (new (mm) XQQNameLiteral(SchemaSymbols::fgURI_SCHEMAFORSCHEMA,
+                                  SchemaSymbols::fgDT_QNAME, uri, prefix,
                                   XPath2NSUtils::getLocalName(qname_), mm))->staticResolution(context);
 }
 
@@ -196,9 +194,8 @@ ASTNode* XQNameExpression::staticResolution(StaticContext *context)
 
   expr_ = new (mm) XQAtomize(expr_, mm);
   expr_->setLocationInfo(this);
-  ItemType *itemType = new (mm) ItemType(ItemType::TEST_ANYTHING);
-  itemType->setLocationInfo(this);
-  SequenceType *seqType = new (mm) SequenceType(itemType, SequenceType::EXACTLY_ONE);
+  SequenceType *seqType = new (mm) SequenceType(new (mm) SequenceType::ItemType(SequenceType::ItemType::TEST_ANYTHING),
+                                                SequenceType::EXACTLY_ONE);
   seqType->setLocationInfo(this);
   expr_ = new (mm) XQTreatAs(expr_, seqType, mm);
   expr_->setLocationInfo(this);
@@ -211,16 +208,16 @@ ASTNode *XQNameExpression::staticTypingImpl(StaticContext *context)
 {
   _src.clear();
 
-  _src.getStaticType() = &ItemType::QNAME;
+  _src.getStaticType() = StaticType::QNAME_TYPE;
 
   _src.add(expr_->getStaticAnalysis());
 
-  if(expr_->getStaticAnalysis().getStaticType().isType(TypeFlags::QNAME)) {
+  if(expr_->getStaticAnalysis().getStaticType().isType(StaticType::QNAME_TYPE)) {
     return expr_;
   }
 
   if(!expr_->getStaticAnalysis().getStaticType().
-     containsType(TypeFlags::QNAME|TypeFlags::STRING|TypeFlags::UNTYPED_ATOMIC)) {
+     containsType(StaticType::QNAME_TYPE|StaticType::STRING_TYPE|StaticType::UNTYPED_ATOMIC_TYPE)) {
     XMLBuffer buf;
     buf.set(X("The name expression must be a single xs:QName, xs:string or xs:untypedAtomic"));
     buf.append(X(" - the expression has a static type of "));
@@ -302,7 +299,7 @@ ASTNode *XQSimpleContent::staticTypingImpl(StaticContext *context)
     if(!(*children_)[i]->isConstant()) constant = false;
   }
 
-  _src.getStaticType() = &ItemType::STRING;
+  _src.getStaticType() = StaticType::STRING_TYPE;
 
   return this;
 }

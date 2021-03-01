@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,15 +41,11 @@ public:
   /** The "XQilla" item interface */
   static const XMLCh gXQilla[];
 
-  enum Type {
-    NODE,
-    ATOMIC,
-    FUNCTION,
-    TUPLE,
-    EXPRESSION
-  };
+  virtual bool isNode() const = 0;
 
-  virtual Type getType() const = 0;
+  virtual bool isAtomicValue() const = 0;
+
+  virtual bool isFunction() const = 0;
 
   virtual const XMLCh* asString(const DynamicContext* context) const = 0;
 

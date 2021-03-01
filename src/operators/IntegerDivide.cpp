@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,23 +24,22 @@
 #include <xqilla/exceptions/XPath2ErrorException.hpp>
 #include <xqilla/context/DynamicContext.hpp>
 
-#include <xercesc/util/XMLUniDefs.hpp>
 #include <xercesc/validators/schema/SchemaSymbols.hpp>
 
 /*static*/ const XMLCh IntegerDivide::name[]={ XERCES_CPP_NAMESPACE_QUALIFIER chLatin_I, XERCES_CPP_NAMESPACE_QUALIFIER chLatin_D, XERCES_CPP_NAMESPACE_QUALIFIER chLatin_i, XERCES_CPP_NAMESPACE_QUALIFIER chLatin_v, XERCES_CPP_NAMESPACE_QUALIFIER chNull };
 
 IntegerDivide::IntegerDivide(const VectorOfASTNodes &args, XPath2MemoryManager* memMgr)
-  : ArithmeticOperator(INTEGER_DIVIDE, name, args, memMgr)
+  : ArithmeticOperator(name, args, memMgr)
 {
   // Nothing to do
 }
 
-void IntegerDivide::calculateStaticType(StaticContext *context)
+void IntegerDivide::calculateStaticType()
 {
   const StaticType &arg0 = _args[0]->getStaticAnalysis().getStaticType();
   // untypedAtomic will be promoted to xs:double
-  if(arg0.containsType(TypeFlags::NUMERIC|TypeFlags::UNTYPED_ATOMIC)) {
-    _src.getStaticType() = StaticType::DECIMAL_QUESTION;
+  if(arg0.containsType(StaticType::NUMERIC_TYPE|StaticType::UNTYPED_ATOMIC_TYPE)) {
+    _src.getStaticType() = StaticType(StaticType::DECIMAL_TYPE, 0, 1);
   }
 }
 

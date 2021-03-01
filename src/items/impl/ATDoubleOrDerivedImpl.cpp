@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,33 +28,35 @@
 #include <xqilla/framework/XPath2MemoryManager.hpp>
 #include <xqilla/utils/XPath2Utils.hpp>
 #include <xqilla/context/ItemFactory.hpp>
-#include <xqilla/utils/UTF8Str.hpp>
 
 #include <assert.h>
-#include <float.h>
-#include <math.h>
-#include <stdio.h>
-#include <limits>
 
 #if defined(XERCES_HAS_CPP_NAMESPACE)
 XERCES_CPP_NAMESPACE_USE
 #endif
-using namespace std;
+
+int ATDoubleOrDerivedImpl::g_nSignificantDigits=25;
 
 ATDoubleOrDerivedImpl::
 ATDoubleOrDerivedImpl(const XMLCh* typeURI, const XMLCh* typeName, const XMLCh* value, const StaticContext* context)
-  : typeName_(typeName),
-    typeURI_(typeURI)
+  : _typeName(typeName),
+    _typeURI(typeURI)
 {
   setDouble(value);
+  checkDoubleLimits(_state, _double);
 }
 
 ATDoubleOrDerivedImpl::
-ATDoubleOrDerivedImpl(const XMLCh* typeURI, const XMLCh* typeName, double value)
-  : value_(value),
-    typeName_(typeName),
-    typeURI_(typeURI)
-{
+ATDoubleOrDerivedImpl(const XMLCh* typeURI, const XMLCh* typeName, const MAPM value, const StaticContext* context): 
+    ATDoubleOrDerived(),
+    _typeName(typeName),
+    _typeURI(typeURI) { 
+    
+  _double = value;
+  _state = NUM;
+  if(value.sign() < 0) 
+    _state = NEG_NUM;
+  checkDoubleLimits(_state, _double);
 }
 
 void *ATDoubleOrDerivedImpl::getInterface(const XMLCh *name) const
@@ -77,81 +79,22 @@ const XMLCh* ATDoubleOrDerivedImpl::getPrimitiveName()  {
 
 /* Get the name of this type  (ie "integer" for xs:integer) */
 const XMLCh* ATDoubleOrDerivedImpl::getTypeName() const {
-  return typeName_;
+  return _typeName;
 }
 
 /* Get the namespace URI for this type */
 const XMLCh* ATDoubleOrDerivedImpl::getTypeURI() const {
-  return typeURI_; 
+  return _typeURI; 
 }
 
-AnyAtomicType::AtomicObjectType ATDoubleOrDerivedImpl::getTypeIndex()
-{
+AnyAtomicType::AtomicObjectType ATDoubleOrDerivedImpl::getTypeIndex() {
   return AnyAtomicType::DOUBLE;
 } 
 
+/* returns the XMLCh* (canonical) representation of this type */
 const XMLCh* ATDoubleOrDerivedImpl::asString(const DynamicContext* context) const
 {
-  return asString(value_, context);
-}
-
-static inline bool isInteger(double v)
-{
-  double tmp;
-  return ::modf(v, &tmp) == 0.0;
-}
-
-const XMLCh* ATDoubleOrDerivedImpl::asString(double v, const DynamicContext* context)
-{
-  switch(getState(v)) {
-  case NaN:     return NaN_string;
-  case INF:     return INF_string;
-  case NEG_INF: return NegINF_string;
-  case NEG_NUM:
-    if(v == 0) return NegZero_string;
-    break;
-  case NUM:
-    if(v == 0) return PosZero_string;
-    break;
-  }
-
-  char obuf[1024];
-  double absVal = ::fabs(v);
-  if(absVal < 1000000.0 && absVal >= 0.000001) {
-    if(::isInteger(v)) {
-      ::snprintf(obuf, sizeof(obuf), "%.f", (double)v);
-    } else {
-      ::snprintf(obuf, sizeof(obuf), "%.16f", (double)v);
-      char *p = strchr(obuf, '.');
-      if(p) {
-        // Remove trailing '0' in the fractional part
-        p = obuf + strlen(obuf);
-        while(p > obuf+2 && p[-1] == '0' && p[-2] != '.') --p;
-        *p = 0;
-      }
-    }
-  } else {
-    ::snprintf(obuf, sizeof(obuf), "%.16E", v);
-    char *p = strchr(obuf, 'E');
-    if(p) {
-      // Remove trailing '0' from the mantissa
-      char *dest = p;
-      while(dest > obuf+2 && dest[-1] == '0' && dest[-2] != '.') --dest;
-
-      // Remove the exponent's "+" sign, and leading '0'
-      ++p;
-      if(p[0] == '+') ++p;
-      if(p[0] == '0' && p[1] != 0) ++p;
-
-      *dest = 'E';
-      for(++dest;; ++dest,++p) {
-        *dest = *p;
-        if(*p == 0) break;
-      }
-    }
-  }
-
-  return context->getMemoryManager()->getPooledString(obuf);
+  return asDoubleString(g_nSignificantDigits, context);
 }
 
 /* Promote this to the given type, if possible */
@@ -167,131 +110,280 @@ Numeric::Ptr ATDoubleOrDerivedImpl::promoteTypeIfApplicable(AnyAtomicType::Atomi
   return 0;
 }
 
-MAPM ATDoubleOrDerivedImpl::asMAPM() const
-{
-  switch(getState()) {
-  case NaN:
-  case INF:
-  case NEG_INF: return 0;
-  case NEG_NUM:
-  case NUM:
-    break;
-  }
-  return MAPM(value_);
-}
-
-Numeric::State ATDoubleOrDerivedImpl::getState() const
-{
-  return getState(value_);
-}
-
-Numeric::State ATDoubleOrDerivedImpl::getState(double v)
-{
-#if defined(WIN32)
-  switch(_fpclass(v)) {
-  case _FPCLASS_NZ:
-  case _FPCLASS_ND:
-  case _FPCLASS_NN: return NEG_NUM;
-  case _FPCLASS_PZ:
-  case _FPCLASS_PD:
-  case _FPCLASS_PN: return NUM;
-  case _FPCLASS_PINF: return INF;
-  case _FPCLASS_NINF: return NEG_INF;
-  case _FPCLASS_QNAN:
-  case _FPCLASS_SNAN:
-  default: return NaN;
-  }
-#else
-  switch(fpclassify(v)) {
-  case FP_ZERO:
-  case FP_SUBNORMAL:
-  case FP_NORMAL: return isNegative(v) ? NEG_NUM : NUM;
-  case FP_INFINITE: return isNegative(v) ? NEG_INF : INF;
-  case FP_NAN:
-  default: return NaN;
-  }
-#endif
-}
-
-bool ATDoubleOrDerivedImpl::equals(const AnyAtomicType::Ptr &other, const DynamicContext* context) const
-{
-  if(!other->isNumericValue())
-    XQThrow2(::IllegalArgumentException,X("Numeric::equals"),
-	    X("Equality operator for given types not supported [err:XPTY0004]"));
-  return value_ == ((Numeric*)other.get())->asDouble();
-}
-
-bool ATDoubleOrDerivedImpl::lessThan(const Numeric::Ptr &other, const DynamicContext* context) const
-{
-  if(!other->isNumericValue())
-    XQThrow2(::IllegalArgumentException,X("Numeric::equals"),
-	    X("Equality operator for given types not supported [err:XPTY0004]"));
-  return value_ < ((Numeric*)other.get())->asDouble();
-}
-
-bool ATDoubleOrDerivedImpl::greaterThan(const Numeric::Ptr &other, const DynamicContext* context) const
-{
-  if(!other->isNumericValue())
-    XQThrow2(::IllegalArgumentException,X("Numeric::equals"),
-	    X("Equality operator for given types not supported [err:XPTY0004]"));
-  return value_ > ((Numeric*)other.get())->asDouble();
-}
-
-Numeric::Ptr ATDoubleOrDerivedImpl::add(const Numeric::Ptr &other, const DynamicContext* context) const
-{
+/** Returns a Numeric object which is the sum of this and other */
+Numeric::Ptr ATDoubleOrDerivedImpl::add(const Numeric::Ptr &other, const DynamicContext* context) const {
   if(AnyAtomicType::DOUBLE == other->getPrimitiveTypeIndex()) {
     // if both are of the same type exactly, we can perform addition
-    return new ATDoubleOrDerivedImpl(SchemaSymbols::fgURI_SCHEMAFORSCHEMA,
-      SchemaSymbols::fgDT_DOUBLE, value_ + other->asDouble());
+    ATDoubleOrDerivedImpl* otherImpl = (ATDoubleOrDerivedImpl*)(const Numeric*)other;
+    if(otherImpl->_state == NaN) return notANumber(context);
+
+    switch (_state) {
+      case NaN: return notANumber(context);
+      case INF: {
+        switch(otherImpl->_state) {
+          case NaN: return notANumber(context);       // case taken care of above
+          case NEG_NUM:
+          case NUM: return infinity(context);         // INF + NUM = INF
+          case INF: return infinity(context);         // INF + INF = INF
+          case NEG_INF: return notANumber(context);   // INF + (-INF) = NaN
+          default: assert(false); return 0; // should never get here
+        }
+      }
+      case NEG_INF: {
+        switch(otherImpl->_state) {
+          case NaN: return notANumber(context);          //case taken care of above
+          case NEG_NUM:
+          case NUM: return negInfinity(context);         // -INF + NUM = -INF
+          case INF: return notANumber(context);          // -INF + INF = NaN
+          case NEG_INF: return negInfinity(context);     // -INF + (-INF) = -INF
+          default: assert(false); return 0; // should never get here
+        }
+      }                
+      case NEG_NUM:
+      case NUM: {
+        switch(otherImpl->_state) {
+          case NaN: return notANumber(context); // case taken care of above
+          case INF: return infinity(context);
+          case NEG_INF: return negInfinity(context);
+          case NEG_NUM:
+          case NUM: 
+              {
+                // Handle positive and negative zero
+                if(_double.sign()==0 && otherImpl->_double!=0)
+                  return other;
+                else if(_double.sign()!=0 && otherImpl->_double==0)
+                  return this;
+                else if(_double.sign()==0 && otherImpl->_double==0)
+                {
+                  if(_state==otherImpl->_state)
+                    // sum of two zero of the same sign -> result is equal to any of the two items
+                    return this;
+                  else
+                    // sum of two zero of different sign -> result is equal to +0
+                    return newDouble(0, context);
+                }
+                return newDouble(_double + otherImpl->_double, context);
+              }
+          default: assert(false); return 0; // should never get here 
+        }
+      }
+      default: assert(false); return 0; // should never get here 
+    } 
+    
   } else {
-    // TBD Could be more efficient - jpcs
     // if other is not a double, then we need to promote it to a double
     return this->add((const Numeric::Ptr )other->castAs(AnyAtomicType::DOUBLE, context), context);
   } 
 }
 
-Numeric::Ptr ATDoubleOrDerivedImpl::subtract(const Numeric::Ptr &other, const DynamicContext* context) const
-{
+/** Returns a Numeric object which is the difference of this and
+   * other */
+Numeric::Ptr ATDoubleOrDerivedImpl::subtract(const Numeric::Ptr &other, const DynamicContext* context) const {
   if(AnyAtomicType::DOUBLE == other->getPrimitiveTypeIndex()) {
     // if both are of the same type exactly, we can perform subtraction
-    return new ATDoubleOrDerivedImpl(SchemaSymbols::fgURI_SCHEMAFORSCHEMA,
-      SchemaSymbols::fgDT_DOUBLE, value_ - other->asDouble());
+    ATDoubleOrDerivedImpl* otherImpl = (ATDoubleOrDerivedImpl*)(const Numeric*)other;
+    if(otherImpl->_state == NaN) return notANumber(context);
+
+    switch (_state) {
+      case NaN: return notANumber(context);
+      case INF: {
+        switch(otherImpl->_state) {
+          case NaN: return notANumber(context);   // case taken care of above
+          case NEG_NUM:
+          case NUM: return infinity(context);     // INF - NUM = INF
+          case INF: return notANumber(context);   // INF - INF = NaN
+          case NEG_INF: return infinity(context); // INF - (-INF) = INF
+          default: assert(false); return 0; // should never get here
+        }
+      }
+      case NEG_INF: {
+        switch(otherImpl->_state) {
+          case NaN: return notANumber(context);          //case taken care of above
+          case NEG_NUM:
+          case NUM: return negInfinity(context);         // -INF - NUM = -INF
+          case INF: return negInfinity(context);         // -INF - INF = -INF
+          case NEG_INF: return notANumber(context);      // -INF - (-INF) = NaN
+          default: assert(false); return 0; // should never get here
+        }
+      }                
+      case NEG_NUM:
+      case NUM: {
+        switch(otherImpl->_state) {
+          case NaN: return notANumber(context);          // case taken care of above
+          case INF: return negInfinity(context);         // NUM - INF = -INF
+          case NEG_INF: return infinity(context);        // NUM - (-INF) = INF
+          case NEG_NUM:
+          case NUM: return newDouble(_double - otherImpl->_double, context);
+          default: assert(false); return 0;  // should never get here
+        }
+      }
+      default: assert(false); return 0;  // should never get here
+    } 
+    
   } else {
     // if other is not a double, then we need to promote it to a double
     return this->subtract((const Numeric::Ptr )other->castAs(AnyAtomicType::DOUBLE, context), context);
   } 
 }
 
-Numeric::Ptr ATDoubleOrDerivedImpl::multiply(const Numeric::Ptr &other, const DynamicContext* context) const
-{
+/** Returns a Numeric object which is the product of this and other */
+Numeric::Ptr ATDoubleOrDerivedImpl::multiply(const Numeric::Ptr &other, const DynamicContext* context) const {
   if(AnyAtomicType::DOUBLE == other->getPrimitiveTypeIndex()) {
     // if both are of the same type, we can perform multiplication
-    return new ATDoubleOrDerivedImpl(SchemaSymbols::fgURI_SCHEMAFORSCHEMA,
-      SchemaSymbols::fgDT_DOUBLE, value_ * other->asDouble());
+    ATDoubleOrDerivedImpl* otherImpl = (ATDoubleOrDerivedImpl*)(const Numeric*)other;
+    if(otherImpl->_state == NaN) return notANumber(context);
+
+    switch (_state) {
+      case NaN: return notANumber(context);
+      case INF: {
+        switch(otherImpl->_state) {
+          case NaN: return notANumber(context);      // case taken care of above
+          case NEG_NUM:
+          case NUM: return other->isPositive() ? infinity(context) : negInfinity(context);        // INF * NUM = +/-INF
+          case INF: return infinity(context);        // INF * INF = INF
+          case NEG_INF: return negInfinity(context); // INF * (-INF) = -INF
+          default: assert(false); return 0; // should never get here
+        }
+      }
+      case NEG_INF: {
+        switch(otherImpl->_state) {
+          case NaN: return notANumber(context);          //case taken care of above
+          case NEG_NUM:
+          case NUM: return other->isPositive() ? negInfinity(context) : infinity(context);         // -INF * NUM = +/-INF
+          case INF: return negInfinity(context);         // -INF * INF = -INF
+          case NEG_INF: return infinity(context);        // -INF * (-INF) = INF
+          default: assert(false); return 0; // should never get here
+        }
+      }                
+      case NEG_NUM:
+      case NUM: {
+        switch(otherImpl->_state) {
+          case NaN: return notANumber(context);          // case taken care of above
+          case INF: return this->isPositive() ? infinity(context) : negInfinity(context);            // NUM * INF = +/-INF
+          case NEG_INF: return this->isPositive() ? negInfinity(context) : infinity(context);        // NUM * (-INF) = +/-INF
+          case NEG_NUM:
+          case NUM: 
+            if(other->isZero() || this->isZero()) {
+              if((this->isNegative() && other->isPositive()) ||
+                 (this->isPositive() && other->isNegative())) {
+                return negZero(context);                // 0 / (-NUM) or (-0) / NUM = -0
+              } else {
+                return newDouble(0, context);           // 0 / NUM or (-0) / (-NUM) = 0
+              }
+            }
+            return newDouble(_double * otherImpl->_double, context);
+          default: assert(false); return 0;  // should never get here
+        }
+      }
+      default: assert(false); return 0;  // should never get here
+    } 
+    
   } else {
     // if other is not a double, then we need to promote it to a double
     return this->multiply((const Numeric::Ptr )other->castAs(AnyAtomicType::DOUBLE, context), context);
   } 
 }
 
-Numeric::Ptr ATDoubleOrDerivedImpl::divide(const Numeric::Ptr &other, const DynamicContext* context) const
-{
+/** Returns a Numeric object which is the quotient of this and other */
+Numeric::Ptr ATDoubleOrDerivedImpl::divide(const Numeric::Ptr &other, const DynamicContext* context) const {
   if(AnyAtomicType::DOUBLE == other->getPrimitiveTypeIndex()) {
     // if both are of the same type, we can perform division
-    return new ATDoubleOrDerivedImpl(SchemaSymbols::fgURI_SCHEMAFORSCHEMA,
-      SchemaSymbols::fgDT_DOUBLE, value_ / other->asDouble());
+    ATDoubleOrDerivedImpl* otherImpl = (ATDoubleOrDerivedImpl*)(const Numeric*)other;
+    if(otherImpl->_state == NaN) return notANumber(context);
+        switch (_state) {
+      case NaN: return notANumber(context);
+      case INF: {
+        switch(otherImpl->_state) {
+          case NaN: return notANumber(context);      // case taken care of above
+          case NEG_NUM:
+          case NUM: return other->isPositive() ? infinity(context) : negInfinity(context);        // INF / NUM = +/-INF
+          case INF: return notANumber(context);      // INF / INF = NaN
+          case NEG_INF: return notANumber(context);  // INF / (-INF) = NaN
+          default: assert(false); return 0; // should never get here
+        } // switch
+      }// case
+      case NEG_INF: {
+        switch(otherImpl->_state) {
+          case NaN: return notANumber(context);          //case taken care of above
+          case NEG_NUM:
+          case NUM: return other->isPositive() ? negInfinity(context) : infinity(context);         // -INF / NUM = -INF
+          case INF: return notANumber(context);          // -INF / INF = NaN
+          case NEG_INF: return notANumber(context);      // -INF / (-INF) = NaN
+          default: assert(false); return 0; // should never get here
+        } // switch
+      } // case    
+      case NEG_NUM:
+      case NUM: {
+        switch(otherImpl->_state) {
+          case NaN: return notANumber(context);          // case taken care of above
+          case INF: {                                    // NUM / INF = +/-0
+            if(this->isNegative()) {
+              return negZero(context);
+            } else {
+              return newDouble(0, context);
+            }
+          }// case
+          case NEG_INF: {                               // NUM / -INF = +/-0
+            if(this->isPositive()) {
+              return negZero(context);
+            } else {
+              return newDouble(0, context);
+            }
+          }// case
+          case NEG_NUM:
+          case NUM: {
+            if(other->isZero()) {
+              if(this->isZero()) return notANumber(context);
+              if((this->isNegative() && other->isPositive()) ||
+                 (this->isPositive() && other->isNegative())) {
+                return negInfinity(context);            // NUM / (-0) or (-NUM) / 0 = -INF
+              } else {
+                return infinity(context);               // NUM / 0 or (-NUM) / (-0) = INF
+              }
+            }
+            else if(this->isZero())
+            {
+              if((this->isNegative() && other->isPositive()) ||
+                 (this->isPositive() && other->isNegative())) {
+                return negZero(context);                // 0 / (-NUM) or (-0) / NUM = -0
+              } else {
+                return newDouble(0, context);           // 0 / NUM or (-0) / (-NUM) = 0
+              }
+            }
+            return newDouble(_double / otherImpl->_double, context);
+          }// case
+          default: assert(false); return 0;  // should never get here
+        }// switch
+      }// case
+      default: assert(false); return 0;  // should never get here
+    }// switch
+
   } else {
     // if other is not a double, then we need to promote it to a double
     return this->divide((const Numeric::Ptr )other->castAs(AnyAtomicType::DOUBLE, context), context);
   } 
 }
 
-Numeric::Ptr ATDoubleOrDerivedImpl::mod(const Numeric::Ptr &other, const DynamicContext* context) const
-{
+/** Returns the mod of its operands as a Numeric */
+Numeric::Ptr ATDoubleOrDerivedImpl::mod(const Numeric::Ptr &other, const DynamicContext* context) const {
   if(AnyAtomicType::DOUBLE == other->getPrimitiveTypeIndex()) {
     // if both are of the same type, we can perform mod
-    return new ATDoubleOrDerivedImpl(SchemaSymbols::fgURI_SCHEMAFORSCHEMA,
-      SchemaSymbols::fgDT_DOUBLE, ::fmod(value_, other->asDouble()));
+    ATDoubleOrDerivedImpl* otherImpl = (ATDoubleOrDerivedImpl*)(const Numeric*)other;
+    if(this->isNaN() || otherImpl->isNaN() || this->isInfinite() || otherImpl->isZero()) {
+      return notANumber(context);
+    
+    } else if(otherImpl->isInfinite() || this->isZero()) {
+      return (const Numeric::Ptr )this->castAs(AnyAtomicType::DOUBLE, context);
+    
+    } else {
+      MAPM result = _double;
+      MAPM r;
+      r = result.integer_divide(otherImpl->_double);
+      result -= r * otherImpl->_double;
+      if (result == 0 && isNegative())
+        return negZero(context);
+      return newDouble(result, context);
+    }
   } else {
     // if other is not a double, then we need to promote it to a double
     return this->mod((const Numeric::Ptr )other->castAs(AnyAtomicType::DOUBLE, context), context);
@@ -305,188 +397,516 @@ Numeric::Ptr ATDoubleOrDerivedImpl::power(const Numeric::Ptr &other, const Dynam
   case FLOAT:
     return power((Numeric*)other->castAs(DOUBLE, context).get(), context);
   case DOUBLE: {
-    return new ATDoubleOrDerivedImpl(SchemaSymbols::fgURI_SCHEMAFORSCHEMA,
-      SchemaSymbols::fgDT_DOUBLE, ::pow(value_,other->asDouble()));
+    ATDoubleOrDerivedImpl *otherImpl = (ATDoubleOrDerivedImpl*)other.get();
+
+    switch(_state) {
+    case NaN: return this;
+    case INF: {
+      switch(otherImpl->_state) {
+      case NaN: return other;
+      case NEG_NUM:
+      case NUM:
+      case INF:
+      case NEG_INF: return this;
+      default: assert(false); return 0; // should never get here
+      }
+    }
+    case NEG_INF: {
+      switch(otherImpl->_state) {
+      case NaN: return other;
+      case NEG_NUM:
+      case NUM:
+      case INF:
+      case NEG_INF: return this;
+      default: assert(false); return 0; // should never get here
+      }
+    }                
+    case NEG_NUM:
+    case NUM: {
+      switch(otherImpl->_state) {
+      case NaN: return other;
+      case INF: return other;
+      case NEG_INF: return infinity(context);
+      case NEG_NUM:
+      case NUM: 
+        return newDouble(_double.pow(otherImpl->_double), context);
+      default: assert(false); return 0;  // should never get here
+      }
+    }
+    default: assert(false); return 0;  // should never get here
+    } 
   }
   default: assert(false); return 0; // Shouldn't happen
   }
 }
 
-Numeric::Ptr ATDoubleOrDerivedImpl::floor(const DynamicContext* context) const
-{
-  return new ATDoubleOrDerivedImpl(SchemaSymbols::fgURI_SCHEMAFORSCHEMA,
-    SchemaSymbols::fgDT_DOUBLE, ::floor(value_));
-}
-
-Numeric::Ptr ATDoubleOrDerivedImpl::ceiling(const DynamicContext* context) const
-{
-  return new ATDoubleOrDerivedImpl(SchemaSymbols::fgURI_SCHEMAFORSCHEMA,
-    SchemaSymbols::fgDT_DOUBLE, ::ceil(value_));
-}
-
-Numeric::Ptr ATDoubleOrDerivedImpl::round(const DynamicContext* context) const
-{
-  return new ATDoubleOrDerivedImpl(SchemaSymbols::fgURI_SCHEMAFORSCHEMA,
-    SchemaSymbols::fgDT_DOUBLE, ::round(value_));
-}
-
-Numeric::Ptr ATDoubleOrDerivedImpl::roundHalfToEven(const Numeric::Ptr &precision, const DynamicContext* context) const
-{
-  switch(getState()) {
-  case NaN:
-  case INF:
-  case NEG_INF: return this;
-  case NEG_NUM:
-  case NUM: break;
+/** Returns the floor of this Numeric */
+Numeric::Ptr ATDoubleOrDerivedImpl::floor(const DynamicContext* context) const {
+  switch (_state) {
+    case NaN: return notANumber(context);
+    case INF: return infinity(context);
+    case NEG_INF: return negInfinity(context);
+    case NEG_NUM:
+    case NUM: { 
+      if (isZero() && isNegative())
+        return this;
+      return newDouble(_double.floor(), context); 
+    }      
+    default: { assert(false); return 0; // should never get here 
+    }
   }
- 
-  if(isZero() && isNegative())
+}
+
+/** Returns the ceiling of this Numeric */
+Numeric::Ptr ATDoubleOrDerivedImpl::ceiling(const DynamicContext* context) const {
+  switch (_state) {
+    case NaN: return notANumber(context);
+    case INF: return infinity(context);
+    case NEG_INF: return negInfinity(context);
+    case NEG_NUM:
+    case NUM: { 
+      if (isNegative() && _double >= -0.5) {
+        return negZero(context);
+      }
+      return newDouble(_double.ceil(), context); 
+    }
+    default: { assert(false); return 0; // should never get here 
+    }
+  }
+}
+
+/** Rounds this Numeric */
+Numeric::Ptr ATDoubleOrDerivedImpl::round(const DynamicContext* context) const {
+  switch (_state) {
+    case NaN: return notANumber(context);
+    case INF: return infinity(context);
+    case NEG_INF: return negInfinity(context);
+    case NEG_NUM:
+    case NUM: { 
+      if (isNegative() &&_double >= -0.5) {
+        return negZero(context);
+      }      
+      MAPM value = _double + 0.5; 
+      return newDouble(value.floor(), context); 
+    }
+  default: {assert(false); return 0; // should never get here
+    }
+  }
+}
+
+/** Rounds this Numeric to the given precision, and rounds a half to even */
+Numeric::Ptr ATDoubleOrDerivedImpl::roundHalfToEven(const Numeric::Ptr &precision, const DynamicContext* context) const {
+  switch (_state) {
+    case NaN: return notANumber(context);
+    case INF: return infinity(context);
+    case NEG_INF: return negInfinity(context);
+    case NEG_NUM:
+    case NUM: break;
+    default: { assert(false); return 0;  // should never get here
+    }
+  }
+
+  if (isZero() && isNegative())
     return this;
   
-  double exp = ::pow(10.0, precision->asDouble());
-  double val = value_ * exp;
+  ATDoubleOrDerived::Ptr double_precision = (const Numeric::Ptr)precision->castAs(AnyAtomicType::DOUBLE, context);
+  MAPM exp = MAPM(10).pow(((ATDoubleOrDerivedImpl*)(const ATDoubleOrDerived*)double_precision)->_double);
+  MAPM value = _double * exp;
+  bool halfVal = false;
 
   // check if we're rounding on a half value 
-  bool halfVal = false;
-  if((val-0.5) == ::floor(val))
+  if((value-0.5) == (value.floor())) {
     halfVal = true;
-
-  val = value_ * exp + 0.5;
-  val = ::floor(val);
+  }
+  value = _double * exp + 0.5;
+  value = value.floor();
 
   // if halfVal make sure what we return has the least significant digit even
-  if(halfVal && ::fmod(val, 2) == 1)
-      val = val - 1;
-  val = val / exp;
-
-  return new ATDoubleOrDerivedImpl(SchemaSymbols::fgURI_SCHEMAFORSCHEMA,
-    SchemaSymbols::fgDT_DOUBLE, val);
-}
-
-Numeric::Ptr ATDoubleOrDerivedImpl::invert(const DynamicContext* context) const
-{
-  return new ATDoubleOrDerivedImpl(SchemaSymbols::fgURI_SCHEMAFORSCHEMA,
-    SchemaSymbols::fgDT_DOUBLE, -value_);
-}
-
-Numeric::Ptr ATDoubleOrDerivedImpl::abs(const DynamicContext* context) const
-{
-  return new ATDoubleOrDerivedImpl(SchemaSymbols::fgURI_SCHEMAFORSCHEMA,
-    SchemaSymbols::fgDT_DOUBLE, ::fabs(value_));
-}
-
-Numeric::Ptr ATDoubleOrDerivedImpl::sqrt(const DynamicContext* context) const
-{
-  return new ATDoubleOrDerivedImpl(SchemaSymbols::fgURI_SCHEMAFORSCHEMA,
-    SchemaSymbols::fgDT_DOUBLE, ::sqrt(value_));
-}
-
-Numeric::Ptr ATDoubleOrDerivedImpl::sin(const DynamicContext* context) const
-{
-  return new ATDoubleOrDerivedImpl(SchemaSymbols::fgURI_SCHEMAFORSCHEMA,
-    SchemaSymbols::fgDT_DOUBLE, ::sin(value_));
-}
-
-Numeric::Ptr ATDoubleOrDerivedImpl::cos(const DynamicContext* context) const
-{
-  return new ATDoubleOrDerivedImpl(SchemaSymbols::fgURI_SCHEMAFORSCHEMA,
-    SchemaSymbols::fgDT_DOUBLE, ::cos(value_));
-}
-
-Numeric::Ptr ATDoubleOrDerivedImpl::tan(const DynamicContext* context) const
-{
-  return new ATDoubleOrDerivedImpl(SchemaSymbols::fgURI_SCHEMAFORSCHEMA,
-    SchemaSymbols::fgDT_DOUBLE, ::tan(value_));
-}
-
-Numeric::Ptr ATDoubleOrDerivedImpl::asin(const DynamicContext* context) const
-{
-  return new ATDoubleOrDerivedImpl(SchemaSymbols::fgURI_SCHEMAFORSCHEMA,
-    SchemaSymbols::fgDT_DOUBLE, ::asin(value_));
-}
-
-Numeric::Ptr ATDoubleOrDerivedImpl::acos(const DynamicContext* context) const
-{
-  return new ATDoubleOrDerivedImpl(SchemaSymbols::fgURI_SCHEMAFORSCHEMA,
-    SchemaSymbols::fgDT_DOUBLE, ::acos(value_));
-}
-
-Numeric::Ptr ATDoubleOrDerivedImpl::atan(const DynamicContext* context) const
-{
-  return new ATDoubleOrDerivedImpl(SchemaSymbols::fgURI_SCHEMAFORSCHEMA,
-    SchemaSymbols::fgDT_DOUBLE, ::atan(value_));
-}
-
-Numeric::Ptr ATDoubleOrDerivedImpl::log(const DynamicContext* context) const
-{
-  return new ATDoubleOrDerivedImpl(SchemaSymbols::fgURI_SCHEMAFORSCHEMA,
-    SchemaSymbols::fgDT_DOUBLE, ::log(value_));
-}
-
-Numeric::Ptr ATDoubleOrDerivedImpl::exp(const DynamicContext* context) const
-{
-  return new ATDoubleOrDerivedImpl(SchemaSymbols::fgURI_SCHEMAFORSCHEMA,
-    SchemaSymbols::fgDT_DOUBLE, ::exp(value_));
-}
-
-bool ATDoubleOrDerivedImpl::isZero() const
-{
-  return value_ == 0.0;
-}
-
-bool ATDoubleOrDerivedImpl::isNegative() const
-{
-  return isNegative(value_);
-}
-
-bool ATDoubleOrDerivedImpl::isNegative(double v)
-{
-#if defined(WIN32)
-  return _copysign(1.0, v) < 0;
-#else
-  return copysign(1.0, v) < 0;
-#endif
-}
-
-bool ATDoubleOrDerivedImpl::isPositive() const
-{
-  return !isNegative(value_);
-}
-
-bool ATDoubleOrDerivedImpl::isNaN() const
-{
-  return value_ != value_;
-}
-
-bool ATDoubleOrDerivedImpl::isInfinite() const
-{
-  switch(getState()) {
-  case INF:
-  case NEG_INF: return true;
-  case NaN:
-  case NEG_NUM:
-  case NUM: break;
+  if (halfVal) {
+    if(value.is_odd()) {
+      value = value - 1;
+    }
   }
-  return false;
+  value = value / exp;
+
+  // the spec doesn't actually say to do this, but djf believes this is the correct way to handle rounding of -ve values which will result in 0.0E0
+  // if (value == 0 && isNegative())
+    // return negZero(context);
+  return newDouble(value, context);
 }
 
-bool ATDoubleOrDerivedImpl::isInteger() const
-{
-  return ::isInteger(value_);
+/** Returns the Additive inverse of this Numeric */
+Numeric::Ptr ATDoubleOrDerivedImpl::invert(const DynamicContext* context) const {
+  switch (_state) {
+    case NaN: return this;
+    case INF: return negInfinity(context);
+    case NEG_INF: return infinity(context);
+    case NEG_NUM:
+    case NUM: 
+        if(this->isZero())
+        {
+          if(this->isNegative())
+            return newDouble(0, context);
+          else
+            return negZero(context);
+        }
+        return newDouble(_double.neg(), context);
+    default: assert(false); return 0;  // should never get here
+  }
 }
 
-double ATDoubleOrDerivedImpl::parseDouble(const XMLCh* const value)
+/** Returns the absolute value of this Numeric */
+Numeric::Ptr ATDoubleOrDerivedImpl::abs(const DynamicContext* context) const {
+  switch (_state) {
+    case NaN: return this;
+    case INF: return infinity(context);
+    case NEG_INF: return infinity(context);
+    case NEG_NUM:
+    case NUM: return newDouble(_double.abs(), context);
+    default: assert(false); return 0;  // should never get here
+  }
+}
+
+/** Returns the square root of this Numeric */
+Numeric::Ptr ATDoubleOrDerivedImpl::sqrt(const DynamicContext* context) const {
+  switch (_state) {
+    case NaN: return this;
+    case INF: return infinity(context);
+    case NEG_INF: return notANumber(context);
+    case NEG_NUM: return notANumber(context);
+    case NUM: return newDouble(_double.sqrt(), context);
+    default: assert(false); return 0;  // should never get here
+  }
+}
+
+Numeric::Ptr ATDoubleOrDerivedImpl::sin(const DynamicContext* context) const {
+  switch (_state) {
+    case NaN: return this;
+    case INF: return notANumber(context);
+    case NEG_INF: return notANumber(context);
+    case NEG_NUM:
+    case NUM: return newDouble(_double.sin(), context);
+    default: assert(false); return 0;  // should never get here
+  }
+}
+
+Numeric::Ptr ATDoubleOrDerivedImpl::cos(const DynamicContext* context) const {
+  switch (_state) {
+    case NaN: return this;
+    case INF: return notANumber(context);
+    case NEG_INF: return notANumber(context);;
+    case NEG_NUM:
+    case NUM: return newDouble(_double.cos(), context);
+    default: assert(false); return 0;  // should never get here
+  }
+}
+
+Numeric::Ptr ATDoubleOrDerivedImpl::tan(const DynamicContext* context) const {
+  switch (_state) {
+    case NaN: return this;
+    case INF: return notANumber(context);
+    case NEG_INF: return notANumber(context);
+    case NEG_NUM:
+    case NUM: return newDouble(_double.tan(), context);
+    default: assert(false); return 0;  // should never get here
+  }
+}
+
+Numeric::Ptr ATDoubleOrDerivedImpl::asin(const DynamicContext* context) const {
+  switch (_state) {
+    case NaN: return this;
+    case INF: return notANumber(context);
+    case NEG_INF: return notANumber(context);
+    case NEG_NUM:
+    case NUM: 
+               if(_double.abs() > 1)return notANumber(context);
+               return newDouble(_double.acos(), context);
+    default: assert(false); return 0;  // should never get here
+  }
+}
+
+Numeric::Ptr ATDoubleOrDerivedImpl::acos(const DynamicContext* context) const {
+  switch (_state) {
+    case NaN: return this;
+    case INF: return notANumber(context);
+    case NEG_INF: return notANumber(context);
+    case NEG_NUM:
+    case NUM: 
+               if(_double.abs() > 1)return notANumber(context);
+               return newDouble(_double.acos(), context);
+    default: assert(false); return 0;  // should never get here
+  }
+}
+
+Numeric::Ptr ATDoubleOrDerivedImpl::atan(const DynamicContext* context) const {
+  switch (_state) {
+    case NaN: return this;
+    case INF:     return newDouble((MM_HALF_PI), context);
+    case NEG_INF: return newDouble(MAPM(MM_HALF_PI).neg() , context);
+    case NEG_NUM: 
+    case NUM: return newDouble(_double.atan(), context);
+    default: assert(false); return 0;  // should never get here
+  }
+}
+
+Numeric::Ptr ATDoubleOrDerivedImpl::log(const DynamicContext* context) const {
+  switch (_state) {
+    case NaN: return this;
+    case INF: return infinity(context);
+    case NEG_INF: return notANumber(context);
+    case NEG_NUM: return notANumber(context);
+    case NUM: if(_double == 0) return notANumber(context);
+                  return newDouble(_double.log(), context);
+    default: assert(false); return 0;  // should never get here
+  }
+}
+
+Numeric::Ptr ATDoubleOrDerivedImpl::exp(const DynamicContext* context) const {
+  switch (_state) {
+    case NaN: return this;
+    case INF: return infinity(context);
+    case NEG_INF: return newDouble(0, context);
+    case NEG_NUM:
+    case NUM: return newDouble(_double.exp(), context);
+    default: assert(false); return 0;  // should never get here
+  }
+}
+
+
+/** Does this Numeric have value 0? */
+bool ATDoubleOrDerivedImpl::isZero() const {
+  switch (_state) {
+    case NaN: 
+    case INF: 
+    case NEG_INF: return false;
+    default: /*NUM*/{
+      return _double.sign() == 0;
+    }
+  }
+}
+
+/** Is this Numeric negative? */
+bool ATDoubleOrDerivedImpl::isNegative() const {
+  switch (_state) {
+  case NaN:
+  case INF:
+  case NUM: return false;
+  case NEG_NUM:
+  case NEG_INF: return true;
+  }
+  assert(false);
+  return false; // should never get here
+}
+
+/** Is this Numeric positive? */
+bool ATDoubleOrDerivedImpl::isPositive() const {
+  switch (_state) {
+  case INF:
+  case NUM: return true;
+  case NaN:
+  case NEG_INF:
+  case NEG_NUM: return false;
+  }
+  assert(false);
+  return false; // should never get here
+}
+
+/* Is this xs:double not a number */
+bool ATDoubleOrDerivedImpl::isNaN() const {
+  return _state == NaN;
+}
+
+
+/* Is this xs:double infinite? */
+bool ATDoubleOrDerivedImpl::isInfinite() const {
+  return _state == INF || _state == NEG_INF;
+}
+
+
+AnyAtomicType::AtomicObjectType ATDoubleOrDerivedImpl::getPrimitiveTypeIndex() const {
+  return this->getTypeIndex();
+}
+
+/* returns a new infinity xs:double*/
+ATDoubleOrDerived::Ptr ATDoubleOrDerivedImpl::infinity(const DynamicContext* context) const {
+  return context->getItemFactory()->createDouble(Numeric::INF_string, context);
+}
+
+/* returns a new negative infinity xs:double*/
+ATDoubleOrDerived::Ptr ATDoubleOrDerivedImpl::negInfinity(const DynamicContext* context) const {
+  return context->getItemFactory()->createDouble(Numeric::NegINF_string, context);
+}
+  
+/* returns a NaN xs:double*/
+ATDoubleOrDerived::Ptr ATDoubleOrDerivedImpl::notANumber(const DynamicContext* context) const {
+  return context->getItemFactory()->createDouble(Numeric::NaN_string, context);
+}
+
+/* returns a -0 ATDoubleOrDerived*/
+ATDoubleOrDerived::Ptr ATDoubleOrDerivedImpl::negZero(const DynamicContext* context) const {
+  return context->getItemFactory()->createDouble(Numeric::NegZero_string, context);
+}
+
+/*returns a ATDoubleOrDerived of value value*/
+ATDoubleOrDerived::Ptr ATDoubleOrDerivedImpl::newDouble(MAPM value, const DynamicContext* context) const {
+  return context->getItemFactory()->createDouble(value, context);
+}
+
+static MAPM parse(const XMLCh* const value, Numeric::State &state)
 {
-  if(value == NULL)
-    return numeric_limits<double>::quiet_NaN();
-  else if(XPath2Utils::equals(value, Numeric::NegINF_string))
-    return -std::numeric_limits<double>::infinity();
-  else if(XPath2Utils::equals(value, Numeric::INF_string))
-    return std::numeric_limits<double>::infinity();
-  return ::atof(UTF8(value));
+  if(value == NULL) {
+    // Not a Number
+    state = Numeric::NaN;
+    return 0;
+  }
+  
+  unsigned int length = XPath2Utils::uintStrlen(value) + 1;
+
+  AutoDeleteArray<char> buffer(new char[length]);
+
+  bool gotBase = false;
+  bool gotPoint = false;
+  bool gotSign = false;
+  bool gotDigit = false;
+  bool stop = false;
+  bool munchWS = true;
+  bool isNegative = false;
+
+  const XMLCh *src = value;
+  char *dest = buffer;
+  XMLCh tmpChar;
+  while(!stop && *src != 0) {
+    tmpChar = *src++;
+    
+    switch(tmpChar) {
+
+    case L'+': {
+      *dest++ = '+';
+      if(gotSign || gotDigit) {
+        stop = true;
+      } else {
+        gotSign = true;
+      }
+      break;
+    }
+             
+    case L'-': {
+      *dest++ = '-';
+      if(gotSign || gotDigit) {
+        stop = true;
+      } else {
+        gotSign = true;
+        if(!gotBase) isNegative = true;
+      }
+      break;
+    }
+             
+    case 0x0045:
+    case 0x0065: {
+      *dest++ = 'e';
+      if(!gotDigit || gotBase) {
+        stop = true;
+      } else {
+        gotPoint = false;
+        gotSign = false;        
+        gotBase = true;
+        gotDigit = false;
+      }
+      break;
+    }
+             
+      //This is '.'
+    case 0x002e: {
+      *dest++ = '.';
+      if(gotPoint || gotBase) {
+        stop = true;
+      } else {
+        gotPoint = true;
+      }
+      break;
+    }
+             
+    case 0x0030:
+    case 0x0031:
+    case 0x0032:
+    case 0x0033:
+    case 0x0034:
+    case 0x0035:
+    case 0x0036:
+    case 0x0037:
+    case 0x0038:
+    case 0x0039: {
+      gotDigit = true;
+      *dest++ = (char)(tmpChar - 0x0030) + '0';
+      break;
+    }
+             
+      // whitespace at start or end of string...
+    case 0x0020:
+    case 0x0009:
+    case 0x000d:
+    case 0x000a: {
+      bool endOfWS = false;
+      while(!endOfWS && *src != 0) {
+        tmpChar = *src++;
+        switch(tmpChar) {
+        case 0x0020:
+        case 0x0009:
+        case 0x000d:
+        case 0x000a: {
+          break;
+        }
+        default: {
+          endOfWS = true;
+          --src;
+          if(munchWS) {
+            //end of leading whitespace
+            munchWS = false;
+          } else {
+            //trailing whitespace is followed by other characters - so return NaN.
+            stop = true;
+          }
+        }
+        }
+      }
+      break;
+    }
+             
+    default:
+      stop = true;
+      break;
+             
+    }
+  }
+
+  if(!gotDigit || stop) {
+    if(XPath2Utils::equals(value, Numeric::NegINF_string)) {
+      state = Numeric::NEG_INF;
+    }
+    else if (XPath2Utils::equals(value, Numeric::INF_string)) {
+      state = Numeric::INF;
+    }
+    else {
+      state = Numeric::NaN;
+    }
+    return 0;
+  }
+
+  *dest++ = 0; // Null terminate  
+  if(isNegative) state = Numeric::NEG_NUM;
+  else state = Numeric::NUM;
+
+  return (char*)buffer;
 }
 
 void ATDoubleOrDerivedImpl::setDouble(const XMLCh* const value)
 {
-  value_ = parseDouble(value);
+  _double = parse(value, _state);
+}
+
+MAPM ATDoubleOrDerivedImpl::parseDouble(const XMLCh* const value, State &state)
+{
+  MAPM result = parse(value, state);
+  Numeric::checkDoubleLimits(state, result);
+  return result;
 }

@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,41 +26,47 @@
 
 class DynamicContext;
 class StaticContext;
-class Collation;
 
 class XQILLA_API AnyAtomicType: public Item
 {
 
 public:
   enum AtomicObjectType {
-    ANY_URI            = 0,
-    BASE_64_BINARY     = 1,
-    BOOLEAN            = 2,
-    DATE               = 3,
-    DATE_TIME          = 4,
-    DAY_TIME_DURATION  = 5,
-    DECIMAL            = 6,
-    DOUBLE             = 7,
-    DURATION           = 8,
-    FLOAT              = 9,
-    G_DAY              = 10,
-    G_MONTH            = 11,
-    G_MONTH_DAY        = 12,
-    G_YEAR             = 13,
-    G_YEAR_MONTH       = 14,
-    HEX_BINARY         = 15,
-    NOTATION           = 16,
-    QNAME              = 17,
-    STRING             = 18,
-    TIME               = 19,
-    UNTYPED_ATOMIC     = 20,
-    YEAR_MONTH_DURATION= 21,
-    NumAtomicObjectTypes= 22
+    ANY_SIMPLE_TYPE    = 0,
+    ANY_URI            = 1,
+    BASE_64_BINARY     = 2,
+    BOOLEAN            = 3,
+    DATE               = 4,
+    DATE_TIME          = 5,
+    DAY_TIME_DURATION  = 6,
+    DECIMAL            = 7,
+    DOUBLE             = 8,
+    DURATION           = 9,
+    FLOAT              = 10,
+    G_DAY              = 11,
+    G_MONTH            = 12,
+    G_MONTH_DAY        = 13,
+    G_YEAR             = 14,
+    G_YEAR_MONTH       = 15,
+    HEX_BINARY         = 16,
+    NOTATION           = 17,
+    QNAME              = 18,
+    STRING             = 19,
+    TIME               = 20,
+    UNTYPED_ATOMIC     = 21,
+    YEAR_MONTH_DURATION= 22,
+    NumAtomicObjectTypes= 23
   };
 
   typedef RefCountPointer<const AnyAtomicType> Ptr;
 
-  virtual Type getType() const { return ATOMIC; }
+  /* isAtomicValue from Item */
+  virtual bool isAtomicValue() const;
+
+  /* isNode from Item */
+  virtual bool isNode() const;
+
+  virtual bool isFunction() const;
 
   /* is this type numeric?  Return false by default */
   virtual bool isNumericValue() const;
@@ -105,9 +111,6 @@ public:
    * in the context of the datatype), false otherwise */
   virtual bool equals(const AnyAtomicType::Ptr &target, const DynamicContext* context) const = 0;
 
-  int compare(const AnyAtomicType::Ptr &b, const Collation *collation, const DynamicContext *context) const;
-  virtual size_t hash(const Collation *collation, const DynamicContext *context) const;
-
   /* Returns true if this typeName and uri match the given typeName and uri */
   virtual bool isOfType(const XMLCh* targetURI, const XMLCh* targetType, const DynamicContext* context) const;
 
@@ -124,7 +127,7 @@ public:
    * (b) the input type is a derived atomic type and the 
    *     target type is a supertype of the input type
    * (c) the target type is a derived atomic type and the 
-   *     input type is xs:string, or a supertype of the 
+   *     input type is xs:string, xs:anySimpleType, or a supertype of the 
    *     target type.
    * (d) If a primitive type P1 can be cast into a primitive type P2, then any 
    *     subtype of P1 can be cast into any subtype of P2
@@ -132,7 +135,6 @@ public:
   bool castIsSupported(AtomicObjectType targetIndex, const DynamicContext* context) const;
 
   virtual AtomicObjectType getPrimitiveTypeIndex() const = 0;
-  AnyAtomicType::AtomicObjectType getSortType() const;
  
   static const XMLCh fgDT_ANYATOMICTYPE[];
 

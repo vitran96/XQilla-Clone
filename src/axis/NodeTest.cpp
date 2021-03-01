@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@
 #include <xqilla/items/Node.hpp>
 #include <xqilla/context/DynamicContext.hpp>
 #include <xqilla/utils/XStr.hpp>
-#include <xqilla/ast/StaticType.hpp>
 
 #if defined(XERCES_HAS_CPP_NAMESPACE)
 XERCES_CPP_NAMESPACE_USE
@@ -89,39 +88,37 @@ void NodeTest::getStaticType(StaticType &st, const StaticContext *context,
                              bool &isExact, const LocationInfo *location) const
 {
   if(_itemType) {
-    st = _itemType;
-    isExact = true;
+    _itemType->getStaticType(st, context, isExact, location);
   }
   else {
     if(_wildcardType) {
       if(_hasChildren) {
-        st = StaticType::ELEMENT;
-        st.typeUnion(StaticType::DOCUMENT);
+        st = StaticType::ELEMENT_TYPE | StaticType::DOCUMENT_TYPE;
       }
       else {
-        st = StaticType::NODE;
+        st = StaticType::NODE_TYPE;
       }
     }
     else if(_type == Node::document_string) {
-      st = StaticType::DOCUMENT;
+      st = StaticType::DOCUMENT_TYPE;
     }
     else if(_type == Node::element_string) {
-      st = StaticType::ELEMENT;
+      st = StaticType::ELEMENT_TYPE;
     }
     else if(_type == Node::attribute_string) {
-      st = StaticType::ATTRIBUTE;
+      st = StaticType::ATTRIBUTE_TYPE;
     }
     else if(_type == Node::namespace_string) {
-      st = StaticType::NAMESPACE;
+      st = StaticType::NAMESPACE_TYPE;
     }
     else if(_type == Node::processing_instruction_string) {
-      st = StaticType::PI;
+      st = StaticType::PI_TYPE;
     }
     else if(_type == Node::comment_string) {
-      st = StaticType::COMMENT;
+      st = StaticType::COMMENT_TYPE;
     }
     else if(_type == Node::text_string) {
-      st = StaticType::TEXT;
+      st = StaticType::TEXT_TYPE;
     }
 
     if(_wildcardName && _wildcardNamespace)
@@ -271,18 +268,17 @@ void NodeTest::staticResolution(StaticContext *context, const LocationInfo *loca
   // Convert certain NodeTest objects that use an ItemType to ones that don't,
   // for efficiency and simplicity of comparison.
   if(_itemType != 0) {
-    // This will never be a type alias
     _itemType->staticResolution(context, location);
 
     switch(_itemType->getItemTestType()) {
-    case ItemType::TEST_NODE:
+    case SequenceType::ItemType::TEST_NODE:
       _wildcardType = true;
       _wildcardNamespace = true;
       _wildcardName = true;
       _itemType = 0;
       break;
-    case ItemType::TEST_DOCUMENT:
-      if(_itemType->getNameName() == 0 && _itemType->getTypeName() == 0) {
+    case SequenceType::ItemType::TEST_DOCUMENT:
+      if(_itemType->getName() == 0 && _itemType->getType() == 0) {
         _wildcardType = false;
         _type = Node::document_string;
         _wildcardNamespace = true;
@@ -290,60 +286,60 @@ void NodeTest::staticResolution(StaticContext *context, const LocationInfo *loca
         _itemType = 0;
       }
       break;
-    case ItemType::TEST_TEXT:
+    case SequenceType::ItemType::TEST_TEXT:
       _wildcardType = false;
       _type = Node::text_string;
       _wildcardNamespace = true;
       _wildcardName = true;
       _itemType = 0;
       break;
-    case ItemType::TEST_COMMENT:
+    case SequenceType::ItemType::TEST_COMMENT:
       _wildcardType = false;
       _type = Node::comment_string;
       _wildcardNamespace = true;
       _wildcardName = true;
       _itemType = 0;
       break;
-    case ItemType::TEST_PI:
+    case SequenceType::ItemType::TEST_PI:
       _wildcardType = false;
       _type = Node::processing_instruction_string;
       _wildcardNamespace = true;
-      if(_itemType->getNameName() == 0) {
+      if(_itemType->getName() == 0) {
         _wildcardName = true;
       } else {
         _wildcardName = false;
-        _name = _itemType->getNameName();
+        _name = _itemType->getName()->getName();
       }
       _itemType = 0;
       break;
-    case ItemType::TEST_ATTRIBUTE:
-      if(_itemType->getTypeName() == 0) {
+    case SequenceType::ItemType::TEST_ATTRIBUTE:
+      if(_itemType->getType() == 0) {
         _wildcardType = false;
         _type = Node::attribute_string;
-        if(_itemType->getNameName() == 0) {
+        if(_itemType->getName() == 0) {
           _wildcardNamespace = true;
           _wildcardName = true;
         } else {
           _wildcardNamespace = false;
-          _uri = context->getUriBoundToPrefix(_itemType->getNamePrefix(), location);
+          _uri = context->getUriBoundToPrefix(_itemType->getName()->getPrefix(), location);
           _wildcardName = false;
-          _name = _itemType->getNameName();
+          _name = _itemType->getName()->getName();
         }
         _itemType = 0;
       }
       break;
-    case ItemType::TEST_ELEMENT:
-      if(_itemType->getTypeName() == 0) {
+    case SequenceType::ItemType::TEST_ELEMENT:
+      if(_itemType->getType() == 0) {
         _wildcardType = false;
         _type = Node::element_string;
-        if(_itemType->getNameName() == 0) {
+        if(_itemType->getName() == 0) {
           _wildcardNamespace = true;
           _wildcardName = true;
         } else {
           _wildcardNamespace = false;
-          _uri = context->getUriBoundToPrefix(_itemType->getNamePrefix(), location);
+          _uri = context->getUriBoundToPrefix(_itemType->getName()->getPrefix(), location);
           _wildcardName = false;
-          _name = _itemType->getNameName();
+          _name = _itemType->getName()->getName();
         }
         _itemType = 0;
       }
@@ -357,11 +353,11 @@ bool NodeTest::isNodePrefixSet() const {
   return _usePrefix;
 }
 
-ItemType* NodeTest::getItemType() const {
+SequenceType::ItemType* NodeTest::getItemType() const {
   return _itemType;
 }
 
-void NodeTest::setItemType(ItemType* type) {
+void NodeTest::setItemType(SequenceType::ItemType* type) {
   _itemType=type;
 }
 

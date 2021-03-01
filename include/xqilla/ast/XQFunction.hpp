@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ public:
 
 protected:
   void resolveArguments(StaticContext *context, bool numericFunction = false);
-  void calculateSRCForArguments(StaticContext *context);
+  void calculateSRCForArguments(StaticContext *context, bool checkTimezone = false);
 
   const XMLCh *name_, *uri_;
   const char *sigString_;

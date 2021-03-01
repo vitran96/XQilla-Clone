@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,10 +72,10 @@ Result XQNav::createResult(DynamicContext* context, int flags) const
     ASTNode *step = it->step;
 
     result = step->createResult(context, flags);
-    StaticType st(BasicMemoryManager::get()); st = step->getStaticAnalysis().getStaticType();
+    StaticType st = step->getStaticAnalysis().getStaticType();
 
     for(++it; it != end; ++it) {
-      if(st.containsType(TypeFlags::ANY_ATOMIC_TYPE)) {
+      if(st.containsType(StaticType::ANY_ATOMIC_TYPE)) {
         result = new IntermediateStepCheckResult(step, result);
       }
 
@@ -87,8 +87,8 @@ Result XQNav::createResult(DynamicContext* context, int flags) const
     }
 
     // the last step allows either nodes or atomic items
-    if(st.containsType(TypeFlags::NODE) &&
-       st.containsType(TypeFlags::ANY_ATOMIC_TYPE)) {
+    if(st.containsType(StaticType::NODE_TYPE) &&
+       st.containsType(StaticType::ANY_ATOMIC_TYPE)) {
       result = new LastStepCheckResult(step, result);
     }
   }
@@ -177,7 +177,7 @@ ASTNode *XQNav::staticTypingImpl(StaticContext *context)
     props = combineProperties(props, stepSrc.getProperties());
 
     if(!context || stepSrc.areContextFlagsUsed() || _src.isNoFoldingForced() ||
-       stepSrc.getStaticType().containsType(TypeFlags::ANY_ATOMIC_TYPE) ||
+       stepSrc.getStaticType().containsType(StaticType::ANY_ATOMIC_TYPE) ||
        stepSrc.isCreative()) {
       if(it != begin) {
         // Remove context item usage
@@ -231,7 +231,7 @@ ASTNode *XQNav::staticTypingImpl(StaticContext *context)
             const XQPredicate *pred = (const XQPredicate*)peek;
             if(pred->getPredicate()->getStaticAnalysis().isContextPositionUsed() ||
                pred->getPredicate()->getStaticAnalysis().isContextSizeUsed() ||
-               pred->getPredicate()->getStaticAnalysis().getStaticType().containsType(TypeFlags::NUMERIC)) {
+               pred->getPredicate()->getStaticAnalysis().getStaticType().containsType(StaticType::NUMERIC_TYPE)) {
               usesContextPositionOrSize = true;
             }
             peek = pred->getExpression();
@@ -241,14 +241,14 @@ ASTNode *XQNav::staticTypingImpl(StaticContext *context)
             const XQStep *peekstep = (XQStep*)peek;
             // If the next node is CHILD or DESCENDANT axis, then
             // this step must have children
-            if(peekstep->getAxis() == Node::CHILD || peekstep->getAxis() == Node::DESCENDANT) {
+            if(peekstep->getAxis() == XQStep::CHILD || peekstep->getAxis() == XQStep::DESCENDANT) {
 
               // Check for a descendant-or-self axis
-              if(step->getAxis() == Node::DESCENDANT_OR_SELF) {
+              if(step->getAxis() == XQStep::DESCENDANT_OR_SELF) {
                 if(!usesContextPositionOrSize) {
                   // This is a descendant-or-self::node()/child::foo that we can optimise into descendant::foo
                   ++it;
-                  const_cast<XQStep*>(peekstep)->setAxis(Node::DESCENDANT);
+                  const_cast<XQStep*>(peekstep)->setAxis(XQStep::DESCENDANT);
                   // Set the properties to those for descendant axis
                   const_cast<StaticAnalysis&>(peekstep->getStaticAnalysis()).
                     setProperties(StaticAnalysis::SUBTREE | StaticAnalysis::DOCORDER |
@@ -260,7 +260,7 @@ ASTNode *XQNav::staticTypingImpl(StaticContext *context)
             }
             // If the next node is ATTRIBUTE axis, then this step needs to be
             // an element
-            else if(peekstep->getAxis() == Node::ATTRIBUTE) {
+            else if(peekstep->getAxis() == XQStep::ATTRIBUTE) {
               nodetest->setTypeWildcard(false);
               nodetest->setNodeType(Node::element_string);
             }
@@ -383,8 +383,7 @@ Item::Ptr NavStepResult::next(DynamicContext *context)
 
 IntermediateStepCheckResult::IntermediateStepCheckResult(const LocationInfo *o, const Result &parent)
   : ResultImpl(o),
-    parent_(parent),
-    state_(NODES_OR_TUPLES)
+    parent_(parent)
 {
 }
 
@@ -393,26 +392,9 @@ Item::Ptr IntermediateStepCheckResult::next(DynamicContext *context)
   Item::Ptr result = parent_->next(context);
 
   // Check it's a node
-  if(!result.isNull()) {
-    switch(state_) {
-    case NODES_OR_TUPLES:
-      if(result->getType() != Item::NODE && result->getType() != Item::TUPLE)
-        XQThrow(TypeErrorException,X("NavStepResult::next"),
-                X("The result of a step expression (StepExpr) is not a sequence of nodes or tuples [err:XPTY0019]"));
-      if(result->getType() == Item::NODE) state_ = NODES;
-      else state_ = TUPLES;
-      break;
-    case NODES:
-      if(result->getType() != Item::NODE)
-        XQThrow(TypeErrorException,X("NavStepResult::next"),
-                X("The result of a step expression (StepExpr) is not a sequence of nodes [err:XPTY0019]"));
-      break;
-    case TUPLES:
-      if(result->getType() != Item::TUPLE)
-        XQThrow(TypeErrorException,X("NavStepResult::next"),
-                X("The result of a step expression (StepExpr) is not a sequence of tuples [err:XPTY0019]"));
-      break;
-    }
+  if(!result.isNull() && !result->isNode()) {
+    XQThrow(TypeErrorException,X("NavStepResult::next"),
+             X("The result of a step expression (StepExpr) is not a sequence of nodes [err:XPTY0019]"));
   }
 
   return result;
@@ -432,12 +414,12 @@ Item::Ptr LastStepCheckResult::next(DynamicContext *context)
   if(result != NULLRCP) {
     // the last step allows either nodes or atomic items
     switch(_nTypeOfItemsInLastStep) {
-    case 0: _nTypeOfItemsInLastStep=result->getType() == Item::NODE?1:2; break;
-    case 1: if(!result->getType() == Item::NODE) 
+    case 0: _nTypeOfItemsInLastStep=result->isNode()?1:2; break;
+    case 1: if(!result->isNode()) 
       XQThrow(TypeErrorException,X("LastStepCheckResult::next"),
                X("The result of the last step in a path expression contains both nodes and atomic values [err:XPTY0018]"));
       break;
-    case 2: if(result->getType() == Item::NODE) 
+    case 2: if(result->isNode()) 
       XQThrow(TypeErrorException,X("LastStepCheckResult::next"),
                X("The result of the last step in a path expression contains both nodes and atomic values [err:XPTY0018]"));
       break;

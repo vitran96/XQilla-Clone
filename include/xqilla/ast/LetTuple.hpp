@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,37 +21,40 @@
 #define LETTUPLE_HPP
 
 #include <xqilla/ast/TupleNode.hpp>
-#include <xqilla/functions/FunctionSignature.hpp>
-
-#include <xercesc/framework/XMLBuffer.hpp>
+#include <xqilla/ast/StaticAnalysis.hpp>
 
 class ASTNode;
+class SequenceType;
 
 class XQILLA_API LetTuple : public TupleNode
 {
 public:
   LetTuple(TupleNode *parent, const XMLCh *varQName, ASTNode *expr, XPath2MemoryManager *mm);
-  LetTuple(TupleNode *parent, const XMLCh *uri, const XMLCh *name, ASTNode *expr, XPath2MemoryManager *mm);
-  LetTuple(TupleNode *parent, const ArgumentSpec *var, ASTNode *expr, XPath2MemoryManager *mm);
+  LetTuple(TupleNode *parent, const XMLCh *varURI, const XMLCh *varName, ASTNode *expr, XPath2MemoryManager *mm);
 
-  const XMLCh *getVarQName() const { return var_->getQName(); }
-  const XMLCh *getVarURI() const { return var_->getURI(); }
-  const XMLCh *getVarName() const { return var_->getName(); }
-  const ArgumentSpec *getVar() const { return var_; }
-
-  void setVarURI(const XMLCh *uri) { var_->setURI(uri); }
-  void setVarName(const XMLCh *name) { var_->setName(name); }
+  const XMLCh *getVarQName() const { return varQName_; }
+  const XMLCh *getVarURI() const { return varURI_; }
+  void setVarURI(const XMLCh *uri) { varURI_ = uri; }
+  const XMLCh *getVarName() const { return varName_; }
+  void setVarName(const XMLCh *name) { varName_ = name; }
 
   ASTNode *getExpression() const { return expr_; }
   void setExpression(ASTNode *expr) { expr_ = expr; }
 
+  const StaticAnalysis &getVarSRC() const { return varSrc_; }
+
   virtual TupleNode *staticResolution(StaticContext *context);
   virtual TupleNode *staticTypingImpl(StaticContext *context);
+  virtual TupleNode *staticTypingTeardown(StaticContext *context, StaticAnalysis &usedSrc);
 
   virtual TupleResult::Ptr createResult(DynamicContext* context) const;
 
+  // Used during parsing
+  SequenceType *seqType;
+
 private:
-  ArgumentSpec *var_;
+  const XMLCh *varQName_, *varURI_, *varName_;
+  StaticAnalysis varSrc_;
   ASTNode *expr_;
 };
 

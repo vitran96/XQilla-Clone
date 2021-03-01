@@ -1,5 +1,5 @@
 #
-# This script drives construction of Visual Studio (version 7.1) projects 
+# This script drives construction of Visual Studio projects 
 # files, using an xquery script (genproject.template),an input XML
 # document, and a file containing a list of project names.
 #
@@ -27,27 +27,12 @@ if [ ! -x "$XQILLA" ]; then
 fi
 echo XQILLA = $XQILLA
 
-# generate the VC7.1 and VC8 project files
-# generate VC10 filter information for xqilla project
-$XQILLA -u genproject.xq -v projectFile "$CONFIG_OUTPUT" -v outputPath "../Win32Projects"
+# generate the VC project files
 $XQILLA -u xqilla.vs2010.xq -v projectFile "$CONFIG_OUTPUT" -v outputPath "../Win32Projects"
 $XQILLA -u xqilla.vs2010_filter.xq -v projectFile "$CONFIG_OUTPUT" -v outputPath "../Win32Projects"
 
-# Post process the VC7.1 files to put the "Name" attribute first,
-# since VC7.1 doesn't use a proper XML parser :-(
 
-for file in `ls ../Win32Projects/VC7.1/*.vcproj ../Win32Projects/VC8/*.vcproj`
-do
-# This only works if the start elements are always on a single line.
-#
-#                        attrs before "Name"       attrs after "Name"
-#                            |-------|                 |-------|
-sed -i -e 's/<\([^/>][^> ]*\)\([^>]*\) Name="\([^"]*\)"\([^>]*\)>/<\1 Name="\3"\2\4>/' $file
-#             |-------------|                |-------|
-#              element name             value of "Name" attr
-done
-
-for file in `ls ../Win32Projects/VC10/*.vcxproj ../Win32Projects/VC10/*.vcxproj.filters`
+for file in `ls ../Win32Projects/VC10/*.vcxproj ../Win32Projects/VC10/*.vcxproj.filters ../Win32Projects/VC11/*.vcxproj ../Win32Projects/VC11/*.vcxproj.filters ../Win32Projects/VC14/*.vcxproj ../Win32Projects/VC14/*.vcxproj.filters`
 do
 sed '2,$s/xmlns="http:\/\/schemas.microsoft.com\/developer\/msbuild\/2003"//' $file > temp
 sed '1 i\

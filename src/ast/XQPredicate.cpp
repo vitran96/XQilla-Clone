@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,16 +89,17 @@ Result XQPredicate::createResult(DynamicContext* context, int flags) const
     contextSize = seq.getLength();
     parent = new SequenceResult(this, seq);
   }
-  if(src.getStaticType().isType(TypeFlags::NUMERIC) &&
+  if(src.getStaticType().isType(StaticType::NUMERIC_TYPE) &&
      src.getStaticType().getMin() <= 1 &&
      src.getStaticType().getMax() >= 1 &&
      !src.isContextItemUsed() && !src.isContextPositionUsed()) {
     // It only contains numeric type results, and doesn't use the context
     // item or position
+    // TBD Fix this StaticAnalysis - jpcs
     return ClosureResult::create(predicate_->getStaticAnalysis(), context,
       new NumericPredicateFilterResult(parent, predicate_, contextSize));
   }
-  else if(!src.getStaticType().containsType(TypeFlags::NUMERIC) ||
+  else if(!src.getStaticType().containsType(StaticType::NUMERIC_TYPE) ||
           src.getStaticType().getMin() > 1 ||
           src.getStaticType().getMax() < 1) {
     // It only contains non-numeric results
@@ -115,7 +116,7 @@ Result XQPredicate::iterateResult(const Result &contextItems, DynamicContext *co
 {
   const StaticAnalysis &src = predicate_->getStaticAnalysis();
 
-  if((src.getStaticType().containsType(TypeFlags::NUMERIC) &&
+  if((src.getStaticType().containsType(StaticType::NUMERIC_TYPE) &&
       src.getStaticType().getMin() <= 1 &&
       src.getStaticType().getMax() >= 1)
      || src.isContextPositionUsed() || src.isContextSizeUsed()) {
@@ -202,7 +203,7 @@ Item::Ptr PredicateFilterResult::next(DynamicContext *context)
     // The predicate truth value is derived by applying the following rules, in order:
     // 1) If the value of the predicate expression is an atomic value of a numeric type, the predicate truth
     // value is true if and only if the value of the predicate expression is equal to the context position.
-    if(first_.notNull() && second_.isNull() && first_->getType() == Item::ATOMIC &&
+    if(first_.notNull() && second_.isNull() && first_->isAtomicValue() &&
        ((const AnyAtomicType::Ptr)first_)->isNumericValue()) {
       const Numeric::Ptr num = (const Numeric::Ptr)first_;
       if(!num->equals((const AnyAtomicType::Ptr)context->getItemFactory()->createInteger((long)contextPos_, context), context)) {

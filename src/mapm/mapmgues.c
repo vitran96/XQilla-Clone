@@ -18,7 +18,7 @@
  *	This software is provided "as is" without express or implied warranty.
  *
  *	THIS FILE HAS BEEN MODIFIED FROM THE OFFICIAL MAPM DISTRIBUTION BY
- *	'XQilla project' on 2005/11/03.
+ *	'XQilla project' on 2005/11/03 and 2015/12/04.
  *	THIS FILE IS ORIGINALLY FROM MAPM VERSION 4.6.1.
  */
 
@@ -90,7 +90,7 @@ else
    while (TRUE)
      {
       p--;
-      if (*p == '0' || *p == '.')
+      if (*p == '0' || *p == '.' || *p == ',')
         *p = ' ';
       else
         break;

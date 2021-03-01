@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,11 +55,12 @@ XQFunctionCoercion::XQFunctionCoercion(ASTNode* expr, SequenceType* exprType, XP
 {
 }
 
-XQFunctionCoercion::XQFunctionCoercion(ASTNode* expr, SequenceType *exprType, ASTNode *funcConvert, XPath2MemoryManager* memMgr)
+XQFunctionCoercion::XQFunctionCoercion(ASTNode* expr, SequenceType *exprType, ASTNode *funcConvert, const StaticType &treatType, XPath2MemoryManager* memMgr)
   : ASTNodeImpl(FUNCTION_COERCION, memMgr),
     _expr(expr),
     _exprType(exprType),
-    _funcConvert(funcConvert)
+    _funcConvert(funcConvert),
+    _treatType(treatType)
 {
 }
 
@@ -70,9 +71,12 @@ ASTNode* XQFunctionCoercion::staticResolution(StaticContext *context)
   _exprType->staticResolution(context);
   _expr = _expr->staticResolution(context);
 
-  const ItemType *type = _exprType->getItemType();
-  if(!type || type->getItemTestType() != ItemType::TEST_FUNCTION ||
-     type->getFunctionSignature() == 0)
+  bool isExact;
+  _exprType->getStaticType(_treatType, context, isExact, this);
+
+  const SequenceType::ItemType *type = _exprType->getItemType();
+  if(!type || type->getItemTestType() != SequenceType::ItemType::TEST_FUNCTION ||
+     type->getReturnType() == 0)
     return substitute(_expr);
 
   // Construct an XQInlineFunction that will convert a function reference
@@ -84,19 +88,17 @@ ASTNode* XQFunctionCoercion::staticResolution(StaticContext *context)
   ArgumentSpecs *paramList = new (mm) ArgumentSpecs(XQillaAllocator<ArgumentSpec*>(mm));
   VectorOfASTNodes *argList = new (mm) VectorOfASTNodes(XQillaAllocator<ASTNode*>(mm));
 
-  ArgumentSpecs *argTypes = type->getFunctionSignature()->argSpecs;
-  if(argTypes) {
-    for(ArgumentSpecs::iterator i = argTypes->begin(); i != argTypes->end(); ++i) {
-      const XMLCh *argName = context->allocateTempVarName(argVarPrefix);
+  VectorOfSequenceTypes *argTypes = type->getArgumentTypes();
+  for(VectorOfSequenceTypes::iterator i = argTypes->begin(); i != argTypes->end(); ++i) {
+    const XMLCh *argName = context->allocateTempVarName(argVarPrefix);
 
-      ArgumentSpec *argSpec = new (mm) ArgumentSpec(argName, (*i)->getType(), mm);
-      argSpec->setLocationInfo(*i);
-      paramList->push_back(argSpec);
+    ArgumentSpec *argSpec = new (mm) ArgumentSpec(argName, *i, mm);
+    argSpec->setLocationInfo(*i);
+    paramList->push_back(argSpec);
     
-      XQVariable *argVar = new (mm) XQVariable(0, argName, mm);
-      argVar->setLocationInfo(this);
-      argList->push_back(argVar);
-    }
+    XQVariable *argVar = new (mm) XQVariable(0, argName, mm);
+    argVar->setLocationInfo(this);
+    argList->push_back(argVar);
   }
 
   XQVariable *funcVar = new (mm) XQVariable(0, funcVarName, mm);
@@ -105,7 +107,7 @@ ASTNode* XQFunctionCoercion::staticResolution(StaticContext *context)
   XQFunctionDeref *body = new (mm) XQFunctionDeref(funcVar, argList, mm);
   body->setLocationInfo(this);
 
-  FunctionSignature *signature = new (mm) FunctionSignature(paramList, type->getFunctionSignature()->returnType, mm);
+  FunctionSignature *signature = new (mm) FunctionSignature(paramList, type->getReturnType(), mm);
 
   XQUserFunction *func = new (mm) XQUserFunction(0, signature, body, false, mm);
   func->setLocationInfo(this);
@@ -123,14 +125,18 @@ ASTNode *XQFunctionCoercion::staticTypingImpl(StaticContext *context)
   _src.clear();
 
   // Get a better static type by looking at our expression's type too
-  _src.getStaticType() = _exprType->getItemType();
-  _src.getStaticType().setCardinality(
-    _expr->getStaticAnalysis().getStaticType().getMin(),
-    _expr->getStaticAnalysis().getStaticType().getMax());
+  _src.getStaticType() = _treatType;
+  _src.getStaticType() &= _expr->getStaticAnalysis().getStaticType();
 
+  StaticType nonFunctionTypes = _expr->getStaticAnalysis().getStaticType();
+  nonFunctionTypes &= StaticType(StaticType::NODE_TYPE | StaticType::ANY_ATOMIC_TYPE, 0, StaticType::UNLIMITED);
+
+  _src.getStaticType() |= nonFunctionTypes;
+
+  _src.setProperties(_expr->getStaticAnalysis().getProperties());
   _src.add(_expr->getStaticAnalysis());
 
-  if(!_expr->getStaticAnalysis().getStaticType().containsType(TypeFlags::FUNCTION))
+  if(!_expr->getStaticAnalysis().getStaticType().containsType(StaticType::FUNCTION_TYPE))
     return substitute(_expr);
 
   return this;
@@ -140,7 +146,7 @@ class FunctionConversionResult : public ResultImpl
 {
 public:
   FunctionConversionResult(const Result &parent, const ASTNode *funcConvert,
-                           const ItemType *itemType, const LocationInfo *location)
+                           const SequenceType::ItemType *itemType, const LocationInfo *location)
     : ResultImpl(location),
       parent_(parent),
       funcConvert_(funcConvert),
@@ -152,8 +158,8 @@ public:
   {
     Item::Ptr item = parent_->next(context);
 
-    if(item.notNull() && item->getType() == Item::FUNCTION &&
-       !itemType_->matches((FunctionRef::Ptr)item)) {
+    if(item.notNull() && item->isFunction() &&
+       !itemType_->matches((FunctionRef::Ptr)item, context)) {
       XPath2MemoryManager *mm = context->getMemoryManager();
 
       VarStoreImpl scope(mm, context->getVariableStore());
@@ -173,7 +179,7 @@ public:
 private:
   Result parent_;
   const ASTNode *funcConvert_;
-  const ItemType *itemType_;
+  const SequenceType::ItemType *itemType_;
 };
 
 Result XQFunctionCoercion::createResult(DynamicContext* context, int flags) const

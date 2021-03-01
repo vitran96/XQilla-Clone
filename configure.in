@@ -2,10 +2,10 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT([XQilla],[2.2.4],[])
+AC_INIT([XQilla],[2.3.4],[])
 AC_CONFIG_AUX_DIR(autotools)
 AC_CANONICAL_TARGET([])
-AM_INIT_AUTOMAKE(XQilla, 2.2.4,)
+AM_INIT_AUTOMAKE(XQilla, 2.3.4,)
 AC_CONFIG_SRCDIR([src/runtime/Result.cpp])
 AC_CONFIG_HEADERS([src/config/xqilla_config_unix.h])
 AC_CONFIG_MACRO_DIR([autotools/m4])

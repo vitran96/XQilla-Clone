@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ XQMap::XQMap(ASTNode *arg1, ASTNode *arg2, XPath2MemoryManager* memMgr)
     arg2_(arg2),
     uri_(0),
     name_(0),
-    varType_(memMgr)
+    varSrc_(memMgr)
 {
 }
 
@@ -48,7 +48,7 @@ XQMap::XQMap(ASTNode *arg1, ASTNode *arg2, const XMLCh *uri, const XMLCh *name, 
     arg2_(arg2),
     uri_(uri),
     name_(name),
-    varType_(memMgr)
+    varSrc_(memMgr)
 {
 }
 

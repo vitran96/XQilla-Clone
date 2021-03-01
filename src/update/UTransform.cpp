@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ CopyBinding::CopyBinding(XPath2MemoryManager* memMgr,
   : qname_(memMgr->getPooledString(variable)),
     uri_(0),
     name_(0),
-    type_(memMgr),
+    src_(memMgr),
     expr_(allValues)
 {
 }
@@ -50,7 +50,7 @@ CopyBinding::CopyBinding(XPath2MemoryManager* memMgr, const CopyBinding &o)
   : qname_(o.qname_),
     uri_(o.uri_),
     name_(o.name_),
-    type_(o.type_, memMgr),
+    src_(o.src_, memMgr),
     expr_(o.expr_)
 {
 }
@@ -89,9 +89,8 @@ ASTNode *UTransform::staticResolution(StaticContext* context)
       (*it0)->uri_ = context->getUriBoundToPrefix(prefix, this);
     (*it0)->name_ = XPath2NSUtils::getLocalName((*it0)->qname_);
 
-    ItemType *itemType = new (mm) ItemType(ItemType::TEST_NODE);
-    itemType->setLocationInfo(this);
-    SequenceType *copyType = new (mm) SequenceType(itemType, SequenceType::EXACTLY_ONE);
+    SequenceType *copyType = new (mm) SequenceType(new (mm) SequenceType::ItemType(SequenceType::ItemType::TEST_NODE),
+                                                   SequenceType::EXACTLY_ONE);
     copyType->setLocationInfo(this);
 
     // call static resolution on the value

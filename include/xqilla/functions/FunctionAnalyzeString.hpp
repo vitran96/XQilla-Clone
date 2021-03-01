@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,14 +22,14 @@
 
 #include "XQillaFunction.hpp"
 
-class XQILLA_API FunctionXQillaAnalyzeString : public XQillaFunction
+class XQILLA_API FunctionAnalyzeString : public XQillaFunction
 {
 public:
   static const XMLCh name[];
   static const unsigned int minArgs;
   static const unsigned int maxArgs;
 
-  FunctionXQillaAnalyzeString(const VectorOfASTNodes &args, XPath2MemoryManager *memMgr);
+  FunctionAnalyzeString(const VectorOfASTNodes &args, XPath2MemoryManager *memMgr);
   
   virtual ASTNode *staticTypingImpl(StaticContext *context);
   virtual Result createResult(DynamicContext* context, int flags=0) const;

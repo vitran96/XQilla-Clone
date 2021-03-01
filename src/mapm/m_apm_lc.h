@@ -214,7 +214,6 @@ extern	void	M_apm_normalize(M_APM);
 extern	void	M_apm_scale(M_APM, int);
 extern	void	M_apm_pad(M_APM, int);
 extern  void    M_long_2_ascii(char *, long);
-extern  void    M_u64_2_ascii(char *, uint64_t);
 extern	void	M_check_PI_places(int);
 extern  void    M_calculate_PI_AGM(M_APM, int);
 extern  void    M_set_to_zero(M_APM);

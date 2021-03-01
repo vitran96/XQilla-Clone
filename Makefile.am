@@ -17,7 +17,7 @@ lib_LTLIBRARIES = libxqilla.la
 
 # Library version, see http://sourceware.org/autobook/autobook/autobook_91.html
 # -no-undefined for Cygwin (bug #1639669)
-libxqilla_la_LDFLAGS = -version-info 5:4:0 -no-undefined
+libxqilla_la_LDFLAGS = -version-info 6:0:4 -no-undefined
 
 libxqilla_la_SOURCES = \
 src/framework/ReferenceCounted.cpp \
@@ -26,6 +26,7 @@ src/framework/ProxyMemoryManager.cpp \
 src/framework/StringPool.cpp \
 src/framework/XPath2MemoryManagerImpl.cpp \
 src/context/UpdateFactory.cpp \
+src/context/impl/CollationImpl.cpp \
 src/context/impl/CodepointCollation.cpp \
 src/context/impl/VarStoreImpl.cpp \
 src/context/impl/VarTypeStoreImpl.hpp \
@@ -57,6 +58,7 @@ src/ast/XQFunctionCoercion.cpp \
 src/ast/XQVariable.cpp \
 src/ast/StaticAnalysis.cpp \
 src/ast/StaticType.cpp \
+src/ast/NumericFunction.cpp \
 src/ast/XQDOMConstructor.cpp \
 src/ast/XQDocumentConstructor.cpp \
 src/ast/XQElementConstructor.cpp \
@@ -66,25 +68,19 @@ src/ast/XQPIConstructor.cpp \
 src/ast/XQCommentConstructor.cpp \
 src/ast/XQTextConstructor.cpp \
 src/ast/XQFunctionCall.cpp \
-src/ast/XQExprSubstitution.cpp \
 src/ast/XQFunctionConversion.cpp \
 src/ast/XQFunctionDeref.cpp \
 src/ast/XQPartialApply.cpp \
 src/ast/XQFunctionRef.cpp \
 src/ast/XQGlobalVariable.cpp \
-src/ast/XQTypeAlias.cpp \
-src/ast/XQRewriteRule.cpp \
 src/ast/XQOrderingChange.cpp \
 src/ast/XQQuantified.cpp \
 src/ast/XQValidate.cpp \
 src/ast/XQTypeswitch.cpp \
-src/ast/XQSwitch.cpp \
 src/ast/ConvertFunctionArg.cpp \
 src/ast/XQDocumentOrder.cpp \
 src/ast/XQPredicate.cpp \
 src/ast/XQReturn.cpp \
-src/ast/XQTupleConstructor.cpp \
-src/ast/XQTupleMember.cpp \
 src/ast/TupleNode.cpp \
 src/ast/ContextTuple.cpp \
 src/ast/ForTuple.cpp \
@@ -148,7 +144,6 @@ src/utils/XStr.cpp \
 src/utils/ContextUtils.cpp \
 src/utils/DateUtils.cpp \
 src/utils/DateUtils.hpp \
-src/utils/lookup3.cpp \
 src/utils/NumUtils.cpp \
 src/utils/XQillaPlatformUtils.cpp \
 src/utils/XPath2NSUtils.cpp \
@@ -161,19 +156,30 @@ src/exceptions/XQillaException.cpp \
 src/exceptions/XQException.cpp \
 src/exceptions/InvalidLexicalSpaceException.hpp \
 src/exceptions/MiscException.hpp \
+src/functions/EXSLTMathFunction.cpp \
 src/functions/ExternalFunction.cpp \
 src/functions/XQillaFunction.cpp \
 src/functions/FunctionParseXML.cpp \
 src/functions/FuncFactory.cpp \
 src/functions/FunctionLookup.cpp \
+src/functions/FunctionAbs.cpp \
+src/functions/FunctionAcos.cpp \
+src/functions/FunctionAsin.cpp \
+src/functions/FunctionAtan.cpp \
 src/functions/FunctionBaseURI.cpp \
 src/functions/FunctionCaseFold.cpp \
+src/functions/FunctionCeiling.cpp \
 src/functions/FunctionCodepointsToString.cpp \
 src/functions/FunctionCollection.cpp \
 src/functions/FunctionCompare.cpp \
 src/functions/FunctionConcat.cpp \
 src/functions/FunctionContains.cpp \
 src/functions/FunctionCount.cpp \
+src/functions/FunctionCos.cpp \
+src/functions/FunctionCurrentDate.cpp \
+src/functions/FunctionCurrentDateTime.cpp \
+src/functions/FunctionCurrentTime.cpp \
+src/functions/FunctionDateTime.cpp \
 src/functions/FunctionDefaultCollation.cpp \
 src/functions/FunctionDistinctValues.cpp \
 src/functions/FunctionDocAvailable.cpp \
@@ -183,6 +189,8 @@ src/functions/FunctionDocumentURI.cpp \
 src/functions/FunctionEmpty.cpp \
 src/functions/FunctionEndsWith.cpp \
 src/functions/FunctionError.cpp \
+src/functions/FunctionExp.cpp \
+src/functions/FunctionFloor.cpp \
 src/functions/FunctionFunctionArity.cpp \
 src/functions/FunctionFunctionName.cpp \
 src/functions/FunctionId.cpp \
@@ -191,10 +199,13 @@ src/functions/FunctionImplicitTimezone.cpp \
 src/functions/FunctionLang.cpp \
 src/functions/FunctionLast.cpp \
 src/functions/FunctionLocalname.cpp \
+src/functions/FunctionLocalNameFromQName.cpp \
+src/functions/FunctionLog.cpp \
 src/functions/FunctionLowerCase.cpp \
 src/functions/FunctionMatches.cpp \
 src/functions/FunctionName.cpp \
 src/functions/FunctionNamespaceUri.cpp \
+src/functions/FunctionNamespaceURIFromQName.cpp \
 src/functions/FunctionNilled.cpp \
 src/functions/FunctionNodeName.cpp \
 src/functions/FunctionNormalizeSpace.cpp \
@@ -202,10 +213,18 @@ src/functions/FunctionNormalizeUnicode.cpp \
 src/functions/FunctionNot.cpp \
 src/functions/FunctionNumber.cpp \
 src/functions/FunctionPosition.cpp \
+src/functions/FunctionPower.cpp \
+src/functions/FunctionPrefixFromQName.cpp \
+src/functions/FunctionQName.cpp \
 src/functions/FunctionRegexGroup.cpp \
 src/functions/FunctionReplace.cpp \
 src/functions/FunctionResolveURI.cpp \
 src/functions/FunctionRoot.cpp \
+src/functions/FunctionRound.cpp \
+src/functions/FunctionRoundHalfToEven.cpp \
+src/functions/FunctionSin.cpp \
+src/functions/FunctionSqrt.cpp \
+src/functions/FunctionTan.cpp \
 src/functions/FunctionSentences.cpp \
 src/functions/FunctionStartsWith.cpp \
 src/functions/FunctionStaticBaseURI.cpp \
@@ -222,6 +241,32 @@ src/functions/FunctionUnordered.cpp \
 src/functions/FunctionUnparsedText.cpp \
 src/functions/FunctionUpperCase.cpp \
 src/functions/FunctionWords.cpp \
+src/functions/FunctionAdjustDateTimeToTimezone.cpp \
+src/functions/FunctionAdjustDateToTimezone.cpp \
+src/functions/FunctionAdjustTimeToTimezone.cpp \
+src/functions/FunctionDayFromDate.cpp \
+src/functions/FunctionDayFromDateTime.cpp \
+src/functions/FunctionDaysFromDuration.cpp \
+src/functions/FunctionHoursFromDateTime.cpp \
+src/functions/FunctionHoursFromDuration.cpp \
+src/functions/FunctionHoursFromTime.cpp \
+src/functions/FunctionMinutesFromDateTime.cpp \
+src/functions/FunctionMinutesFromDuration.cpp \
+src/functions/FunctionMinutesFromTime.cpp \
+src/functions/FunctionMonthFromDate.cpp \
+src/functions/FunctionMonthFromDateTime.cpp \
+src/functions/FunctionMonthsFromDuration.cpp \
+src/functions/FunctionSecondsFromDateTime.cpp \
+src/functions/FunctionSecondsFromDuration.cpp \
+src/functions/FunctionSecondsFromTime.cpp \
+src/functions/FunctionTimezoneFromDate.cpp \
+src/functions/FunctionTimezoneFromDateTime.cpp \
+src/functions/FunctionTimezoneFromTime.cpp \
+src/functions/FunctionYearFromDate.cpp \
+src/functions/FunctionYearFromDateTime.cpp \
+src/functions/FunctionYearsFromDuration.cpp \
+src/functions/FunctionParseJSON.cpp \
+src/functions/FunctionSerializeJSON.cpp \
 src/functions/FunctionParseHTML.cpp \
 src/functions/FunctionExplain.cpp \
 src/functions/FunctionAnalyzeString.cpp \
@@ -231,7 +276,8 @@ src/functions/FunctionSignature.cpp \
 src/functions/BuiltInModules.cpp \
 src/functions/CoreModule.hpp \
 src/functions/FnModule.hpp \
-src/functions/RwModule.hpp \
+src/items/impl/ATAnySimpleTypeImpl.cpp \
+src/items/impl/ATAnySimpleTypeImpl.hpp \
 src/items/impl/ATAnyURIOrDerivedImpl.cpp \
 src/items/impl/ATAnyURIOrDerivedImpl.hpp \
 src/items/impl/ATBase64BinaryOrDerivedImpl.cpp \
@@ -260,7 +306,6 @@ src/items/impl/ATUntypedAtomicImpl.cpp \
 src/items/impl/ATUntypedAtomicImpl.hpp \
 src/items/impl/FunctionRefImpl.cpp \
 src/items/impl/FunctionRefImpl.hpp \
-src/items/impl/TupleImpl.cpp \
 src/items/DatatypeFactory.cpp \
 src/items/DatatypeFactoryTemplate.hpp \
 src/items/DatatypeLookup.cpp \
@@ -270,7 +315,6 @@ src/items/ATUntypedAtomic.cpp \
 src/items/DateOrTimeType.cpp \
 src/items/Item.cpp \
 src/items/Node.cpp \
-src/items/ExpressionItem.cpp \
 src/items/Numeric.cpp \
 src/items/Timezone.cpp \
 src/parser/QName.cpp \
@@ -430,6 +474,19 @@ src/optimizer/StaticTyper.cpp \
 src/optimizer/QueryPathNode.cpp \
 src/optimizer/QueryPathTreeGenerator.cpp \
 src/optimizer/ASTToXML.cpp \
+src/yajl/yajl_buf.c \
+src/yajl/yajl_buf.h \
+src/yajl/yajl.c \
+src/yajl/yajl_encode.c \
+src/yajl/yajl_encode.h \
+src/yajl/yajl_gen.c \
+src/yajl/yajl_lex.c \
+src/yajl/yajl_lex.h \
+src/yajl/yajl_parser.c \
+src/yajl/yajl_parser.h \
+src/yajl/yajl_common.h \
+src/yajl/yajl_gen.h \
+src/yajl/yajl_parse.h \
 src/xqc/XQillaXQCImplementation.cpp \
 src/xqc/XQillaXQCImplementation.hpp \
 src/xqc/XQillaXQCStaticContext.cpp \
@@ -453,8 +510,6 @@ src/samples/dom-api/foo.xml \
 src/samples/simple-api/foo.xml \
 src/functions/CoreModule.xq \
 src/functions/FnModule.xq \
-src/functions/RwModule.xq \
-src/functions/XQillaModule.xq \
 LICENSE \
 TODO \
 README \
@@ -469,30 +524,42 @@ docs/xqc_header.html \
 docs/simple-api \
 docs/dom3-api \
 docs/xqc-api \
-Win32Projects/VC8/dom-basic.vcproj \
-Win32Projects/VC8/dom-context-item.vcproj \
-Win32Projects/VC8/dom-resolver.vcproj \
-Win32Projects/VC8/simple-basic.vcproj \
-Win32Projects/VC8/simple-context-item.vcproj \
-Win32Projects/VC8/xmarkRunner.vcproj \
-Win32Projects/VC8/xqc-basic.vcproj \
-Win32Projects/VC8/xqc-context-item.vcproj \
-Win32Projects/VC8/xqilla.vcproj \
-Win32Projects/VC8/xqilla_cmd.vcproj \
-Win32Projects/VC8/xqtsRunner.vcproj \
-Win32Projects/VC8/XQilla.sln \
-Win32Projects/VC7.1/dom-basic.vcproj \
-Win32Projects/VC7.1/dom-context-item.vcproj \
-Win32Projects/VC7.1/dom-resolver.vcproj \
-Win32Projects/VC7.1/simple-basic.vcproj \
-Win32Projects/VC7.1/simple-context-item.vcproj \
-Win32Projects/VC7.1/xmarkRunner.vcproj \
-Win32Projects/VC7.1/xqc-basic.vcproj \
-Win32Projects/VC7.1/xqc-context-item.vcproj \
-Win32Projects/VC7.1/xqilla.vcproj \
-Win32Projects/VC7.1/xqilla_cmd.vcproj \
-Win32Projects/VC7.1/XQilla.sln \
-Win32Projects/VC7.1/xqtsRunner.vcproj \
+Win32Projects/VC14/dom-basic.vcxproj \
+Win32Projects/VC14/dom-context-item.vcxproj \
+Win32Projects/VC14/dom-resolver.vcxproj \
+Win32Projects/VC14/simple-basic.vcxproj \
+Win32Projects/VC14/simple-context-item.vcxproj \
+Win32Projects/VC14/xmarkRunner.vcxproj \
+Win32Projects/VC14/xqc-basic.vcxproj \
+Win32Projects/VC14/xqc-context-item.vcxproj \
+Win32Projects/VC14/xqilla.vcxproj \
+Win32Projects/VC14/xqilla_cmd.vcxproj \
+Win32Projects/VC14/xqtsRunner.vcxproj \
+Win32Projects/VC14/XQilla.sln \
+Win32Projects/VC11/dom-basic.vcxproj \
+Win32Projects/VC11/dom-context-item.vcxproj \
+Win32Projects/VC11/dom-resolver.vcxproj \
+Win32Projects/VC11/simple-basic.vcxproj \
+Win32Projects/VC11/simple-context-item.vcxproj \
+Win32Projects/VC11/xmarkRunner.vcxproj \
+Win32Projects/VC11/xqc-basic.vcxproj \
+Win32Projects/VC11/xqc-context-item.vcxproj \
+Win32Projects/VC11/xqilla.vcxproj \
+Win32Projects/VC11/xqilla_cmd.vcxproj \
+Win32Projects/VC11/xqtsRunner.vcxproj \
+Win32Projects/VC11/XQilla.sln \
+Win32Projects/VC10/dom-basic.vcxproj \
+Win32Projects/VC10/dom-context-item.vcxproj \
+Win32Projects/VC10/dom-resolver.vcxproj \
+Win32Projects/VC10/simple-basic.vcxproj \
+Win32Projects/VC10/simple-context-item.vcxproj \
+Win32Projects/VC10/xmarkRunner.vcxproj \
+Win32Projects/VC10/xqc-basic.vcxproj \
+Win32Projects/VC10/xqc-context-item.vcxproj \
+Win32Projects/VC10/xqilla.vcxproj \
+Win32Projects/VC10/xqilla_cmd.vcxproj \
+Win32Projects/VC10/xqtsRunner.vcxproj \
+Win32Projects/VC10/XQilla.sln \
 tests/xqts/xqts_testsuite/errors.xml \
 tests/xqts/xqts_testsuite/update_errors.xml \
 tests/xqts/xqts_testsuite/xsl_errors.xml \
@@ -531,16 +598,14 @@ dom_resolver_SOURCES = \
 src/samples/dom-api/dom-resolver.cpp
 
 # Dummy C++ source to cause C++ linking.
-# nodist_EXTRA_xqc_basic_SOURCES = dummy.cpp
+nodist_EXTRA_xqc_basic_SOURCES = dummy.cpp
 xqc_basic_SOURCES = \
-src/samples/xqc-api/xqc-basic.c \
-src/samples/xqc-api/dummy.cpp
+src/samples/xqc-api/xqc-basic.c
 
 # Dummy C++ source to cause C++ linking.
-# nodist_EXTRA_xqc_context_item_SOURCES = dummy.cpp
+nodist_EXTRA_xqc_context_item_SOURCES = dummy.cpp
 xqc_context_item_SOURCES = \
-src/samples/xqc-api/xqc-context-item.c \
-src/samples/xqc-api/dummy.cpp
+src/samples/xqc-api/xqc-context-item.c
 
 compile_delayed_module_SOURCES = \
 src/tools/compile-delayed-module.cpp
@@ -550,12 +615,6 @@ $(top_srcdir)/src/functions/CoreModule.hpp: $(top_srcdir)/src/functions/CoreModu
 
 $(top_srcdir)/src/functions/FnModule.hpp: $(top_srcdir)/src/functions/FnModule.xq
 	./compile-delayed-module $(top_srcdir)/src/functions/FnModule.xq >$(top_srcdir)/src/functions/FnModule.hpp
-
-$(top_srcdir)/src/functions/RwModule.hpp: $(top_srcdir)/src/functions/RwModule.xq
-	./compile-delayed-module $(top_srcdir)/src/functions/RwModule.xq >$(top_srcdir)/src/functions/RwModule.hpp
-
-$(top_srcdir)/src/functions/XQillaModule.hpp: $(top_srcdir)/src/functions/XQillaModule.xq
-	./compile-delayed-module $(top_srcdir)/src/functions/XQillaModule.xq >$(top_srcdir)/src/functions/XQillaModule.hpp
 
 LEXERFILE   = $(top_srcdir)/src/lexer/XQLexer.cpp
 LEXTEMPLATE = $(top_srcdir)/src/lexer/XQLexer.l

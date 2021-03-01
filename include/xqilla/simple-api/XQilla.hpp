@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2010,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,7 +70,6 @@ public:
     EXTENSIONS = 0x08,
     XSLT2      = 0x10,
     VERSION3   = 0x20,
-    CARROT     = 0x40,
 
     XQUERY_FULLTEXT          = (XQUERY | FULLTEXT),
     XQUERY_UPDATE            = (XQUERY | UPDATE),
@@ -181,7 +180,7 @@ public:
    * @param memMgr The memory manager used to create the DynamicContext.
    * @return An implementation of DynamicContext
    */
-  static DynamicContext *createContext(Language language = XQUERY3,
+  static DynamicContext *createContext(Language language = XQUERY,
                                        XQillaConfiguration *conf = 0,
                                        XERCES_CPP_NAMESPACE_QUALIFIER MemoryManager *memMgr =
                                        XERCES_CPP_NAMESPACE_QUALIFIER XMLPlatformUtils::fgMemoryManager);

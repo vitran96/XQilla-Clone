@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,14 +26,11 @@
 #include <xqilla/exceptions/XPath2ErrorException.hpp>
 #include <xqilla/context/DynamicContext.hpp>
 #include <xqilla/items/DatatypeFactory.hpp>
-#include <xqilla/framework/BasicMemoryManager.hpp>
-
-#include <xercesc/util/XMLUniDefs.hpp>
 
 /*static*/ const XMLCh UnaryMinus::name[]={ XERCES_CPP_NAMESPACE_QUALIFIER chLatin_U, XERCES_CPP_NAMESPACE_QUALIFIER chLatin_M, XERCES_CPP_NAMESPACE_QUALIFIER chLatin_i, XERCES_CPP_NAMESPACE_QUALIFIER chLatin_n, XERCES_CPP_NAMESPACE_QUALIFIER chLatin_u, XERCES_CPP_NAMESPACE_QUALIFIER chLatin_s, XERCES_CPP_NAMESPACE_QUALIFIER chNull };
 
 UnaryMinus::UnaryMinus(bool positive, const VectorOfASTNodes &args, XPath2MemoryManager* memMgr)
-  : ArithmeticOperator(UNARY_MINUS, name, args, memMgr),
+  : ArithmeticOperator(name, args, memMgr),
     positive_(positive)
 {
   assert(_args.size() == 1);
@@ -58,17 +55,15 @@ ASTNode *UnaryMinus::staticTypingImpl(StaticContext *context)
   return result;
 }
 
-void UnaryMinus::calculateStaticType(StaticContext *context)
+void UnaryMinus::calculateStaticType()
 {
   const StaticType &arg0 = _args[0]->getStaticAnalysis().getStaticType();
   // untypedAtomic will be promoted to xs:double
-  if(arg0.containsType(TypeFlags::NUMERIC)) {
-    StaticType tmp(BasicMemoryManager::get()); tmp = arg0;
-    tmp.typeIntersect(TypeFlags::NUMERIC);
-    _src.getStaticType().typeUnion(tmp);
+  if(arg0.containsType(StaticType::NUMERIC_TYPE)) {
+    _src.getStaticType() = arg0 & StaticType::NUMERIC_TYPE;
   }
-  if(arg0.containsType(TypeFlags::UNTYPED_ATOMIC)) {
-    _src.getStaticType().typeUnion(StaticType::DOUBLE);
+  if(arg0.containsType(StaticType::UNTYPED_ATOMIC_TYPE)) {
+    _src.getStaticType() |= StaticType::DOUBLE_TYPE;
   }
 }
 

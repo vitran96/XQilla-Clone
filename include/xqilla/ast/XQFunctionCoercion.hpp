@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ class XQILLA_API XQFunctionCoercion : public ASTNodeImpl
 {
 public:
   XQFunctionCoercion(ASTNode *expr, SequenceType *exprType, XPath2MemoryManager *memMgr);
-  XQFunctionCoercion(ASTNode *expr, SequenceType *exprType, ASTNode *funcConvert, XPath2MemoryManager *memMgr);
+  XQFunctionCoercion(ASTNode *expr, SequenceType *exprType, ASTNode *funcConvert, const StaticType &treatType, XPath2MemoryManager *memMgr);
 
   virtual Result createResult(DynamicContext* context, int flags=0) const;
   virtual ASTNode *staticResolution(StaticContext *context);
@@ -41,6 +41,7 @@ public:
   ASTNode *getFuncConvert() const { return _funcConvert; }
   void setFuncConvert(ASTNode *item) { _funcConvert = item; }
   SequenceType *getSequenceType() const { return _exprType; }
+  const StaticType &getTreatType() const { return _treatType; }
 
   static const XMLCh funcVarName[];
 
@@ -48,6 +49,7 @@ protected:
   ASTNode* _expr;
   SequenceType *_exprType;
   ASTNode *_funcConvert;
+  StaticType _treatType;
 };
 
 #endif

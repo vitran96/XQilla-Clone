@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,24 +73,30 @@ ATQNameOrDerived::Ptr ItemFactoryImpl::createQName(const XMLCh* uri,
 	const XMLCh* name, 
 	const DynamicContext* context
 	) {
-  return new ATQNameOrDerivedImpl(SchemaSymbols::fgURI_SCHEMAFORSCHEMA, SchemaSymbols::fgDT_QNAME,
-    uri, prefix, name, context);
+  return createQNameOrDerived(
+    SchemaSymbols::fgURI_SCHEMAFORSCHEMA,
+    SchemaSymbols::fgDT_QNAME,
+    uri,
+    prefix,
+    name,
+    context
+    );
 }
 
-ATDoubleOrDerived::Ptr ItemFactoryImpl::createDouble(double value, const DynamicContext* context)
+ATDoubleOrDerived::Ptr ItemFactoryImpl::createDouble(const MAPM value, const DynamicContext* context)
 {
   return new ATDoubleOrDerivedImpl(SchemaSymbols::fgURI_SCHEMAFORSCHEMA,
-                                   SchemaSymbols::fgDT_DOUBLE, value);
+                                   SchemaSymbols::fgDT_DOUBLE, value, context);
 }
 
 ATDoubleOrDerived::Ptr ItemFactoryImpl::createDouble(const XMLCh* value, const DynamicContext* context) {
   return (ATDoubleOrDerived*)datatypeLookup_->getDoubleFactory()->createInstance(value, context).get();
 }
 
-ATFloatOrDerived::Ptr ItemFactoryImpl::createFloat(float value, const DynamicContext* context)
+ATFloatOrDerived::Ptr ItemFactoryImpl::createFloat(const MAPM value, const DynamicContext* context)
 {
   return new ATFloatOrDerivedImpl(SchemaSymbols::fgURI_SCHEMAFORSCHEMA,
-                                  SchemaSymbols::fgDT_FLOAT, value);
+                                  SchemaSymbols::fgDT_FLOAT, value, context);
 }
 
 ATFloatOrDerived::Ptr ItemFactoryImpl::createFloat(const XMLCh* value, const DynamicContext* context) {
@@ -324,10 +330,13 @@ ATDoubleOrDerived::Ptr ItemFactoryImpl::createDoubleOrDerived(const XMLCh* typeU
   return (const ATDoubleOrDerived*)datatypeLookup_->getDoubleFactory()->createInstance(typeURI, typeName, value, context).get();
 }
 
-ATDoubleOrDerived::Ptr ItemFactoryImpl::createDoubleOrDerived(const XMLCh* typeURI,
-  const XMLCh* typeName, double value, const DynamicContext* context)
+/** create a xs:double with a MAPM */
+ATDoubleOrDerived::Ptr ItemFactoryImpl::createDoubleOrDerived(const XMLCh* typeURI, 
+                                                                const XMLCh* typeName,
+                                                                const MAPM value, 
+                                                                const DynamicContext* context)
 {
-  ATDoubleOrDerived::Ptr retVal = new ATDoubleOrDerivedImpl(typeURI, typeName, value);
+  ATDoubleOrDerived::Ptr retVal = new ATDoubleOrDerivedImpl(typeURI, typeName, value, context);
 
   // check if it's a valid instance
   DatatypeValidator* validator = context->getDocumentCache()->getDatatypeValidator(typeURI, typeName);
@@ -368,10 +377,10 @@ ATFloatOrDerived::Ptr ItemFactoryImpl::createFloatOrDerived(const XMLCh* typeURI
 /** create a xs:float with a MAPM */
 ATFloatOrDerived::Ptr ItemFactoryImpl::createFloatOrDerived(const XMLCh* typeURI, 
                                                               const XMLCh* typeName,
-                                                              float value, 
+                                                              const MAPM value, 
                                                               const DynamicContext* context)
 { 
-  ATFloatOrDerived::Ptr retVal = new ATFloatOrDerivedImpl(typeURI, typeName, value);
+  ATFloatOrDerived::Ptr retVal = new ATFloatOrDerivedImpl(typeURI, typeName, value, context);
 
   // check if it's a valid instance
   DatatypeValidator* validator = context->getDocumentCache()->getDatatypeValidator(typeURI, typeName);
@@ -447,7 +456,24 @@ ATQNameOrDerived::Ptr ItemFactoryImpl::createQNameOrDerived(const XMLCh* typeURI
 	const XMLCh* name, 
 	const DynamicContext* context) {
 
-  return new ATQNameOrDerivedImpl(typeURI, typeName, uri, prefix, name, context);
+  ATQNameOrDerivedImpl* tmp =  new ATQNameOrDerivedImpl(typeURI, typeName, uri, prefix, name, context);
+  
+  const DatatypeFactory* dtf_anyURI = datatypeLookup_->getAnyURIFactory();
+  if(dtf_anyURI->checkInstance(uri, context->getMemoryManager())) {
+    const DatatypeFactory* dtf_NCName = datatypeLookup_->getStringFactory();
+    if (dtf_NCName->checkInstance(SchemaSymbols::fgURI_SCHEMAFORSCHEMA, SchemaSymbols::fgDT_NCNAME, name, context->getMemoryManager())) {
+      return tmp;
+    } else {
+      // this call will obviously fail, but it is better for error reporting, 
+      // since we actually get the XMLException's error message 
+      return (const ATQNameOrDerived::Ptr )dtf_NCName->
+        createInstance(SchemaSymbols::fgURI_SCHEMAFORSCHEMA, SchemaSymbols::fgDT_NCNAME, name, context);
+    }
+  } else {
+    // this call will obviously fail, but it is better for error reporting, 
+    // since we actually get the XMLException's error message 
+    return (const ATQNameOrDerived::Ptr )dtf_anyURI->createInstance(uri, context);
+  }
 }
 
 

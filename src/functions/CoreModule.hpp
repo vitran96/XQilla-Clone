@@ -10,24 +10,23 @@ static const XMLCh core_prefix[] = { 99, 111, 114, 101, 0 };
 // http://xqilla.sourceforge.net/core
 static const XMLCh core_uri[] = { 104, 116, 116, 112, 58, 47, 47, 120, 113, 105, 108, 108, 97, 46, 115, 111, 117, 114, 99, 101, 102, 111, 114, 103, 101, 46, 110, 101, 116, 47, 99, 111, 114, 101, 0 };
 
-static const DelayedModule::Decl core_declarations[] = {
+static const DelayedModule::FuncDef core_functions[] = {
   {
-    DelayedModule::Decl::FUNCTION, "to", 2, false, 22, 1,
-    "declare %xqilla:inline\n"
-    "function core:to($a as xs:integer?, $b as xs:integer?) as xs:decimal*\n"
+    "to", 2, false, 20, 1,
+    "declare function core:to($a as xs:integer?, $b as xs:integer?) as xs:decimal*\n"
     "{\n"
     "  if(empty($a) or empty($b)) then ()\n"
     "  else core:to_helper($a treat as xs:decimal, $b treat as xs:decimal)\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "to_helper", 2, true, 29, 1,
-    "declare %private function core:to_helper($a as xs:decimal, $b as xs:decimal) as xs:decimal*\n"
+    "to_helper", 2, false, 26, 1,
+    "declare function core:to_helper($a as xs:decimal, $b as xs:decimal) as xs:decimal*\n"
     "{\n"
     "  if($a gt $b) then () else ($a, core:to_helper($a + 1, $b))\n"
-    "}"
+    "}\n"
   },
-  { DelayedModule::Decl::NONE, 0, 0, 0, 0, 0 }
+  { 0, 0, 0, 0, 0 }
 };
 
-static const DelayedModule core_module = { core_file, core_prefix, core_uri, core_declarations };
+static const DelayedModule core_module = { core_file, core_prefix, core_uri, core_functions };

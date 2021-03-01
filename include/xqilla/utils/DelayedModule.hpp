@@ -32,10 +32,9 @@ class ModuleCache;
 class XQILLA_API DelayedModule
 {
 public:
-  class XQILLA_API Decl
+  class XQILLA_API FuncDef
   {
   public:
-    enum { NONE, FUNCTION, REWRITE_RULE, NAMESPACE } type;
     const char *name;
     unsigned int args;
     bool isPrivate;
@@ -46,7 +45,7 @@ public:
   const XMLCh *file;
   const XMLCh *prefix;
   const XMLCh *uri;
-  const Decl *declarations;
+  const FuncDef *functions;
 
   void importModuleInto(XQQuery *importer) const;
 };

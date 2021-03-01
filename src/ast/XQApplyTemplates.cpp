@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,9 +60,8 @@ ASTNode* XQApplyTemplates::staticResolution(StaticContext *context)
 {
   XPath2MemoryManager *mm = context->getMemoryManager();
 
-  ItemType *itemType = new (mm) ItemType(ItemType::TEST_NODE);
-  itemType->setLocationInfo(this);
-  SequenceType *seqType = new (mm) SequenceType(itemType, SequenceType::STAR);
+  SequenceType *seqType = new (mm) SequenceType(new (mm) SequenceType::ItemType(SequenceType::ItemType::TEST_NODE),
+                                                SequenceType::STAR);
   seqType->setLocationInfo(this);
 
   expr_ = new (mm) XQTreatAs(expr_, seqType, mm, err_XTTE0520);
@@ -163,7 +162,7 @@ ASTNode *XQApplyTemplates::staticTypingImpl(StaticContext *context)
       _src.getStaticType() = (*inIt)->getBodyStaticAnalysis().getStaticType();
       _src.setProperties((*inIt)->getBodyStaticAnalysis().getProperties());
     } else {
-      _src.getStaticType().typeUnion((*inIt)->getBodyStaticAnalysis().getStaticType());
+      _src.getStaticType() |= (*inIt)->getBodyStaticAnalysis().getStaticType();
       _src.setProperties(_src.getProperties() & (*inIt)->getBodyStaticAnalysis().getProperties());
     }
     _src.add((*inIt)->getBodyStaticAnalysis());
@@ -256,10 +255,9 @@ public:
       templates_(templates),
       input_(input),
       node_(0),
-      scope_(context->getMemoryManager()),
+      scope_(context->getMemoryManager(), context->getVariableStore()),
       result_(0)
   {
-    scope_.cacheVariableStore(ast_->getStaticAnalysis(), context->getVariableStore());
     ast_->evaluateArguments(scope_, context);
   }
 
@@ -268,12 +266,11 @@ public:
     : ResultImpl(parent),
       ast_(parent->ast_),
       templates_(context->getTemplateRules()),
-      input_(node->getAxisResult(Node::CHILD, 0, context, parent)),
+      input_(node->getAxisResult(XQStep::CHILD, 0, context, parent)),
       node_(0),
-      scope_(parent->scope_, context->getMemoryManager()),
+      scope_(context->getMemoryManager(), &parent->scope_),
       result_(0)
   {
-    scope_.cacheVariableStore(ast_->getStaticAnalysis(), context->getVariableStore());
   }
 
   Item::Ptr next(DynamicContext *context)
@@ -341,6 +338,8 @@ public:
     }
   }
 
+  string asString(DynamicContext *context, int indent) const { return ""; }
+
 private:
   const XQApplyTemplates *ast_;
   UserFunctions templates_;
@@ -354,5 +353,6 @@ private:
 
 Result XQApplyTemplates::createResult(DynamicContext *context, int flags) const
 {
-  return new ApplyTemplatesResult(this, expr_->createResult(context), templates_, context);
+  return ClosureResult::create(getStaticAnalysis(), context,
+    new ApplyTemplatesResult(this, expr_->createResult(context), templates_, context));
 }

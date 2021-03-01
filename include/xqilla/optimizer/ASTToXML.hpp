@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,19 +46,15 @@ protected:
   virtual ASTNode *optimize(ASTNode *item);
   virtual XQGlobalVariable *optimizeGlobalVar(XQGlobalVariable *item);
   virtual XQUserFunction *optimizeFunctionDef(XQUserFunction *item);
-  virtual XQRewriteRule *optimizeRewriteRule(XQRewriteRule *item);
   virtual ASTNode *optimizeFunction(XQFunction *item);
   virtual ASTNode *optimizeOperator(XQOperator *item);
   virtual ASTNode *optimizeLiteral(XQLiteral *item);
   virtual ASTNode *optimizeQNameLiteral(XQQNameLiteral *item);
-  virtual ASTNode *optimizeDecimalLiteral(XQDecimalLiteral *item);
-  virtual ASTNode *optimizeFloatLiteral(XQFloatLiteral *item);
-  virtual ASTNode *optimizeDoubleLiteral(XQDoubleLiteral *item);
+  virtual ASTNode *optimizeNumericLiteral(XQNumericLiteral *item);
   virtual ASTNode *optimizeStep(XQStep *item);
   virtual ASTNode *optimizeInlineFunction(XQInlineFunction *item);
   virtual ASTNode *optimizePromoteUntyped(XQPromoteUntyped *item);
   virtual ASTNode *optimizeVariable(XQVariable *item);
-  virtual ASTNode *optimizeExprSubstitution(XQExprSubstitution *item);
   virtual ASTNode *optimizeTreatAs(XQTreatAs *item);
   virtual ASTNode *optimizePromoteNumeric(XQPromoteNumeric *item);
   virtual ASTNode *optimizePromoteAnyURI(XQPromoteAnyURI *item);
@@ -67,7 +63,6 @@ protected:
   virtual ASTNode *optimizeCastAs(XQCastAs *item);
   virtual ASTNode *optimizeFunctionCoercion(XQFunctionCoercion *item);
   virtual ASTNode *optimizeTypeswitch(XQTypeswitch *item);
-  virtual ASTNode *optimizeSwitch(XQSwitch *item);
   virtual ASTNode *optimizePartialApply(XQPartialApply *item);
   virtual ASTNode *optimizeFunctionRef(XQFunctionRef *item);
   virtual ASTNode *optimizeFunctionConversion(XQFunctionConversion *item);
@@ -81,7 +76,6 @@ protected:
   virtual ASTNode *optimizeASTDebugHook(ASTDebugHook *item);
   virtual ASTNode *optimizeCallTemplate(XQCallTemplate *item);
   virtual ASTNode *optimizeApplyTemplates(XQApplyTemplates *item);
-  virtual ASTNode *optimizeTupleMember(XQTupleMember *item);
 
   virtual TupleNode *optimizeTupleNode(TupleNode *item);
   virtual TupleNode *optimizeForTuple(ForTuple *item);
@@ -112,7 +106,7 @@ protected:
   virtual void getElementName(FTSelection *item, XERCES_CPP_NAMESPACE_QUALIFIER XMLBuffer &buf);
 
   static const XMLCh *getComparisonOperationName(GeneralComp::ComparisonOperation co);
-  static const XMLCh *getAxisName(Node::Axis axis);
+  static const XMLCh *getAxisName(XQStep::Axis axis);
   static const XMLCh *getFTRangeTypeName(FTRange::Type type);
   static const XMLCh *getFTUnitName(FTOption::FTUnit unit);
 

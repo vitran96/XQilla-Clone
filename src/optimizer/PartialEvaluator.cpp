@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@
 #include <xqilla/context/DynamicContext.hpp>
 #include <xqilla/context/ContextHelpers.hpp>
 #include <xqilla/utils/XPath2Utils.hpp>
-#include <xqilla/utils/XPath2NSUtils.hpp>
 #include <xqilla/ast/XQSequence.hpp>
 #include <xqilla/exceptions/XQException.hpp>
 #include <xqilla/schema/SequenceType.hpp>
@@ -31,7 +30,6 @@
 #include <xqilla/functions/FunctionCount.hpp>
 #include <xqilla/functions/FunctionEmpty.hpp>
 #include <xqilla/functions/FunctionFunctionArity.hpp>
-#include <xqilla/functions/XQillaFunction.hpp>
 
 #include <xqilla/operators/Plus.hpp>
 #include <xqilla/operators/Minus.hpp>
@@ -61,7 +59,6 @@ using namespace std;
 
 PartialEvaluator::PartialEvaluator(DynamicContext *context, Optimizer *parent)
   : ASTVisitor(parent),
-    rules_(0),
     context_(context),
     functionInlineLimit_(0),
     sizeLimit_(0),
@@ -205,47 +202,18 @@ protected:
   size_t count_;
 };
 
-typedef HashMap<int, XQRewriteRule*> RulesMap;
-typedef HashMap<XQQuery*, XQQuery*> SeenModuleSet;
-
-static void addRewriteRules(XQQuery *module, RulesMap &rulesMap, SeenModuleSet &modulesSeen)
-{
-  if(modulesSeen.contains(module)) return;
-  modulesSeen.put(module, module);
-
-  RewriteRules &rules = const_cast<RewriteRules&>(module->getRewriteRules());
-  for(RewriteRules::iterator it3 = rules.begin(); it3 != rules.end(); ++it3) {
-    vector<ASTNode::whichType> types;
-    (*it3)->getPattern()->typesMatched(types);
-    for(vector<ASTNode::whichType>::iterator i = types.begin(); i != types.end(); ++i) {
-      rulesMap.add(*i, *it3);
-    }
-  }
-
-  ImportedModules &modules = const_cast<ImportedModules&>(module->getImportedModules());
-  for(ImportedModules::iterator it2 = modules.begin(); it2 != modules.end(); ++it2) {
-    addRewriteRules(*it2, rulesMap, modulesSeen);
-  }
-}
-
 void PartialEvaluator::optimize(XQQuery *query)
 {
-  AutoReset<RulesMap*> reset(rules_);
-
   redoTyping_ = false;
-
-  // Construct the rewrite rules map for this module
-  RulesMap rules(true, context_->getMemoryManager());
-  {
-    SeenModuleSet modulesSeen(true, context_->getMemoryManager());
-    addRewriteRules(query, rules, modulesSeen);
-  }
-  rules_ = &rules;
 
   if(query->getQueryBody() == 0) {
     ASTVisitor::optimize(query);
     return;
   }
+
+  // Find and remove all the unused user defined functions
+  removeUnusedFunctions(query, FunctionReferenceFinder().find(query),
+                        context_->getMemoryManager());
 
   // Calculate a size limit on the partially evaluated AST
   sizeLimit_ = ASTCounter().count(query) * BODY_SIZE_RATIO;
@@ -260,11 +228,6 @@ void PartialEvaluator::optimize(XQQuery *query)
   // Find and remove all the unused user defined functions
   removeUnusedFunctions(query, FunctionReferenceFinder().find(query),
                         context_->getMemoryManager());
-}
-
-XQRewriteRule *PartialEvaluator::optimizeRewriteRule(XQRewriteRule *item)
-{
-  return item;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -284,20 +247,6 @@ bool PartialEvaluator::checkSizeLimit(const ASTNode *oldAST, const ASTNode *newA
 
 ASTNode *PartialEvaluator::optimize(ASTNode *item)
 {
-  // Apply rewrite rules
-  if(rules_) {
-    RulesMap::iterator i = rules_->find(item->getType());
-    for(; i != rules_->end(); ++i) {
-      ASTNode *apply = i.getValue()->apply(item, context_);
-      if(apply) {
-        redoTyping_ = true;
-        apply = optimize(apply);
-        item->release();
-        return apply;
-      }
-    }
-  }
-
   bool retype;
   {
     AutoReset<bool> reset(redoTyping_);
@@ -317,14 +266,13 @@ ASTNode *PartialEvaluator::optimize(ASTNode *item)
   switch(item->getType()) {
   case ASTNode::SEQUENCE:
   case ASTNode::LITERAL:
-  case ASTNode::DECIMAL_LITERAL:
-  case ASTNode::DOUBLE_LITERAL:
+  case ASTNode::NUMERIC_LITERAL:
   case ASTNode::QNAME_LITERAL:
     break;
   default:
     if(!item->getStaticAnalysis().isUsed() &&
-       !item->getStaticAnalysis().getStaticType().isType(TypeFlags::NODE) &&
-       !item->getStaticAnalysis().getStaticType().isType(TypeFlags::FUNCTION)) {
+       !item->getStaticAnalysis().getStaticType().isType(StaticType::NODE_TYPE) &&
+       !item->getStaticAnalysis().getStaticType().isType(StaticType::FUNCTION_TYPE)) {
       XPath2MemoryManager* mm = context_->getMemoryManager();
 
       try {
@@ -339,7 +287,7 @@ ASTNode *PartialEvaluator::optimize(ASTNode *item)
         if(newBlock != 0) {
           if(checkSizeLimit(item, newBlock)) {
             item->release();
-            return newBlock->staticResolution(context_)->staticTypingImpl(context_);
+            return newBlock;
           }
           else {
             newBlock->release();
@@ -352,20 +300,6 @@ ASTNode *PartialEvaluator::optimize(ASTNode *item)
       }
     }
     break;
-  }
-
-  // Apply rewrite rules
-  if(rules_) {
-    RulesMap::iterator i = rules_->find(item->getType());
-    for(; i != rules_->end(); ++i) {
-      ASTNode *apply = i.getValue()->apply(item, context_);
-      if(apply) {
-        redoTyping_ = true;
-        apply = optimize(apply);
-        item->release();
-        return apply;
-      }
-    }
   }
 
   return item;
@@ -646,9 +580,9 @@ protected:
     AutoReset<bool> reset(active_);
     AutoReset<bool> reset2(inScope_);
 
-    if(item->getItemType()->getFunctionSignature()->argSpecs) {
-      ArgumentSpecs::const_iterator argsIt = item->getItemType()->getFunctionSignature()->argSpecs->begin();
-      for(; argsIt != item->getItemType()->getFunctionSignature()->argSpecs->end(); ++argsIt) {
+    if(item->getSignature()->argSpecs) {
+      ArgumentSpecs::const_iterator argsIt = item->getSignature()->argSpecs->begin();
+      for(; argsIt != item->getSignature()->argSpecs->end(); ++argsIt) {
         if(required_ && required_->isVariableUsed((*argsIt)->getURI(), (*argsIt)->getName()))
           inScope_ = false;
 
@@ -868,80 +802,34 @@ ASTNode *PartialEvaluator::inlineFunction(const XQUserFunctionInstance *item, Dy
   return result;
 }
 
-static const XMLCh s_inline[] = { 'i', 'n', 'l', 'i', 'n', 'e', 0 };
-static const XMLCh s_inline_if_constant[] = { 'i', 'n', 'l', 'i', 'n', 'e', '-', 'i', 'f', '-',
-  'c', 'o', 'n', 's', 't', 'a', 'n', 't', 0 };
-
 ASTNode *PartialEvaluator::optimizeUserFunction(XQUserFunctionInstance *item)
 {
   VectorOfASTNodes &args = const_cast<VectorOfASTNodes &>(item->getArguments());
-  VectorOfASTNodes::iterator i;
-  for(i = args.begin(); i != args.end(); ++i) {
+  bool constantArg = args.empty();
+  for(VectorOfASTNodes::iterator i = args.begin(); i != args.end(); ++i) {
     *i = optimize(*i);
+    if((*i)->isConstant()) constantArg = true;
   }
 
   const XQUserFunction *funcDef = item->getFunctionDefinition();
 
   // TBD Maybe make this dependant on the number of times the function is called in the query as well? - jpcs
-  if(funcDef->getFunctionBody()) {
-    // %inline annotation
-    XMLBuffer buf;
-    XPath2NSUtils::makeURIName(XQillaFunction::XMLChFunctionURI, s_inline, buf);
-    if(funcDef->getSignature()->annotationMap.contains(buf.getRawBuffer())) {
-      // std::cerr << "%inline - " << UTF8(funcDef->getURIName()) << "#" << args.size() << "\n";
-      ASTNode *result = inlineFunction(item, context_);
+//   if(funcDef->getFunctionBody() && functionInlineLimit_ > 0 && (!funcDef->isRecursive() || constantArg)) {
+  if(funcDef->getFunctionBody() && functionInlineLimit_ > 0 && !funcDef->isRecursive()) {
+    AutoReset<size_t> reset(functionInlineLimit_);
+    --functionInlineLimit_;
+
+    ASTNode *result = inlineFunction(item, context_);
+
+    if(checkSizeLimit(item, result)) {
       redoTyping_ = true;
       result = optimize(result->staticTyping(0, 0));
       item->release();
       return result;
     }
-
-    // %inline-if-constant(arg1, ....) annotation
-    buf.reset();
-    XPath2NSUtils::makeURIName(XQillaFunction::XMLChFunctionURI, s_inline_if_constant, buf);
-    Annotation* const *annotation = funcDef->getSignature()->annotationMap.get(buf.getRawBuffer());
-    if(annotation && funcDef->getSignature()->argSpecs) {
-      bool constantArgs = true;
-      Result result = (*annotation)->getExpression()->createResult(context_);
-      Item::Ptr value;
-      while(constantArgs && (value = result->next(context_)).notNull()) {
-        value = ((AnyAtomicType*)value.get())->castAs(AnyAtomicType::QNAME, context_);
-        ArgumentSpecs::const_iterator specIt = funcDef->getSignature()->argSpecs->begin();
-        for(i = args.begin(); i != args.end(); ++i, ++specIt) {
-          if(XPath2Utils::equals((*specIt)->getName(), ((ATQNameOrDerived*)value.get())->getName()) &&
-             XPath2Utils::equals((*specIt)->getURI(), ((ATQNameOrDerived*)value.get())->getURI())) {
-            constantArgs = constantArgs && (*i)->isConstant();
-            break;
-          }
-        }
-        if(i == args.end()) constantArgs = false;
-      }
-      if(constantArgs) {
-        // std::cerr << "%inline-if-constant - " << UTF8(funcDef->getURIName()) << "#" << args.size() << "\n";
-        ASTNode *result = inlineFunction(item, context_);
-        redoTyping_ = true;
-        result = optimize(result->staticTyping(0, 0));
-        item->release();
-        return result;
-      }
-    }
-
-    if(functionInlineLimit_ > 0 && !funcDef->isRecursive()) {
-      AutoReset<size_t> reset(functionInlineLimit_);
-      --functionInlineLimit_;
-
-      ASTNode *result = inlineFunction(item, context_);
-
-      if(checkSizeLimit(item, result)) {
-        redoTyping_ = true;
-        result = optimize(result->staticTyping(0, 0));
-        item->release();
-        return result;
-      }
-      else {
-        result->release();
-        return item;
-      }
+    else {
+      result->release();
+      return item;
     }
   }
 
@@ -986,8 +874,8 @@ ASTNode *PartialEvaluator::optimizeFunctionDeref(XQFunctionDeref *item)
   ASTNode *bodyCopy = func->getInstance()->copy(context_);
   InlineVar inliner;
 
-  if(args && func->getItemType()->getFunctionSignature()->argSpecs) {
-    ArgumentSpecs::const_iterator specIt = func->getItemType()->getFunctionSignature()->argSpecs->begin();
+  if(args && func->getSignature()->argSpecs) {
+    ArgumentSpecs::const_iterator specIt = func->getSignature()->argSpecs->begin();
     for(VectorOfASTNodes::iterator argIt = args->begin(); argIt != args->end(); ++argIt, ++specIt) {
       // Rename the variable to avoid naming conflicts
       const XMLCh *newName = context_->allocateTempVarName(X("inline_arg"));
@@ -1045,7 +933,7 @@ ASTNode *PartialEvaluator::optimizePartialApply(XQPartialApply *item)
   ASTNode *bodyCopy = func->getInstance()->copy(context_);
   InlineVar inliner;
 
-  FunctionSignature *signature = new (mm) FunctionSignature(func->getItemType()->getFunctionSignature(), mm);
+  FunctionSignature *signature = new (mm) FunctionSignature(func->getSignature(), mm);
 
   if(args && signature->argSpecs) {
     ArgumentSpecs::iterator specIt = signature->argSpecs->begin();
@@ -1078,7 +966,7 @@ ASTNode *PartialEvaluator::optimizePartialApply(XQPartialApply *item)
   ret->setLocationInfo(item);
 
   ASTNode *result = new (mm) XQInlineFunction(0, func->getPrefix(), func->getURI(), func->getName(),
-    new (mm) ItemType(signature, context_->getDocumentCache()), ret, mm);
+                                              signature->argSpecs->size(), signature, ret, mm);
   result->setLocationInfo(item);
 
   if(checkSizeLimit(item, result)) {
@@ -1093,9 +981,39 @@ ASTNode *PartialEvaluator::optimizePartialApply(XQPartialApply *item)
   }
 }
 
+static inline FunctionSignature *findSignature(ASTNode *expr)
+{
+  FunctionSignature *signature = 0;
+
+  switch(expr->getType()) {
+  case ASTNode::INLINE_FUNCTION: {
+    signature = ((XQInlineFunction*)expr)->getSignature();
+    break;
+  }
+  case ASTNode::FUNCTION_COERCION: {
+    XQFunctionCoercion *coercion = (XQFunctionCoercion*)expr;
+    if(coercion->getFuncConvert()->getType() == ASTNode::INLINE_FUNCTION)
+      signature = ((XQInlineFunction*)coercion->getFuncConvert())->getSignature();
+    break;
+  }
+  default: break;
+  }
+
+  return signature;
+}
+
 ASTNode *PartialEvaluator::optimizeFunctionCoercion(XQFunctionCoercion *item)
 {
   ASTVisitor::optimizeFunctionCoercion(item);
+
+  FunctionSignature *signature = findSignature(item->getExpression());
+  if(signature && item->getSequenceType()->getItemType()->matches(signature, context_)) {
+    ASTNode *result = item->getExpression();
+    item->setExpression(0);
+    sizeLimit_ += ASTCounter().count(item);
+    item->release();
+    return result;
+  }
 
   if(item->getExpression()->getType() != ASTNode::INLINE_FUNCTION || functionInlineLimit_ <= 0)
     return item;
@@ -1118,6 +1036,25 @@ ASTNode *PartialEvaluator::optimizeFunctionCoercion(XQFunctionCoercion *item)
     result->release();
     return item;
   }
+}
+
+ASTNode *PartialEvaluator::optimizeTreatAs(XQTreatAs *item)
+{
+  ASTVisitor::optimizeTreatAs(item);
+
+  const SequenceType::ItemType *itemType = item->getSequenceType()->getItemType();
+  if(!itemType) return item;
+
+  FunctionSignature *signature = findSignature(item->getExpression());
+  if(signature && itemType->matches(signature, context_)) {
+    ASTNode *result = item->getExpression();
+    item->setExpression(0);
+    sizeLimit_ += ASTCounter().count(item);
+    item->release();
+    return result;
+  }
+
+  return item;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1210,7 +1147,7 @@ protected:
 
     item->setExpression(optimize(item->getExpression()));
 
-    count_ = uadd(tcount, umultiply(count_, item->getParent()->getStaticAnalysis().getStaticType().getMax()));
+    count_ = uadd(tcount, umultiply(count_, item->getParent()->getMax()));
 
     return item;
   }
@@ -1224,7 +1161,7 @@ protected:
 
     item->setExpression(optimize(item->getExpression()));
 
-    count_ = uadd(tcount, umultiply(count_, item->getParent()->getStaticAnalysis().getStaticType().getMax()));
+    count_ = uadd(tcount, umultiply(count_, item->getParent()->getMax()));
 
     return item;
   }
@@ -1236,7 +1173,7 @@ protected:
     unsigned int tcount = count_;
     count_ = 0;
 
-    count_ = uadd(tcount, umultiply(count_, item->getParent()->getStaticAnalysis().getStaticType().getMax()));
+    count_ = uadd(tcount, umultiply(count_, item->getParent()->getMax()));
 
     return item;
   }
@@ -1250,7 +1187,7 @@ protected:
 
     item->setExpression(optimize(item->getExpression()));
 
-    count_ = uadd(tcount, umultiply(count_, item->getParent()->getStaticAnalysis().getStaticType().getMax()));
+    count_ = uadd(tcount, umultiply(count_, item->getParent()->getMax()));
 
     return item;
   }
@@ -1264,7 +1201,7 @@ protected:
 
     item->setExpression(optimize(item->getExpression()));
 
-    count_ = uadd(tcount, umultiply(count_, item->getParent()->getStaticAnalysis().getStaticType().getMax()));
+    count_ = uadd(tcount, umultiply(count_, item->getParent()->getMax()));
 
     return item;
   }
@@ -1278,14 +1215,8 @@ protected:
 
     item->setExpression(optimize(item->getExpression()));
 
-    count_ = uadd(tcount, umultiply(count_, item->getParent()->getStaticAnalysis().getStaticType().getMax()));
+    count_ = uadd(tcount, umultiply(count_, item->getParent()->getMax()));
 
-    return item;
-  }
-
-  virtual ASTNode *optimizeTupleConstructor(XQTupleConstructor *item)
-  {
-    item->setParent(optimizeTupleNode(const_cast<TupleNode*>(item->getParent())));
     return item;
   }
 
@@ -1298,7 +1229,7 @@ protected:
 
     item->setExpression(optimize(item->getExpression()));
 
-    count_ = uadd(tcount, umultiply(count_, item->getParent()->getStaticAnalysis().getStaticType().getMax()));
+    count_ = uadd(tcount, umultiply(count_, item->getParent()->getMax()));
 
     return item;
   }
@@ -1337,7 +1268,7 @@ static void findLetsToInline(TupleNode *ancestor, vector<LetTuple*> &toInline, m
     LetTuple *f = (LetTuple*)ancestor;
 
     countLetUsage(f->getExpression(), toCount,
-                  ancestor->getParent()->getStaticAnalysis().getStaticType().getMax());
+                  ancestor->getParent()->getMax());
 
     if(f->getExpression()->isConstant() ||
        f->getExpression()->getType() == ASTNode::VARIABLE ||
@@ -1352,17 +1283,17 @@ static void findLetsToInline(TupleNode *ancestor, vector<LetTuple*> &toInline, m
   case TupleNode::WHERE:
     findLetsToInline(ancestor->getParent(), toInline, toCount);
     countLetUsage(((WhereTuple*)ancestor)->getExpression(), toCount,
-                  ancestor->getParent()->getStaticAnalysis().getStaticType().getMax());
+                  ancestor->getParent()->getMax());
     break;
   case TupleNode::ORDER_BY:
     findLetsToInline(ancestor->getParent(), toInline, toCount);
     countLetUsage(((OrderByTuple*)ancestor)->getExpression(), toCount,
-                  ancestor->getParent()->getStaticAnalysis().getStaticType().getMax());
+                  ancestor->getParent()->getMax());
     break;
   case TupleNode::FOR:
     findLetsToInline(ancestor->getParent(), toInline, toCount);
     countLetUsage(((ForTuple*)ancestor)->getExpression(), toCount,
-                  ancestor->getParent()->getStaticAnalysis().getStaticType().getMax());
+                  ancestor->getParent()->getMax());
     break;
   case TupleNode::COUNT:
     findLetsToInline(ancestor->getParent(), toInline, toCount);
@@ -1379,7 +1310,7 @@ static ASTNode *inlineLets(XQReturn *item, DynamicContext *context, size_t &size
   vector<LetTuple*> toInline;
   findLetsToInline(const_cast<TupleNode*>(item->getParent()), toInline, toCount);
   countLetUsage(item->getExpression(), toCount,
-                item->getParent()->getStaticAnalysis().getStaticType().getMax());
+                item->getParent()->getMax());
 
   InlineVar inliner;
   vector<LetTuple*>::iterator i = toInline.begin();
@@ -1460,13 +1391,41 @@ ASTNode *PartialEvaluator::optimizeReturn(XQReturn *item)
 //
 // Make decisions early
 
+ASTNode *PartialEvaluator::optimizeIf(XQIf *item)
+{
+  item->setTest(optimize(const_cast<ASTNode *>(item->getTest())));
+
+  if(item->getTest()->isConstant()) {
+    bool result = item->getTest()->boolResult(context_);
+    context_->clearDynamicContext();
+
+    if(result) {
+      ASTNode *tmp = const_cast<ASTNode *>(item->getWhenTrue());
+      item->setWhenTrue(0);
+      sizeLimit_ += ASTCounter().count(item);
+      item->release();
+      return optimize(tmp);
+    }
+    else {
+      ASTNode *tmp = const_cast<ASTNode *>(item->getWhenFalse());
+      item->setWhenFalse(0);
+      sizeLimit_ += ASTCounter().count(item);
+      item->release();
+      return optimize(tmp);
+    }
+  }
+
+  item->setWhenTrue(optimize(const_cast<ASTNode *>(item->getWhenTrue())));
+  item->setWhenFalse(optimize(const_cast<ASTNode *>(item->getWhenFalse())));
+  return item;
+}
+
 ASTNode *PartialEvaluator::optimizeQuantified(XQQuantified *item)
 {
   item->setParent(optimizeTupleNode(const_cast<TupleNode*>(item->getParent())));
 
-  if(item->getParent()->getStaticAnalysis().getStaticType().getMax() == 0) {
-    ASTNode *result = XQLiteral::create(item->getQuantifierType() == XQQuantified::EVERY, context_->getMemoryManager(), item)
-      ->staticResolution(context_);
+  if(item->getParent()->getMax() == 0) {
+    ASTNode *result = XQLiteral::create(item->getQuantifierType() == XQQuantified::EVERY, context_->getMemoryManager(), item);
     sizeLimit_ += ASTCounter().count(item);
     sizeLimit_ -= ASTCounter().count(result);
     item->release();
@@ -1475,13 +1434,175 @@ ASTNode *PartialEvaluator::optimizeQuantified(XQQuantified *item)
 
   item->setExpression(optimize(item->getExpression()));
 
-  if(item->getExpression()->isConstant() &&
-     item->getParent()->getStaticAnalysis().getStaticType().getMin() != 0) {
-      bool value = item->getExpression()->boolResult(context_);
-    ASTNode *result = XQLiteral::create(value, context_->getMemoryManager(), item)
-      ->staticResolution(context_);
+  if(item->getExpression()->isConstant() && item->getParent()->getMin() != 0) {
+    bool value = item->getExpression()->boolResult(context_);
+    ASTNode *result = XQLiteral::create(value, context_->getMemoryManager(), item);
     sizeLimit_ += ASTCounter().count(item);
     sizeLimit_ -= ASTCounter().count(result);
+    item->release();
+    return result;
+  }
+
+  return item;
+}
+
+ASTNode *PartialEvaluator::optimizePredicate(XQPredicate *item)
+{
+  item->setPredicate(optimize(const_cast<ASTNode *>(item->getPredicate())));
+
+  if(item->getPredicate()->isConstant()) {
+    context_->clearDynamicContext();
+
+    Result pred_result = item->getPredicate()->createResult(context_);
+    Item::Ptr first = pred_result->next(context_);
+    Item::Ptr second;
+    if(first.notNull()) {
+      second = pred_result->next(context_);
+    }
+
+    if(first.isNull() || second.notNull() || !first->isAtomicValue() ||
+       !((AnyAtomicType*)first.get())->isNumericValue()) {
+      // It's not a single numeric item
+      if(XQEffectiveBooleanValue::get(first, second, context_, item)) {
+        // We have a true predicate
+        ASTNode *tmp = const_cast<ASTNode *>(item->getExpression());
+        item->setExpression(0);
+        sizeLimit_ += ASTCounter().count(item);
+        item->release();
+        return optimize(tmp);
+      }
+      else {
+        // We have a false predicate, which is constant folded to an empty sequence
+        XPath2MemoryManager *mm = context_->getMemoryManager();
+        ASTNode *result = new (mm) XQSequence(mm);
+        result->setLocationInfo(item->getExpression());
+        sizeLimit_ += ASTCounter().count(item);
+        item->release();
+        return optimize(result);
+      }
+    }
+  }
+
+  if(item->getPredicate()->getStaticAnalysis().getStaticType().getMax() == 0) {
+    // If there are no items EBV returns false, which is constant folded to an empty sequence
+    XPath2MemoryManager *mm = context_->getMemoryManager();
+    ASTNode *result = new (mm) XQSequence(mm);
+    result->setLocationInfo(item->getExpression());
+    sizeLimit_ += ASTCounter().count(item);
+    item->release();
+    return optimize(result);
+  }
+
+  if(item->getPredicate()->getStaticAnalysis().getStaticType().getMin() >= 1 &&
+     item->getPredicate()->getStaticAnalysis().getStaticType().isType(StaticType::NODE_TYPE)) {
+    // If there is one or more nodes, EBV returns true
+    ASTNode *tmp = const_cast<ASTNode *>(item->getExpression());
+    item->setExpression(0);
+    sizeLimit_ += ASTCounter().count(item);
+    item->release();
+    return optimize(tmp);
+  }
+
+  item->setExpression(optimize(const_cast<ASTNode *>(item->getExpression())));
+
+  if(item->getExpression()->getStaticAnalysis().getStaticType().getMax() == 0) {
+    // If the expression doesn't return any results, it doesn't need a predicate!
+    ASTNode *result = item->getExpression();
+    item->setExpression(0);
+    sizeLimit_ += ASTCounter().count(item);
+    item->release();
+    return result;
+  }
+
+  return item;
+}
+
+ASTNode *PartialEvaluator::optimizeAnd(And *item)
+{
+  VectorOfASTNodes &args = const_cast<VectorOfASTNodes &>(item->getArguments());
+
+  VectorOfASTNodes::iterator i = args.begin();
+  while(i != args.end()) {
+    if(!(*i)->getStaticAnalysis().isUsed()) {
+      if(!(*i)->boolResult(context_)) {
+        // It's constantly false, so this expression is false
+        ASTNode *result = XQLiteral::create(false, context_->getMemoryManager(), item);
+        sizeLimit_ += ASTCounter().count(item);
+        sizeLimit_ -= ASTCounter().count(result);
+        item->release();
+        return result;
+      }
+      else {
+        // Remove the constant true from the operator arguments
+        sizeLimit_ += ASTCounter().count(*i);
+        (*i)->release();
+        i = args.erase(i);
+      }
+    }
+    else ++i;
+  }
+
+  return item;
+}
+
+ASTNode *PartialEvaluator::optimizeOr(Or *item)
+{
+  VectorOfASTNodes &args = const_cast<VectorOfASTNodes &>(item->getArguments());
+
+  VectorOfASTNodes::iterator i = args.begin();
+  while(i != args.end()) {
+    if(!(*i)->getStaticAnalysis().isUsed()) {
+      if((*i)->boolResult(context_)) {
+        // It's constantly true, so this expression is true
+        ASTNode *result = XQLiteral::create(true, context_->getMemoryManager(), item);
+        sizeLimit_ += ASTCounter().count(item);
+        sizeLimit_ -= ASTCounter().count(result);
+        item->release();
+        return result;
+      }
+      else {
+        // Remove the constant false from the operator arguments
+        sizeLimit_ += ASTCounter().count(*i);
+        (*i)->release();
+        i = args.erase(i);
+      }
+    }
+    else ++i;
+  }
+
+  return item;
+}
+
+ASTNode *PartialEvaluator::optimizeEffectiveBooleanValue(XQEffectiveBooleanValue *item)
+{
+  item->setExpression(optimize(item->getExpression()));
+
+  if(item->getExpression()->getStaticAnalysis().getStaticType().getMax() == 0) {
+    // If there are no items, EBV returns false
+    ASTNode *result = XQLiteral::create(false, context_->getMemoryManager(), item);
+    sizeLimit_ += ASTCounter().count(item);
+    sizeLimit_ -= ASTCounter().count(result);
+    item->release();
+    return result;
+  }
+
+  if(item->getExpression()->getStaticAnalysis().getStaticType().getMin() >= 1 &&
+     item->getExpression()->getStaticAnalysis().getStaticType().isType(StaticType::NODE_TYPE)) {
+    // If there is one or more nodes, EBV returns true
+    ASTNode *result = XQLiteral::create(true, context_->getMemoryManager(), item);
+    sizeLimit_ += ASTCounter().count(item);
+    sizeLimit_ -= ASTCounter().count(result);
+    item->release();
+    return result;
+  }
+
+  if(item->getExpression()->getStaticAnalysis().getStaticType().getMin() <= 1 &&
+     item->getExpression()->getStaticAnalysis().getStaticType().getMax() == 1 &&
+     item->getExpression()->getStaticAnalysis().getStaticType().isType(StaticType::BOOLEAN_TYPE)) {
+    // If there is zero or one boolean values, EBV isn't needed
+    ASTNode *result = item->getExpression();
+    item->setExpression(0);
+    sizeLimit_ += ASTCounter().count(item);
     item->release();
     return result;
   }
@@ -1530,6 +1651,479 @@ ASTNode *PartialEvaluator::optimizeTypeswitch(XQTypeswitch *item)
     result = optimize(result->staticTyping(0, 0));
   }
   return result;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// Arithmetic folding rules
+
+static ASTNode *foldEmptyArgument(XQOperator *item, DynamicContext *context)
+{
+  VectorOfASTNodes &args = const_cast<VectorOfASTNodes &>(item->getArguments());
+
+  for(VectorOfASTNodes::iterator i = args.begin(); i != args.end(); ++i) {
+    if((*i)->getStaticAnalysis().getStaticType().getMax() == 0) {
+      // The result is always empty if one of our arguments is always empty
+      XPath2MemoryManager* mm = context->getMemoryManager();
+      ASTNode *result = new (mm) XQSequence(mm);
+      result->setLocationInfo(item);
+      return result;
+    }
+  }
+
+  return item;
+}
+
+ASTNode *PartialEvaluator::optimizeOperator(XQOperator *item)
+{
+  ASTNode *result = ASTVisitor::optimizeOperator(item);
+  if(result != item) return result;
+
+  const XMLCh *name = item->getOperatorName();
+
+  if(name == Plus::name) {
+    return optimizePlus((Plus*)item);
+  }
+  else if(name == Minus::name) {
+    return optimizeMinus((Minus*)item);
+  }
+  else if(name == Multiply::name) {
+    return optimizeMultiply((Multiply*)item);
+  }
+  else if(name == Divide::name) {
+    return optimizeDivide((Divide*)item);
+  }
+
+  else if(name == Mod::name) {
+    return foldEmptyArgument(item, context_);
+  }
+  else if(name == IntegerDivide::name) {
+    return foldEmptyArgument(item, context_);
+  }
+  else if(name == UnaryMinus::name) {
+    return foldEmptyArgument(item, context_);
+  }
+
+  else if(name == And::name) {
+    return optimizeAnd((And*)item);
+  }
+  else if(name == Or::name) {
+    return optimizeOr((Or*)item);
+  }
+
+  return item;
+}
+
+ASTNode *PartialEvaluator::optimizePlus(Plus *item)
+{
+  XPath2MemoryManager *mm = context_->getMemoryManager();
+
+  VectorOfASTNodes &args = const_cast<VectorOfASTNodes &>(item->getArguments());
+
+  if(!item->getStaticAnalysis().getStaticType().isType(StaticType::NUMERIC_TYPE))
+    return foldEmptyArgument(item, context_);
+
+  if(args[1]->isConstant() && args[0]->getType() == ASTNode::OPERATOR) {
+    XQOperator *op = (XQOperator*)args[0];
+    if(op->getOperatorName() == Minus::name || op->getOperatorName() == Plus::name) {
+      if(op->getArguments()[0]->isConstant()) {
+        // (A (+/-) B) + C = (A + C) (+/-) B
+        args[0] = op->getArguments()[0];
+        const_cast<VectorOfASTNodes&>(op->getArguments())[0] = item;
+        redoTyping_ = true;
+        return optimize(op->staticTyping(0, 0));
+      }
+      else if(op->getArguments()[1]->isConstant()) {
+        // (A - B) + C = A - (B - C)
+        // (A + B) + C = A + (B + C)
+        args[0] = op->getArguments()[1];
+
+        if(op->getOperatorName() == Minus::name) {
+          const_cast<VectorOfASTNodes&>(op->getArguments())[1] = new (mm) Minus(args, mm);
+          const_cast<VectorOfASTNodes&>(op->getArguments())[1]->setLocationInfo(item);
+        }
+        else {
+          const_cast<VectorOfASTNodes&>(op->getArguments())[1] = item;
+        }
+        redoTyping_ = true;
+        return optimize(op->staticTyping(0, 0));
+      }
+    }
+  }
+
+  if(args[0]->isConstant() && args[1]->getType() == ASTNode::OPERATOR) {
+    XQOperator *op = (XQOperator*)args[1];
+    if(op->getOperatorName() == Minus::name || op->getOperatorName() == Plus::name) {
+      if(op->getArguments()[0]->isConstant()) {
+        // A + (B (+/-) C) = (A + B) (+/-) C
+        args[1] = op->getArguments()[0];
+        const_cast<VectorOfASTNodes&>(op->getArguments())[0] = item;
+        redoTyping_ = true;
+        return optimize(op->staticTyping(0, 0));
+      }
+      else if(op->getArguments()[1]->isConstant()) {
+        // A + (B + C) = (A + C) + B
+        // A + (B - C) = (A - C) + B
+        args[1] = op->getArguments()[0];
+        const_cast<VectorOfASTNodes&>(op->getArguments())[0] = args[0];
+        redoTyping_ = true;
+        return optimize(item->staticTyping(0, 0));
+      }
+    }
+  }
+
+  if(args[1]->isConstant()) {
+    AnyAtomicType::Ptr arg1 = (AnyAtomicType*)args[1]->createResult(context_)->next(context_).get();
+    if(arg1.notNull() && arg1->isNumericValue()) {
+      // TBD type promotion - jpcs
+      Numeric *num = (Numeric*)arg1.get();
+      if((num->getState() == Numeric::NUM || num->getState() == Numeric::NEG_NUM) && num->asMAPM() == 0) {
+        // X + 0 = X
+        ASTNode *result = args[0];
+        args[0] = 0;
+        sizeLimit_ += ASTCounter().count(item);
+        item->release();
+        redoTyping_ = true;
+        return result;
+      }
+    }
+  }
+
+  if(args[0]->isConstant()) {
+    AnyAtomicType::Ptr arg0 = (AnyAtomicType*)args[0]->createResult(context_)->next(context_).get();
+    if(arg0.notNull() && arg0->isNumericValue()) {
+      // TBD type promotion - jpcs
+      Numeric *num = (Numeric*)arg0.get();
+      if((num->getState() == Numeric::NUM || num->getState() == Numeric::NEG_NUM) && num->asMAPM() == 0) {
+        // 0 + X = X
+        ASTNode *result = args[1];
+        args[1] = 0;
+        sizeLimit_ += ASTCounter().count(item);
+        item->release();
+        return result;
+      }
+    }
+  }
+
+  return foldEmptyArgument(item, context_);
+}
+
+ASTNode *PartialEvaluator::optimizeMinus(Minus *item)
+{
+  XPath2MemoryManager *mm = context_->getMemoryManager();
+
+  VectorOfASTNodes &args = const_cast<VectorOfASTNodes &>(item->getArguments());
+
+  if(!item->getStaticAnalysis().getStaticType().isType(StaticType::NUMERIC_TYPE))
+    return foldEmptyArgument(item, context_);
+
+  if(args[1]->isConstant() && args[0]->getType() == ASTNode::OPERATOR) {
+    XQOperator *op = (XQOperator*)args[0];
+    if(op->getOperatorName() == Minus::name || op->getOperatorName() == Plus::name) {
+      if(op->getArguments()[0]->isConstant()) {
+        // (A (+/-) B) - C = (A - C) (+/-) B
+        args[0] = op->getArguments()[0];
+        const_cast<VectorOfASTNodes&>(op->getArguments())[0] = item;
+        redoTyping_ = true;
+        return optimize(op->staticTyping(0, 0));
+      }
+      else if(op->getArguments()[1]->isConstant()) {
+        // (A - B) - C = A - (B + C)
+        // (A + B) - C = A + (B - C)
+        args[0] = op->getArguments()[1];
+
+        if(op->getOperatorName() == Minus::name) {
+          const_cast<VectorOfASTNodes&>(op->getArguments())[1] = new (mm) Plus(args, mm);
+          const_cast<VectorOfASTNodes&>(op->getArguments())[1]->setLocationInfo(item);
+        }
+        else {
+          const_cast<VectorOfASTNodes&>(op->getArguments())[1] = item;
+        }
+        redoTyping_ = true;
+        return optimize(op->staticTyping(0, 0));
+      }
+    }
+  }
+
+  if(args[0]->isConstant() && args[1]->getType() == ASTNode::OPERATOR) {
+    XQOperator *op = (XQOperator*)args[1];
+    if(op->getOperatorName() == Minus::name || op->getOperatorName() == Plus::name) {
+      if(op->getArguments()[0]->isConstant()) {
+        // A - (B (+/-) C) = (A - B) (+/-) C
+        args[1] = op->getArguments()[0];
+        const_cast<VectorOfASTNodes&>(op->getArguments())[0] = item;
+        redoTyping_ = true;
+        return optimize(op->staticTyping(0, 0));
+      }
+      else if(op->getArguments()[1]->isConstant()) {
+        // A - (B + C) = (A - C) - B
+        // A - (B - C) = (A + C) - B
+        args[1] = op->getArguments()[0];
+        const_cast<VectorOfASTNodes&>(op->getArguments())[0] = args[0];
+
+        if(op->getOperatorName() == Minus::name) {
+          args[0] = new (mm) Plus(op->getArguments(), mm);
+          args[0]->setLocationInfo(op);
+        }
+        else {
+          args[0] = new (mm) Minus(op->getArguments(), mm);
+          args[0]->setLocationInfo(op);
+        }
+        redoTyping_ = true;
+        return optimize(item->staticTyping(0, 0));
+      }
+    }
+  }
+
+  if(args[1]->isConstant()) {
+    AnyAtomicType::Ptr arg1 = (AnyAtomicType*)args[1]->createResult(context_)->next(context_).get();
+    if(arg1.notNull() && arg1->isNumericValue()) {
+      // TBD type promotion - jpcs
+      Numeric *num = (Numeric*)arg1.get();
+      if((num->getState() == Numeric::NUM || num->getState() == Numeric::NEG_NUM) && num->asMAPM() == 0) {
+        // X - 0 = X
+        ASTNode *result = args[0];
+        args[0] = 0;
+        sizeLimit_ += ASTCounter().count(item);
+        item->release();
+        return result;
+      }
+    }
+  }
+
+  if(args[0]->isConstant()) {
+    AnyAtomicType::Ptr arg0 = (AnyAtomicType*)args[0]->createResult(context_)->next(context_).get();
+    if(arg0.notNull() && arg0->isNumericValue()) {
+      // TBD type promotion - jpcs
+      Numeric *num = (Numeric*)arg0.get();
+      if((num->getState() == Numeric::NUM || num->getState() == Numeric::NEG_NUM) && num->asMAPM() == 0) {
+        // 0 - X = -X
+        VectorOfASTNodes newArgs = VectorOfASTNodes(XQillaAllocator<ASTNode*>(mm));
+        newArgs.push_back(args[1]);
+        ASTNode *result = new (mm) UnaryMinus(false, newArgs, mm);
+        result->setLocationInfo(item);
+
+        sizeLimit_ += ASTCounter().count(item);
+        sizeLimit_ -= ASTCounter().count(result);
+        args[1] = 0;
+        item->release();
+        return result;
+      }
+    }
+  }
+
+  return foldEmptyArgument(item, context_);
+}
+
+ASTNode *PartialEvaluator::optimizeMultiply(Multiply *item)
+{
+  VectorOfASTNodes &args = const_cast<VectorOfASTNodes &>(item->getArguments());
+
+  if(!item->getStaticAnalysis().getStaticType().isType(StaticType::NUMERIC_TYPE))
+    return foldEmptyArgument(item, context_);
+
+  if(args[1]->isConstant() && args[0]->getType() == ASTNode::OPERATOR) {
+    XQOperator *op = (XQOperator*)args[0];
+    if(op->getOperatorName() == Multiply::name || op->getOperatorName() == Divide::name) {
+      if(op->getArguments()[0]->isConstant()) {
+        // (A * B) * C = (A * C) * B
+        // (A / B) * C = (A * C) / B
+        args[0] = op->getArguments()[0];
+        const_cast<VectorOfASTNodes&>(op->getArguments())[0] = item;
+        redoTyping_ = true;
+        return optimize(op->staticTyping(0, 0));
+      }
+      else if(op->getArguments()[1]->isConstant()) {
+        // (A * B) * C = A * (C * B)
+        // (A / B) * C = A * (C / B)
+        args[0] = op->getArguments()[0];
+        const_cast<VectorOfASTNodes&>(op->getArguments())[0] = args[1];
+        const_cast<VectorOfASTNodes&>(op->getArguments())[1] = op->getArguments()[1];
+        args[1] = op;
+        redoTyping_ = true;
+        return optimize(item->staticTyping(0, 0));
+      }
+    }
+  }
+
+  if(args[0]->isConstant() && args[1]->getType() == ASTNode::OPERATOR) {
+    XQOperator *op = (XQOperator*)args[1];
+    if(op->getOperatorName() == Multiply::name || op->getOperatorName() == Divide::name) {
+      if(op->getArguments()[0]->isConstant()) {
+        // A * (B * C) = (A * B) * C
+        // A * (B / C) = (A * B) / C
+        args[1] = op->getArguments()[0];
+        const_cast<VectorOfASTNodes&>(op->getArguments())[0] = item;
+        redoTyping_ = true;
+        return optimize(op->staticTyping(0, 0));
+      }
+      else if(op->getArguments()[1]->isConstant()) {
+        // A * (B * C) = (A * C) * B
+        // A * (B / C) = (A / C) * B
+        args[1] = op->getArguments()[0];
+        const_cast<VectorOfASTNodes&>(op->getArguments())[0] = args[0];
+        redoTyping_ = true;
+        return optimize(item->staticTyping(0, 0));
+      }
+    }
+  }
+
+  if(args[1]->isConstant()) {
+    AnyAtomicType::Ptr arg1 = (AnyAtomicType*)args[1]->createResult(context_)->next(context_).get();
+    if(arg1.notNull() && arg1->isNumericValue()) {
+      // TBD type promotion - jpcs
+      Numeric *num = (Numeric*)arg1.get();
+      if(num->getState() == Numeric::NUM && num->asMAPM() == 0 &&
+         item->getStaticAnalysis().getStaticType().isType(StaticType::DECIMAL_TYPE)) {
+        // X * 0 = 0
+        // but only for xs:decimal, since otherwise "-0" messes things up
+        ASTNode *result = args[1];
+        args[1] = 0;
+        sizeLimit_ += ASTCounter().count(item);
+        item->release();
+        return result;
+      }
+      else if(num->asMAPM() == 1) {
+        // X * 1 = X
+        ASTNode *result = args[0];
+        args[0] = 0;
+        sizeLimit_ += ASTCounter().count(item);
+        item->release();
+        return result;
+      }
+    }
+  }
+
+  if(args[0]->isConstant()) {
+    AnyAtomicType::Ptr arg0 = (AnyAtomicType*)args[0]->createResult(context_)->next(context_).get();
+    if(arg0.notNull() && arg0->isNumericValue()) {
+      // TBD type promotion - jpcs
+      Numeric *num = (Numeric*)arg0.get();
+      if(num->asMAPM() == 0 && item->getStaticAnalysis().getStaticType().isType(StaticType::DECIMAL_TYPE)) {
+        // 0 * X = 0
+        // but only for xs:decimal, since otherwise "-0" messes things up
+        ASTNode *result = args[0];
+        args[0] = 0;
+        sizeLimit_ += ASTCounter().count(item);
+        item->release();
+        return result;
+      }
+      else if(num->asMAPM() == 1) {
+        // 1 * X = X
+        ASTNode *result = args[1];
+        args[1] = 0;
+        sizeLimit_ += ASTCounter().count(item);
+        item->release();
+        return result;
+      }
+    }
+  }
+
+  return foldEmptyArgument(item, context_);
+}
+
+ASTNode *PartialEvaluator::optimizeDivide(Divide *item)
+{
+  XPath2MemoryManager *mm = context_->getMemoryManager();
+
+  VectorOfASTNodes &args = const_cast<VectorOfASTNodes &>(item->getArguments());
+
+  if(!item->getStaticAnalysis().getStaticType().isType(StaticType::NUMERIC_TYPE))
+    return foldEmptyArgument(item, context_);
+
+  // duration / duration = decimal
+  if(args[0]->getStaticAnalysis().getStaticType().containsType(StaticType::DAY_TIME_DURATION_TYPE | StaticType::YEAR_MONTH_DURATION_TYPE) ||
+     args[1]->getStaticAnalysis().getStaticType().containsType(StaticType::DAY_TIME_DURATION_TYPE | StaticType::YEAR_MONTH_DURATION_TYPE))
+    return foldEmptyArgument(item, context_);
+
+  if(args[1]->isConstant() && args[0]->getType() == ASTNode::OPERATOR) {
+    XQOperator *op = (XQOperator*)args[0];
+    if(op->getOperatorName() == Multiply::name || op->getOperatorName() == Divide::name) {
+      if(op->getArguments()[0]->isConstant()) {
+        // (A / B) / C = (A / C) / B
+        // (A * B) / C = (A / C) * B
+        args[0] = op->getArguments()[0];
+        const_cast<VectorOfASTNodes&>(op->getArguments())[0] = item;
+        redoTyping_ = true;
+        return optimize(op->staticTyping(0, 0));
+      }
+      else if(op->getArguments()[1]->isConstant()) {
+        // (A / B) / C = A / (B * C)
+        // (A * B) / C = A * (B / C)
+        args[0] = op->getArguments()[1];
+
+        if(op->getOperatorName() == Divide::name) {
+          const_cast<VectorOfASTNodes&>(op->getArguments())[1] = new (mm) Multiply(args, mm);
+          const_cast<VectorOfASTNodes&>(op->getArguments())[1]->setLocationInfo(item);
+        }
+        else {
+          const_cast<VectorOfASTNodes&>(op->getArguments())[1] = item;
+        }
+        redoTyping_ = true;
+        return optimize(op->staticTyping(0, 0));
+      }
+    }
+  }
+
+  if(args[0]->isConstant() && args[1]->getType() == ASTNode::OPERATOR) {
+    XQOperator *op = (XQOperator*)args[1];
+    if(op->getOperatorName() == Multiply::name || op->getOperatorName() == Divide::name) {
+      if(op->getArguments()[0]->isConstant()) {
+        // A / (B / C) = (A / B) * C
+        // A / (B * C) = (A / B) / C
+        args[1] = op->getArguments()[0];
+        const_cast<VectorOfASTNodes&>(op->getArguments())[0] = item;
+
+        if(op->getOperatorName() == Divide::name) {
+          op = new (mm) Multiply(op->getArguments(), mm);
+          op->setLocationInfo(op);
+        }
+        else {
+          op = new (mm) Divide(op->getArguments(), mm);
+          op->setLocationInfo(op);
+        }
+        redoTyping_ = true;
+        return optimize(op->staticTyping(0, 0));
+      }
+      else if(op->getArguments()[1]->isConstant()) {
+        // A / (B / C) = (A * C) / B
+        // A / (B * C) = (A / C) / B
+        args[1] = op->getArguments()[0];
+        const_cast<VectorOfASTNodes&>(op->getArguments())[0] = args[0];
+
+        if(op->getOperatorName() == Divide::name) {
+          args[0] = new (mm) Multiply(op->getArguments(), mm);
+          args[0]->setLocationInfo(op);
+        }
+        else {
+          args[0] = new (mm) Divide(op->getArguments(), mm);
+          args[0]->setLocationInfo(op);
+        }
+        redoTyping_ = true;
+        return optimize(item->staticTyping(0, 0));
+      }
+    }
+  }
+
+  if(args[1]->isConstant()) {
+    AnyAtomicType::Ptr arg1 = (AnyAtomicType*)args[1]->createResult(context_)->next(context_).get();
+    if(arg1.notNull() && arg1->isNumericValue()) {
+      // TBD type promotion - jpcs
+      Numeric *num = (Numeric*)arg1.get();
+      if(num->asMAPM() == 1) {
+        // X / 1 = X
+        ASTNode *result = args[0];
+        args[0] = 0;
+        sizeLimit_ += ASTCounter().count(item);
+        item->release();
+        return result;
+      }
+    }
+  }
+
+  // 0 / X = 0, but only if X != 0 - so we leave that one for regular constant folding
+
+  return foldEmptyArgument(item, context_);
 }
 
 // Other things to constant fold:

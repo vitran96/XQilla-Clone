@@ -9,10 +9,6 @@
       <Configuration>Debug</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="Debug|IA64">
-      <Configuration>Debug</Configuration>
-      <Platform>IA64</Platform>
-    </ProjectConfiguration>
     <ProjectConfiguration Include="Static Debug|Win32">
       <Configuration>Static Debug</Configuration>
       <Platform>Win32</Platform>
@@ -20,10 +16,6 @@
     <ProjectConfiguration Include="Static Debug|x64">
       <Configuration>Static Debug</Configuration>
       <Platform>x64</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="Static Debug|IA64">
-      <Configuration>Static Debug</Configuration>
-      <Platform>IA64</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="Release|Win32">
       <Configuration>Release</Configuration>
@@ -33,10 +25,6 @@
       <Configuration>Release</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="Release|IA64">
-      <Configuration>Release</Configuration>
-      <Platform>IA64</Platform>
-    </ProjectConfiguration>
     <ProjectConfiguration Include="Static Release|Win32">
       <Configuration>Static Release</Configuration>
       <Platform>Win32</Platform>
@@ -44,10 +32,6 @@
     <ProjectConfiguration Include="Static Release|x64">
       <Configuration>Static Release</Configuration>
       <Platform>x64</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="Static Release|IA64">
-      <Configuration>Static Release</Configuration>
-      <Platform>IA64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals" >
@@ -58,61 +42,49 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v100</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'" Label="Configuration" >
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v100</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration" >
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v100</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'" Label="Configuration" >
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v100</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration" >
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v100</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'" Label="Configuration" >
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v100</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration" >
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v100</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'" Label="Configuration" >
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|IA64'" Label="Configuration" >
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <UseOfMfc>false</UseOfMfc>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Static Debug|IA64'" Label="Configuration" >
-    <ConfigurationType>StaticLibrary</ConfigurationType>
-    <UseOfMfc>false</UseOfMfc>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|IA64'" Label="Configuration" >
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <UseOfMfc>false</UseOfMfc>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Static Release|IA64'" Label="Configuration" >
-    <ConfigurationType>StaticLibrary</ConfigurationType>
-    <UseOfMfc>false</UseOfMfc>
-    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v100</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props"/>
   <ImportGroup Label="ExtensionSettings" >
@@ -139,18 +111,6 @@
     <Import Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" />
     </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'" Label="PropertySheets" >
-    <Import Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" />
-    </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|IA64'" Label="PropertySheets" >
-    <Import Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" />
-    </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Static Debug|IA64'" Label="PropertySheets" >
-    <Import Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" />
-    </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|IA64'" Label="PropertySheets" >
-    <Import Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" />
-    </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Static Release|IA64'" Label="PropertySheets" >
     <Import Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" />
     </ImportGroup>
   <PropertyGroup Label="UserMacros"/>
@@ -196,32 +156,12 @@
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'" >false</LinkIncremental>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'" >xqilla23s</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'" >.lib</TargetExt>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|IA64'" >..\..\build\windows\VC10\$(Platform)\Debug\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|IA64'" >./$(OutDir)xqilla\</IntDir>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|IA64'" >false</LinkIncremental>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|IA64'" >xqilla23d</TargetName>
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|IA64'" >.dll</TargetExt>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Static Debug|IA64'" >..\..\build\windows\VC10\$(Platform)\Static Debug\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Static Debug|IA64'" >./$(OutDir)xqilla\</IntDir>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Static Debug|IA64'" >false</LinkIncremental>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Static Debug|IA64'" >xqilla23sd</TargetName>
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Static Debug|IA64'" >.lib</TargetExt>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|IA64'" >..\..\build\windows\VC10\$(Platform)\Release\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|IA64'" >./$(OutDir)xqilla\</IntDir>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|IA64'" >false</LinkIncremental>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|IA64'" >xqilla23</TargetName>
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|IA64'" >.dll</TargetExt>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Static Release|IA64'" >..\..\build\windows\VC10\$(Platform)\Static Release\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Static Release|IA64'" >./$(OutDir)xqilla\</IntDir>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Static Release|IA64'" >false</LinkIncremental>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Static Release|IA64'" >xqilla23s</TargetName>
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Static Release|IA64'" >.lib</TargetExt>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" >
     <ClCompile >
       <Optimization>Disabled</Optimization>
       <MinimalRebuild>true</MinimalRebuild>
-      <AdditionalIncludeDirectories>../../include;../../src/lexer;../../../xerces-c-src/include;../../../xerces-c-src/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include;../../src/lexer;../../../xerces-c-src/include;../../../xerces-c-src/src;../../../xerces-c-src/build/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;_CRT_SECURE_NO_WARNINGS;_USRDLL;XQILLA_APIS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -239,7 +179,7 @@
     <Link >
       <AdditionalOptions >/machine:x86 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalDependencies>xerces-c_3d.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>../../../xerces-c-src/Build/Win32/VC7.1/$(ConfigurationName);../../../xerces-c-src/Build/Win32/VC8/$(ConfigurationName);../../../xerces-c-src/Build/Win32/VC10/$(ConfigurationName);../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../../xerces-c-src/build/src/$(ConfigurationName);../../../xerces-c-src/build/src/$(ConfigurationName);../../../xerces-c-src/build/src/$(ConfigurationName);../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <ProgramDatabaseFile>$(OutDir)xqilla23d.pdb</ProgramDatabaseFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -248,12 +188,20 @@
       <OptimizeReferences>true</OptimizeReferences>
       <TargetMachine>NotSet</TargetMachine>
     </Link>
+    <PreBuildEvent >
+      <Command>cd ..\..\..\xerces-c-src
+      mkdir build
+      cd build
+      cmake -DCMAKE_INSTALL_PREFIX=..\..\..\bin\debug -DBUILD_SHARED_LIBS=ON -G "Visual Studio 10 2010 "  ..\
+      cmake --build . --config Debug</Command>
+      <Message>Building Xerces-C</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'" >
     <ClCompile >
       <Optimization>Disabled</Optimization>
       <MinimalRebuild>true</MinimalRebuild>
-      <AdditionalIncludeDirectories>../../include;../../src/lexer;../../../xerces-c-src/include;../../../xerces-c-src/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include;../../src/lexer;../../../xerces-c-src/include;../../../xerces-c-src/src;../../../xerces-c-src/build/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;_CRT_SECURE_NO_WARNINGS;_LIB;XQILLA_API=;XERCES_STATIC_LIBRARY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -272,13 +220,21 @@
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalOptions >/machine:x86 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
+    <PreBuildEvent >
+      <Command>cd ..\..\..\xerces-c-src
+      mkdir build
+      cd build
+      cmake -DCMAKE_INSTALL_PREFIX=..\..\..\bin\debug -DBUILD_SHARED_LIBS=OFF -G "Visual Studio 10 2010 "  ..\
+      cmake --build . --config Debug</Command>
+      <Message>Building Xerces-C</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" >
     <ClCompile >
       <Optimization>MaxSpeed</Optimization>
       <MinimalRebuild>true</MinimalRebuild>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>../../include;../../src/lexer;../../../xerces-c-src/include;../../../xerces-c-src/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include;../../src/lexer;../../../xerces-c-src/include;../../../xerces-c-src/src;../../../xerces-c-src/build/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;_USRDLL;XQILLA_APIS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -296,7 +252,7 @@
     <Link >
       <AdditionalOptions >/machine:x86 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalDependencies>xerces-c_3.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>../../../xerces-c-src/Build/Win32/VC7.1/$(ConfigurationName);../../../xerces-c-src/Build/Win32/VC8/$(ConfigurationName);../../../xerces-c-src/Build/Win32/VC10/$(ConfigurationName);../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../../xerces-c-src/build/src/$(ConfigurationName);../../../xerces-c-src/build/src/$(ConfigurationName);../../../xerces-c-src/build/src/$(ConfigurationName);../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <ProgramDatabaseFile>$(OutDir)xqilla23.pdb</ProgramDatabaseFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -305,13 +261,21 @@
       <OptimizeReferences>true</OptimizeReferences>
       <TargetMachine>NotSet</TargetMachine>
     </Link>
+    <PreBuildEvent >
+      <Command>cd ..\..\..\xerces-c-src
+      mkdir build
+      cd build
+      cmake -DCMAKE_INSTALL_PREFIX=..\..\..\bin\release -DBUILD_SHARED_LIBS=ON -G "Visual Studio 10 2010 "  ..\
+      cmake --build . --config Release</Command>
+      <Message>Building Xerces-C</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'" >
     <ClCompile >
       <Optimization>MaxSpeed</Optimization>
       <MinimalRebuild>true</MinimalRebuild>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>../../include;../../src/lexer;../../../xerces-c-src/include;../../../xerces-c-src/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include;../../src/lexer;../../../xerces-c-src/include;../../../xerces-c-src/src;../../../xerces-c-src/build/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;_LIB;XQILLA_API=;XERCES_STATIC_LIBRARY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -330,12 +294,20 @@
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalOptions >/machine:x86 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
+    <PreBuildEvent >
+      <Command>cd ..\..\..\xerces-c-src
+      mkdir build
+      cd build
+      cmake -DCMAKE_INSTALL_PREFIX=..\..\..\bin\release -DBUILD_SHARED_LIBS=OFF -G "Visual Studio 10 2010 "  ..\
+      cmake --build . --config Release</Command>
+      <Message>Building Xerces-C</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" >
     <ClCompile >
       <Optimization>Disabled</Optimization>
       <MinimalRebuild>true</MinimalRebuild>
-      <AdditionalIncludeDirectories>../../include;../../src/lexer;../../../xerces-c-src/include;../../../xerces-c-src/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include;../../src/lexer;../../../xerces-c-src/include;../../../xerces-c-src/src;../../../xerces-c-src/build/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;_CRT_SECURE_NO_WARNINGS;_USRDLL;XQILLA_APIS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -353,7 +325,7 @@
     <Link >
       <AdditionalOptions >/machine:x64 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalDependencies>xerces-c_3d.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>../../../xerces-c-src/Build/Win64/VC8/$(ConfigurationName);../../../xerces-c-src/Build/Win64/VC10/$(ConfigurationName);../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../../xerces-c-src/build/src/$(ConfigurationName);../../../xerces-c-src/build/src/$(ConfigurationName);../../../xerces-c-src/build/src/$(ConfigurationName);../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <ProgramDatabaseFile>$(OutDir)xqilla23d.pdb</ProgramDatabaseFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -362,12 +334,20 @@
       <OptimizeReferences>true</OptimizeReferences>
       <TargetMachine>NotSet</TargetMachine>
     </Link>
+    <PreBuildEvent >
+      <Command>cd ..\..\..\xerces-c-src
+      mkdir build
+      cd build
+      cmake -DCMAKE_INSTALL_PREFIX=..\..\..\bin\debug -DBUILD_SHARED_LIBS=ON -G "Visual Studio 10 2010 Win64"  ..\
+      cmake --build . --config Debug</Command>
+      <Message>Building Xerces-C</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'" >
     <ClCompile >
       <Optimization>Disabled</Optimization>
       <MinimalRebuild>true</MinimalRebuild>
-      <AdditionalIncludeDirectories>../../include;../../src/lexer;../../../xerces-c-src/include;../../../xerces-c-src/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include;../../src/lexer;../../../xerces-c-src/include;../../../xerces-c-src/src;../../../xerces-c-src/build/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;_CRT_SECURE_NO_WARNINGS;_LIB;XQILLA_API=;XERCES_STATIC_LIBRARY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -386,13 +366,21 @@
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalOptions >/machine:x64 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
+    <PreBuildEvent >
+      <Command>cd ..\..\..\xerces-c-src
+      mkdir build
+      cd build
+      cmake -DCMAKE_INSTALL_PREFIX=..\..\..\bin\debug -DBUILD_SHARED_LIBS=OFF -G "Visual Studio 10 2010 Win64"  ..\
+      cmake --build . --config Debug</Command>
+      <Message>Building Xerces-C</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" >
     <ClCompile >
       <Optimization>MaxSpeed</Optimization>
       <MinimalRebuild>true</MinimalRebuild>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>../../include;../../src/lexer;../../../xerces-c-src/include;../../../xerces-c-src/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include;../../src/lexer;../../../xerces-c-src/include;../../../xerces-c-src/src;../../../xerces-c-src/build/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;_USRDLL;XQILLA_APIS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -410,7 +398,7 @@
     <Link >
       <AdditionalOptions >/machine:x64 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalDependencies>xerces-c_3.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>../../../xerces-c-src/Build/Win64/VC8/$(ConfigurationName);../../../xerces-c-src/Build/Win64/VC10/$(ConfigurationName);../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../../xerces-c-src/build/src/$(ConfigurationName);../../../xerces-c-src/build/src/$(ConfigurationName);../../../xerces-c-src/build/src/$(ConfigurationName);../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <ProgramDatabaseFile>$(OutDir)xqilla23.pdb</ProgramDatabaseFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -419,13 +407,21 @@
       <OptimizeReferences>true</OptimizeReferences>
       <TargetMachine>NotSet</TargetMachine>
     </Link>
+    <PreBuildEvent >
+      <Command>cd ..\..\..\xerces-c-src
+      mkdir build
+      cd build
+      cmake -DCMAKE_INSTALL_PREFIX=..\..\..\bin\release -DBUILD_SHARED_LIBS=ON -G "Visual Studio 10 2010 Win64"  ..\
+      cmake --build . --config Release</Command>
+      <Message>Building Xerces-C</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'" >
     <ClCompile >
       <Optimization>MaxSpeed</Optimization>
       <MinimalRebuild>true</MinimalRebuild>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>../../include;../../src/lexer;../../../xerces-c-src/include;../../../xerces-c-src/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include;../../src/lexer;../../../xerces-c-src/include;../../../xerces-c-src/src;../../../xerces-c-src/build/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;_LIB;XQILLA_API=;XERCES_STATIC_LIBRARY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -444,120 +440,14 @@
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalOptions >/machine:x64 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|IA64'" >
-    <ClCompile >
-      <Optimization>Disabled</Optimization>
-      <MinimalRebuild>true</MinimalRebuild>
-      <AdditionalIncludeDirectories>../../include;../../src/lexer;../../../xerces-c-src/include;../../../xerces-c-src/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;_CRT_SECURE_NO_WARNINGS;_USRDLL;XQILLA_APIS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <PrecompiledHeaderOutputFile>./$(OutDir)xqilla.pch</PrecompiledHeaderOutputFile>
-      <AssemblerListingLocation>$(OutDir)xqilla/</AssemblerListingLocation>
-      <ObjectFileName>$(OutDir)xqilla/</ObjectFileName>
-      <WarningLevel>Level3</WarningLevel>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <DebugInformationFormat >ProgramDatabase</DebugInformationFormat>
-      <BasicRuntimeChecks >EnableFastChecks</BasicRuntimeChecks>
-      <CompileAs>Default</CompileAs>
-    </ClCompile>
-    <Link >
-      <AdditionalOptions >/machine:IA64 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies>xerces-c_3d.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-      <ProgramDatabaseFile>$(OutDir)xqilla23d.pdb</ProgramDatabaseFile>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <ImportLibrary >$(OutDir)xqilla23d.lib</ImportLibrary>
-      <OptimizeReferences>true</OptimizeReferences>
-      <TargetMachine>NotSet</TargetMachine>
-    </Link>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Static Debug|IA64'" >
-    <ClCompile >
-      <Optimization>Disabled</Optimization>
-      <MinimalRebuild>true</MinimalRebuild>
-      <AdditionalIncludeDirectories>../../include;../../src/lexer;../../../xerces-c-src/include;../../../xerces-c-src/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;_CRT_SECURE_NO_WARNINGS;_LIB;XQILLA_API=;XERCES_STATIC_LIBRARY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <PrecompiledHeaderOutputFile>./$(OutDir)xqilla.pch</PrecompiledHeaderOutputFile>
-      <AssemblerListingLocation>$(OutDir)xqilla/</AssemblerListingLocation>
-      <ObjectFileName>$(OutDir)xqilla/</ObjectFileName>
-      <WarningLevel>Level3</WarningLevel>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <DebugInformationFormat >ProgramDatabase</DebugInformationFormat>
-      <BasicRuntimeChecks >EnableFastChecks</BasicRuntimeChecks>
-      <CompileAs>Default</CompileAs>
-    </ClCompile>
-    <Lib >
-      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalOptions >/machine:IA64 %(AdditionalOptions)</AdditionalOptions>
-    </Lib>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|IA64'" >
-    <ClCompile >
-      <Optimization>MaxSpeed</Optimization>
-      <MinimalRebuild>true</MinimalRebuild>
-      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>../../include;../../src/lexer;../../../xerces-c-src/include;../../../xerces-c-src/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;_USRDLL;XQILLA_APIS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <PrecompiledHeaderOutputFile>./$(OutDir)xqilla.pch</PrecompiledHeaderOutputFile>
-      <AssemblerListingLocation>$(OutDir)xqilla/</AssemblerListingLocation>
-      <ObjectFileName>$(OutDir)xqilla/</ObjectFileName>
-      <WarningLevel>Level3</WarningLevel>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <DebugInformationFormat >ProgramDatabase</DebugInformationFormat>
-      <CompileAs>Default</CompileAs>
-    </ClCompile>
-    <Link >
-      <AdditionalOptions >/machine:IA64 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies>xerces-c_3.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-      <ProgramDatabaseFile>$(OutDir)xqilla23.pdb</ProgramDatabaseFile>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <ImportLibrary >$(OutDir)xqilla23.lib</ImportLibrary>
-      <OptimizeReferences>true</OptimizeReferences>
-      <TargetMachine>NotSet</TargetMachine>
-    </Link>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Static Release|IA64'" >
-    <ClCompile >
-      <Optimization>MaxSpeed</Optimization>
-      <MinimalRebuild>true</MinimalRebuild>
-      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>../../include;../../src/lexer;../../../xerces-c-src/include;../../../xerces-c-src/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;_LIB;XQILLA_API=;XERCES_STATIC_LIBRARY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <PrecompiledHeaderOutputFile>./$(OutDir)xqilla.pch</PrecompiledHeaderOutputFile>
-      <AssemblerListingLocation>$(OutDir)xqilla/</AssemblerListingLocation>
-      <ObjectFileName>$(OutDir)xqilla/</ObjectFileName>
-      <WarningLevel>Level3</WarningLevel>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <DebugInformationFormat >ProgramDatabase</DebugInformationFormat>
-      <CompileAs>Default</CompileAs>
-    </ClCompile>
-    <Lib >
-      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalOptions >/machine:IA64 %(AdditionalOptions)</AdditionalOptions>
-    </Lib>
+    <PreBuildEvent >
+      <Command>cd ..\..\..\xerces-c-src
+      mkdir build
+      cd build
+      cmake -DCMAKE_INSTALL_PREFIX=..\..\..\bin\release -DBUILD_SHARED_LIBS=OFF -G "Visual Studio 10 2010 Win64"  ..\
+      cmake --build . --config Release</Command>
+      <Message>Building Xerces-C</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup >
     <ClInclude Include="..\..\include\xqc.h" />
@@ -670,7 +560,6 @@
     <ClInclude Include="..\..\include\xqilla\context\VarHashEntry.hpp" />
     <ClInclude Include="..\..\include\xqilla\context\VariableTypeStore.hpp" />
     <ClInclude Include="..\..\include\xqilla\context\Collation.hpp" />
-    <ClInclude Include="..\..\include\xqilla\context\ModuleResolver.hpp" />
     <ClInclude Include="..\..\include\xqilla\context\ExternalFunctionResolver.hpp" />
     <ClInclude Include="..\..\include\xqilla\context\UpdateFactory.hpp" />
     <ClInclude Include="..\..\include\xqilla\context\RegexGroupStore.hpp" />

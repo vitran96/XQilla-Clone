@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@ void ResultBufferImpl::increaseMaxReadCount(unsigned int readCount)
 Item::Ptr ResultBufferImpl::item(unsigned int index, DynamicContext *context)
 {
   while(!_result.isNull() && index >= _items.size()) {
-    Item::Ptr item = _result->next(context);
+    const Item::Ptr item = _result->next(context);
     if(item.isNull()) {
       _result = 0;
     }
@@ -112,4 +112,3 @@ Result ResultBufferImpl::createResult(unsigned start)
 {
   return new BufferedResult(this, start);
 }
-

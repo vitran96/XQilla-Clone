@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,8 +65,7 @@ XQillaExpressionImpl::XQillaExpressionImpl(const XMLCh *expression,
 		    getPooledString(nsr->lookupNamespaceURI(XMLUni::fgZeroLenString));
 	    _staticContext->setDefaultElementAndTypeNS(defaultElementNS);
     }
-    _compiledExpression = XQilla::parse(expression, _staticContext, NULL, XQilla::NO_ADOPT_CONTEXT,
-                                        _createdWith);
+    _compiledExpression = XQilla::parse(expression, _staticContext, NULL, 0, _createdWith);
   }
   catch(XQException &e) {
     if(XQillaException::getDebug()) {
@@ -78,7 +77,6 @@ XQillaExpressionImpl::XQillaExpressionImpl(const XMLCh *expression,
 
 XQillaExpressionImpl::~XQillaExpressionImpl() 
 {
-  delete _staticContext;
   delete _compiledExpression;
 }
 

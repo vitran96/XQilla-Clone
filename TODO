@@ -7,6 +7,7 @@ XQuery 1.1 Grouping support
 Complete XSLT 2.0 support
 Support pre-parsed modules
 Improve exceptions heirachy, and implement XQuery 1.1 try/catch
+Implement EXSLT math functions
 
 
 Optimization
@@ -19,13 +20,13 @@ faster modifiable data model
 Document projection for recursive functions
 pull event execution
 Remove and free unused global variables
-Batched iterator execution
-Execute method for singleton results
+Better static typing esp. for higher order functions
 
 
 Infrastructure
 --------------
 
+query plan output using event API
 string pool that returns numeric identifier
 support for UTF-8 execution?
 extract basic schema types from Xerces-C
@@ -42,6 +43,7 @@ QA
 
 fix UTF-16 bugs
 fix XQTS bugs
+new test suite
 test XQuery Fulltext
 Fix ATDoubleOrDerivedImpl and ATFloatOrDerivedImpl to use double and float types
 Make xs:decimal infinite length

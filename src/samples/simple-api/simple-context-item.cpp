@@ -15,7 +15,7 @@ int main(int argc, char *argv[]) {
 
   // Parse a document, and set it as the context item
   Sequence seq = context->resolveDocument(X("foo.xml"));
-  if(!seq.isEmpty() && seq.first()->getType() == Item::NODE) {
+  if(!seq.isEmpty() && seq.first()->isNode()) {
     context->setContextItem(seq.first());
     context->setContextPosition(1);
     context->setContextSize(1);

@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -386,9 +386,9 @@ Numeric::Ptr ATDecimalOrDerivedImpl::power(const Numeric::Ptr &other, const Dyna
     return context->getItemFactory()->createDecimal(_decimal.pow(otherImpl->_decimal), context);
   }
   case FLOAT:
-    return context->getItemFactory()->createFloat(_decimal.toDouble(), context)->power(other, context);
+    return context->getItemFactory()->createFloat(_decimal, context)->power(other, context);
   case DOUBLE:
-    return context->getItemFactory()->createDouble(_decimal.toDouble(), context)->power(other, context);
+    return context->getItemFactory()->createDouble(_decimal, context)->power(other, context);
   default: assert(false); return 0; // Shouldn't happen
   }
 }
@@ -523,6 +523,24 @@ bool ATDecimalOrDerivedImpl::isNegative() const {
 /** Is this Numeric positive? */
 bool ATDecimalOrDerivedImpl::isPositive() const {
   return _decimal.sign() > 0;
+}
+
+/** Treat this decimal (must be integer) as a codepoint **/
+XMLInt32 ATDecimalOrDerivedImpl::treatAsCodepoint(const DynamicContext* context) const {
+  if(_isInteger) {
+    int integer = (int)_decimal.toDouble();
+    XMLInt32 ch = (XMLInt32)integer;
+    if(integer<=0 || (int)ch != integer) { // negative or lost some info
+      XQThrow2(XPath2ErrorException, X("ATDecimalOrDerivedImpl::treatAsCodepoint"), X("Codepoint not legal [err:FOCH0001]."));
+    }
+    return ch;
+  } else {
+    XQThrow2(XPath2ErrorException, X("ATDecimalOrDerivedImpl::treatAsCodepoint"), X("Only integers can be treated as codepoints."));
+  }
+}
+
+AnyAtomicType::AtomicObjectType ATDecimalOrDerivedImpl::getPrimitiveTypeIndex() const {
+  return this->getTypeIndex();
 }
 
 void ATDecimalOrDerivedImpl::setDecimal(const XMLCh* const value)

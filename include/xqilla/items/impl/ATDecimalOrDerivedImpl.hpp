@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -136,13 +136,19 @@ public:
   /** Is this Numeric positive? */
   virtual bool isPositive() const;
 
+  /** Treat this decimal (must be integer) as a codepoint **/
+  virtual XMLInt32 treatAsCodepoint(const DynamicContext* context) const;
+
+  /* Get the primitive index associated with this type */
+  virtual AnyAtomicType::AtomicObjectType getPrimitiveTypeIndex() const;
+
   /* Get the primitive index associated with this type */
   static AnyAtomicType::AtomicObjectType getTypeIndex(); 
 
   /* Get the primitive type name */
   static const XMLCh* getPrimitiveName();
   
-  virtual MAPM asMAPM() const { return _decimal; }
+  virtual const MAPM &asMAPM() const { return _decimal; }
 
   virtual State getState() const { return isNegative()? NEG_NUM : NUM; }
 

@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,9 +27,10 @@
 #include <xqilla/framework/XQillaExport.hpp>
 
 #include <xqilla/context/VariableTypeStore.hpp>
-#include <xqilla/utils/IHashMap.hpp>
-
-#include <vector>
+#include <xqilla/context/impl/VariableStoreTemplate.hpp>
+#include <xqilla/context/Scope.hpp>
+#include <xqilla/context/VarHashEntry.hpp>
+#include <xqilla/framework/StringPool.hpp>
 
 class XPath2MemoryManager;
 
@@ -56,33 +57,41 @@ public:
   virtual void removeScope();
 
   /** Declares and/or sets a variable in the global scope. */
-  virtual void declareGlobalVar(const XMLCh* namespaceURI, const XMLCh* name,
-                                const VariableType &vtype);
+  virtual void declareGlobalVar(const XMLCh* namespaceURI,
+                                const XMLCh* name,
+                                const StaticAnalysis &src,
+                                XQGlobalVariable *global);
+
+  /** Looks up the value of a variable in the current scope.
+      Returns a boolean (true if successful), and the SequenceType
+      value of the variable*/
+  virtual const StaticAnalysis* getGlobalVar(const XMLCh* namespaceURI,
+                                             const XMLCh* name,
+                                             XQGlobalVariable **global = 0) const;
 
   ///Declares a var in the top level scope
-  virtual void declareVar(const XMLCh* namespaceURI, const XMLCh* name,
-                          const VariableType &vtype);
+  virtual void declareVar(const XMLCh* namespaceURI,
+                          const XMLCh* name,
+                          const StaticAnalysis &src);
 
-  /** Looks up the value of a variable in the current scope. */
-  virtual const VariableType *getVar(const XMLCh* namespaceURI, const XMLCh* name) const;
+  /** Looks up the value of a variable in the current scope.
+      Returns a boolean (true if successful), and the SequenceType
+      value of the variable*/
+  virtual const StaticAnalysis* getVar(const XMLCh* namespaceURI,
+                                       const XMLCh* name,
+                                       XQGlobalVariable **global = 0) const;
 
 private:
-  struct XQILLA_API VarEntry
+  struct VarType
   {
-    const XMLCh *uri, *name;
+    VarType(const StaticAnalysis *t, XQGlobalVariable *g)
+      : type(t), global(g) {}
 
-    bool operator==(const VarEntry &o) const
-    {
-      return XPath2Utils::equals(name, o.name) && XPath2Utils::equals(uri, o.uri) ;
-    }
-    inline size_t hash() const
-    {
-      return DefaultHashFunctor<const XMLCh*>()(name);
-    }
+    const StaticAnalysis *type;
+    XQGlobalVariable *global;
   };
-  typedef IHashMap<VarEntry,VariableType> VarMap;
-  VarMap global_;
-  std::vector<VarMap> scopes_;
+
+  VariableStoreTemplate<VarType> _store;
 };
 
 #endif

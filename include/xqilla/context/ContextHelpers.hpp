@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,6 @@
 
 #include <xqilla/framework/XQillaExport.hpp>
 #include <xqilla/context/DynamicContext.hpp>
-#include <xqilla/ast/StaticType.hpp>
-#include <xqilla/framework/BasicMemoryManager.hpp>
 
 class XQILLA_API AutoNodeSetOrderingReset
 {
@@ -53,7 +51,6 @@ class XQILLA_API AutoContextItemTypeReset
 {
 public:
   AutoContextItemTypeReset(StaticContext* context)
-    : sType_(BasicMemoryManager::get())
   {
     context_ = context;
     if(context_) {
@@ -62,7 +59,6 @@ public:
   }
 
   AutoContextItemTypeReset(StaticContext* context, const StaticType &sType)
-    : sType_(BasicMemoryManager::get())
   {
     context_ = context;
     if(context_) {

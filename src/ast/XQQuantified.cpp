@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,9 +50,10 @@ ASTNode *XQQuantified::staticTypingImpl(StaticContext *context)
 {
   _src.clear();
 
-  _src.add(parent_->getStaticAnalysis());
   _src.add(expr_->getStaticAnalysis());
-  _src.getStaticType() = &ItemType::BOOLEAN;
+  _src.getStaticType() = StaticType::BOOLEAN_TYPE;
+
+  parent_ = parent_->staticTypingTeardown(context, _src);
 
   return this;
 }

@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,10 +46,6 @@
 #include <xqilla/ast/XQTreatAs.hpp>
 #include <xqilla/ast/ConvertFunctionArg.hpp>
 #include <xqilla/ast/XQFunctionCoercion.hpp>
-#include <xqilla/schema/DocumentCacheImpl.hpp>
-#include <xqilla/framework/BasicMemoryManager.hpp>
-#include <xqilla/ast/XQTypeAlias.hpp>
-#include <xqilla/ast/XQRewriteRule.hpp>
 
 #include <xercesc/validators/schema/SchemaAttDef.hpp>
 #include <xercesc/validators/schema/SchemaElementDecl.hpp>
@@ -58,58 +54,13 @@
 XERCES_CPP_NAMESPACE_USE
 #endif
 
-static const DocumentCache *staticDocumentCache()
+SequenceType::SequenceType(const XMLCh* typeURI,const XMLCh* typeName, SequenceType::OccurrenceIndicator occur, XPath2MemoryManager *mm)
+  : m_pItemType(new (mm) SequenceType::ItemType(typeURI, typeName, mm)),
+    m_nOccurrence(occur)
 {
-  static const DocumentCacheImpl dc(BasicMemoryManager::get());
-  return &dc;
 }
 
-const ItemType ItemType::ITEM(ItemType::TEST_ANYTHING, staticDocumentCache());
-
-const ItemType ItemType::ANY_ATOMIC_TYPE(ItemType::TEST_ATOMIC_TYPE, staticDocumentCache());
-const ItemType ItemType::UNTYPED_ATOMIC(AnyAtomicType::UNTYPED_ATOMIC, true, SchemaSymbols::fgURI_SCHEMAFORSCHEMA, ATUntypedAtomic::fgDT_UNTYPEDATOMIC, staticDocumentCache());
-const ItemType ItemType::BOOLEAN(AnyAtomicType::BOOLEAN, true, SchemaSymbols::fgURI_SCHEMAFORSCHEMA, SchemaSymbols::fgDT_BOOLEAN, staticDocumentCache());
-const ItemType ItemType::DECIMAL(AnyAtomicType::DECIMAL, true, SchemaSymbols::fgURI_SCHEMAFORSCHEMA, SchemaSymbols::fgDT_DECIMAL, staticDocumentCache());
-const ItemType ItemType::FLOAT(AnyAtomicType::FLOAT, true, SchemaSymbols::fgURI_SCHEMAFORSCHEMA, SchemaSymbols::fgDT_FLOAT, staticDocumentCache());
-const ItemType ItemType::DOUBLE(AnyAtomicType::DOUBLE, true, SchemaSymbols::fgURI_SCHEMAFORSCHEMA, SchemaSymbols::fgDT_DOUBLE, staticDocumentCache());
-const ItemType ItemType::STRING(AnyAtomicType::STRING, true, SchemaSymbols::fgURI_SCHEMAFORSCHEMA, SchemaSymbols::fgDT_STRING, staticDocumentCache());
-const ItemType ItemType::QNAME(AnyAtomicType::QNAME, true, SchemaSymbols::fgURI_SCHEMAFORSCHEMA, SchemaSymbols::fgDT_QNAME, staticDocumentCache());
-const ItemType ItemType::DAY_TIME_DURATION(AnyAtomicType::DAY_TIME_DURATION, true, SchemaSymbols::fgURI_SCHEMAFORSCHEMA, ATDurationOrDerived::fgDT_DAYTIMEDURATION, staticDocumentCache());
-const ItemType ItemType::ANY_URI(AnyAtomicType::ANY_URI, true, SchemaSymbols::fgURI_SCHEMAFORSCHEMA, SchemaSymbols::fgDT_ANYURI, staticDocumentCache());
-const ItemType ItemType::BASE_64_BINARY(AnyAtomicType::BASE_64_BINARY, true, SchemaSymbols::fgURI_SCHEMAFORSCHEMA, SchemaSymbols::fgDT_BASE64BINARY, staticDocumentCache());
-const ItemType ItemType::DATE(AnyAtomicType::DATE, true, SchemaSymbols::fgURI_SCHEMAFORSCHEMA, SchemaSymbols::fgDT_DATE, staticDocumentCache());
-const ItemType ItemType::DATE_TIME(AnyAtomicType::DATE_TIME, true, SchemaSymbols::fgURI_SCHEMAFORSCHEMA, SchemaSymbols::fgDT_DATETIME, staticDocumentCache());
-const ItemType ItemType::DURATION(AnyAtomicType::DURATION, true, SchemaSymbols::fgURI_SCHEMAFORSCHEMA, SchemaSymbols::fgDT_DURATION, staticDocumentCache());
-const ItemType ItemType::G_DAY(AnyAtomicType::G_DAY, true, SchemaSymbols::fgURI_SCHEMAFORSCHEMA, SchemaSymbols::fgDT_DAY, staticDocumentCache());
-const ItemType ItemType::G_MONTH(AnyAtomicType::G_MONTH, true, SchemaSymbols::fgURI_SCHEMAFORSCHEMA, SchemaSymbols::fgDT_MONTH, staticDocumentCache());
-const ItemType ItemType::G_MONTH_DAY(AnyAtomicType::G_MONTH_DAY, true, SchemaSymbols::fgURI_SCHEMAFORSCHEMA, SchemaSymbols::fgDT_MONTHDAY, staticDocumentCache());
-const ItemType ItemType::G_YEAR(AnyAtomicType::G_YEAR, true, SchemaSymbols::fgURI_SCHEMAFORSCHEMA, SchemaSymbols::fgDT_YEAR, staticDocumentCache());
-const ItemType ItemType::G_YEAR_MONTH(AnyAtomicType::G_YEAR_MONTH, true, SchemaSymbols::fgURI_SCHEMAFORSCHEMA, SchemaSymbols::fgDT_YEARMONTH, staticDocumentCache());
-const ItemType ItemType::HEX_BINARY(AnyAtomicType::HEX_BINARY, true, SchemaSymbols::fgURI_SCHEMAFORSCHEMA, SchemaSymbols::fgDT_HEXBINARY, staticDocumentCache());
-const ItemType ItemType::NOTATION(AnyAtomicType::NOTATION, true, SchemaSymbols::fgURI_SCHEMAFORSCHEMA, SchemaSymbols::fgELT_NOTATION, staticDocumentCache());
-const ItemType ItemType::TIME(AnyAtomicType::TIME, true, SchemaSymbols::fgURI_SCHEMAFORSCHEMA, SchemaSymbols::fgDT_TIME, staticDocumentCache());
-const ItemType ItemType::YEAR_MONTH_DURATION(AnyAtomicType::YEAR_MONTH_DURATION, true, SchemaSymbols::fgURI_SCHEMAFORSCHEMA, ATDurationOrDerived::fgDT_YEARMONTHDURATION, staticDocumentCache());
-const ItemType ItemType::INTEGER(AnyAtomicType::DECIMAL, false, SchemaSymbols::fgURI_SCHEMAFORSCHEMA, SchemaSymbols::fgDT_INTEGER, staticDocumentCache());
-
-const ItemType ItemType::NODE(ItemType::TEST_NODE, staticDocumentCache());
-const ItemType ItemType::DOCUMENT(ItemType::TEST_DOCUMENT, staticDocumentCache());
-const ItemType ItemType::ELEMENT(ItemType::TEST_ELEMENT, staticDocumentCache());
-const ItemType ItemType::ATTRIBUTE(ItemType::TEST_ATTRIBUTE, staticDocumentCache());
-const ItemType ItemType::TEXT(ItemType::TEST_TEXT, staticDocumentCache());
-const ItemType ItemType::PI(ItemType::TEST_PI, staticDocumentCache());
-const ItemType ItemType::COMMENT(ItemType::TEST_COMMENT, staticDocumentCache());
-const ItemType ItemType::NAMESPACE(ItemType::TEST_NAMESPACE, staticDocumentCache());
-
-const ItemType ItemType::FUNCTION(ItemType::TEST_FUNCTION, staticDocumentCache());
-const ItemType ItemType::TUPLE(ItemType::TEST_TUPLE, staticDocumentCache());
-const ItemType ItemType::MAP(ItemType::TEST_MAP, staticDocumentCache());
-const ItemType ItemType::EXPRESSION(ItemType::TEST_EXPRESSION, staticDocumentCache());
-
-const SequenceType SequenceType::ANY_ATOMIC_TYPE((ItemType*)&ItemType::ANY_ATOMIC_TYPE);
-const SequenceType SequenceType::ITEM_STAR((ItemType*)&ItemType::ITEM, SequenceType::STAR);
-const SequenceType SequenceType::ITEM_QUESTION((ItemType*)&ItemType::ITEM, SequenceType::QUESTION_MARK);
-
-SequenceType::SequenceType(ItemType* test, OccurrenceIndicator occur)
+SequenceType::SequenceType(SequenceType::ItemType* test, OccurrenceIndicator occur)
   : m_pItemType(test),
     m_nOccurrence(occur)
 {
@@ -123,6 +74,8 @@ SequenceType::SequenceType()
 
 SequenceType::~SequenceType()
 {
+  if(m_pItemType)
+    delete m_pItemType;
 }
 
 Result SequenceType::occurrenceMatches(const Result &toBeTested, const LocationInfo *location, const XMLCh *errorCode) const
@@ -140,99 +93,14 @@ Result SequenceType::matches(const Result &toBeTested, const LocationInfo *locat
   return typeMatches(occurrenceMatches(toBeTested, location, errorCode), location, errorCode);
 }
 
-bool SequenceType::matches(const Result &toBeTested, DynamicContext *context) const
+void SequenceType::setItemType(SequenceType::ItemType* itemType)
 {
-  if(m_nOccurrence == STAR && m_pItemType && m_pItemType->getItemTestType() == ItemType::TEST_ANYTHING)
-    return true;
-
-  Result result(toBeTested);
-
-  // First item
-  Item::Ptr item = result->next(context);
-  if(item.isNull())
-    return m_pItemType == 0 || m_nOccurrence == STAR || m_nOccurrence == QUESTION_MARK;
-  if(m_pItemType == 0 || !m_pItemType->matches(item, context)) return false;
-
-  // Second item
-  item = result->next(context);
-  if(item.isNull()) return true;
-  if(m_nOccurrence == EXACTLY_ONE || m_nOccurrence == QUESTION_MARK)
-    return false;
-  if(!m_pItemType->matches(item, context)) return false;
-
-  // The rest of the sequence
-  while((item = result->next(context)).notNull())
-    if(!m_pItemType->matches(item, context)) return false;
-  return true;
+  if(m_pItemType)
+    delete m_pItemType;
+  m_pItemType=itemType;
 }
 
-SequenceType::TypeMatch SequenceType::matches(const StaticType &actual) const
-{
-  TypeMatch result = { ALWAYS, ALWAYS };
-
-  unsigned int min = 0, max = 0;
-
-  if(m_pItemType) {
-    switch(m_nOccurrence) {
-    case SequenceType::EXACTLY_ONE:
-      min = 1; max = 1; break;
-    case SequenceType::STAR:
-      min = 0; max = StaticType::UNLIMITED; break;
-    case SequenceType::PLUS:
-      min = 1; max = StaticType::UNLIMITED; break;
-    case SequenceType::QUESTION_MARK:
-      min = 0; max = 1; break;
-    }
-  }
-
-  if(min > actual.getMax() ||
-     max < actual.getMin()) {
-    result.cardinality = NEVER;
-  }
-  else if(min > actual.getMin() ||
-          max < actual.getMax()) {
-    // if(actual.getMax() != StaticType::UNLIMITED)
-    //   result.cardinality = PROBABLY_NOT;
-    // else
-      result.cardinality = MAYBE;
-  }
-
-  if(m_pItemType == 0) {
-    result.type = (actual.getMax() == 0 ? ALWAYS : (actual.getMin() == 0 ? MAYBE : NEVER));
-    return result;
-  }
-
-  bool foundMatch = false;
-
-  TypeFlags::Enum myFlags = TypeFlags::flags(m_pItemType);
-  if(actual.containsType(myFlags)) {
-    foundMatch = true;
-    if(!m_pItemType->isPrimitive() || !actual.isType(myFlags))
-      result.type = MAYBE;
-  }
-
-  StaticType::ItemTypes::const_iterator i = actual.getTypes().begin();
-  for(; i != actual.getTypes().end(); ++i) {
-    if((*i)->isSubtypeOf(m_pItemType, /*forStaticType*/true)) {
-      // Good to go
-      foundMatch = true;
-    }
-    else if((*i)->intersects(m_pItemType)) {
-      foundMatch = true;
-      result.type = MAYBE;
-    }
-    else {
-      result.type = MAYBE;
-    }
-  }
-
-  if(!foundMatch)
-    result.type = (min > 0 || actual.getMin() > 0) ? NEVER : PROBABLY_NOT;
-
-  return result;
-}
-
-ItemType::ItemTestType SequenceType::getItemTestType() const {
+SequenceType::ItemType::ItemTestType SequenceType::getItemTestType() const {
 
   return m_pItemType->getItemTestType();
 }
@@ -247,83 +115,106 @@ void SequenceType::setOccurrence(SequenceType::OccurrenceIndicator nOccurrence)
   m_nOccurrence=nOccurrence;
 }
 
+const XMLCh* SequenceType::getNameURI() const {
+
+  if(m_pItemType)
+    return m_pItemType->getNameURI();
+  return 0;
+}
+
+const XMLCh* SequenceType::getTypeURI() const {
+
+  if(m_pItemType)
+    return m_pItemType->getTypeURI();
+  return 0;
+}
+
+QualifiedName *SequenceType::getConstrainingName() const {
+
+  return m_pItemType->getName();
+}
+
+QualifiedName *SequenceType::getConstrainingType() const {
+
+  return m_pItemType->getType();
+}
+
 void SequenceType::staticResolution(StaticContext* context)
 {
   if(m_pItemType)
-    m_pItemType = m_pItemType->staticResolution(context, this);
+    m_pItemType->staticResolution(context, this);
 }
 
-ItemType *ItemType::staticResolution(StaticContext *context, const LocationInfo *location)
+void SequenceType::ItemType::staticResolution(StaticContext *context, const LocationInfo *location)
 {
   // Prefix resolution should only happen once
   // (since SequenceType objects can be multiple times in the AST)
-  if(staticallyResolved_) return this;
-  staticallyResolved_ = true;
+  if(!staticallyResolved_) {
+    staticallyResolved_ = true;
 
-  dc_ = context->getDocumentCache();
-
-  if(m_TypeName && m_TypeURI == 0) {
-    // an empty prefix means the default element and type namespace
-    if(m_TypePrefix == 0 || *m_TypePrefix == 0) {
-      m_TypeURI = context->getDefaultElementAndTypeNS();
+    if(m_pType && m_TypeURI == 0) {
+      const XMLCh *prefix = m_pType->getPrefix();
+      // an empty prefix means the default element and type namespace
+      if(prefix == 0 || *prefix == 0) {
+        m_TypeURI = context->getDefaultElementAndTypeNS();
+      }
+      else {
+        m_TypeURI = context->getUriBoundToPrefix(prefix, location);
+      }
     }
-    else {
-      m_TypeURI = context->getUriBoundToPrefix(m_TypePrefix, location);
-    }
-  }
   
-  if(m_NameName && m_NameURI == 0) {
-    // if we are testing for an attribute, an empty prefix means empty namespace; if we are testing an element, it means 
-    // the default element and type namespace
-    if(m_NamePrefix == 0 || *m_NamePrefix == 0) {
-      if(m_nTestType == TEST_ELEMENT || m_nTestType == TEST_SCHEMA_ELEMENT ||
-         m_nTestType == TEST_DOCUMENT || m_nTestType == TEST_SCHEMA_DOCUMENT)
-        m_NameURI = context->getDefaultElementAndTypeNS();
-    } else {
-      m_NameURI = context->getUriBoundToPrefix(m_NamePrefix, location);
+    if(m_pName && m_NameURI == 0) {
+      const XMLCh *prefix = m_pName->getPrefix();
+      // if we are testing for an attribute, an empty prefix means empty namespace; if we are testing an element, it means 
+      // the default element and type namespace
+      if(prefix == 0 || *prefix == 0) {
+        if(m_nTestType == TEST_ELEMENT || m_nTestType == TEST_SCHEMA_ELEMENT ||
+           m_nTestType == TEST_DOCUMENT || m_nTestType == TEST_SCHEMA_DOCUMENT)
+          m_NameURI = context->getDefaultElementAndTypeNS();
+      } else {
+        m_NameURI = context->getUriBoundToPrefix(prefix, location);
+      }
     }
   }
 
-  if(m_TypeName) {
-    if(m_nTestType == ItemType::TEST_EXPRESSION) {
-      // skip
-    }
-    else if(m_nTestType == ItemType::TEST_ATOMIC_TYPE) {
-      // Check if this is actually a type alias
-      alias_ = context->getTypeAlias(m_TypeURI, m_TypeName);
-      // if(alias_) return alias_->isResolved() ? alias_->getType() : this;
-      if(alias_) return this;
-
-      // Check if this is actually an expression SequenceType
-      if(XPath2Utils::equals(m_TypeURI, XQRewriteRule::URI) &&
-         XPath2Utils::equals(m_TypeName, XQRewriteRule::TypeName)) {
-        m_nTestType = TEST_EXPRESSION;
-        return this;
+  if(m_pType) {
+    if(m_nTestType == ItemType::TEST_ATOMIC_TYPE) {
+      // check if the type to be tested is defined and is really an atomic one
+      if(!context->getDocumentCache()->isTypeDefined(m_TypeURI, m_pType->getName())) {
+        XMLBuffer buf;
+        buf.set(X("Type {"));
+        buf.append(m_TypeURI);
+        buf.append(X("}:"));
+        buf.append(m_pType->getName());
+        buf.append(X(" is not defined [err:XPST0051]"));
+        XQThrow3(StaticErrorException, X("SequenceType::ItemType::staticResolution"), buf.getRawBuffer(), location);
       }
-
-      if((XPath2Utils::equals(m_TypeName, AnyAtomicType::fgDT_ANYATOMICTYPE) ||
-          XPath2Utils::equals(m_TypeName, SchemaSymbols::fgDT_ANYSIMPLETYPE)) &&
-         XPath2Utils::equals(m_TypeURI, SchemaSymbols::fgURI_SCHEMAFORSCHEMA)) {
-        m_TypePrefix = m_TypeURI = m_TypeName = 0;
-        m_primitiveType = AnyAtomicType::NumAtomicObjectTypes;
-        m_primitive = false;
-      } else {
-        m_primitiveType = context->getItemFactory()->getPrimitiveTypeIndex(m_TypeURI, m_TypeName, m_primitive);
+      if(!context->getDocumentCache()->isTypeOrDerivedFromType(m_TypeURI, m_pType->getName(),
+                                                               SchemaSymbols::fgURI_SCHEMAFORSCHEMA,
+                                                               AnyAtomicType::fgDT_ANYATOMICTYPE)) {
+        XMLBuffer buf;
+        buf.set(X("Type {"));
+        buf.append(m_TypeURI);
+        buf.append(X("}:"));
+        buf.append(m_pType->getName());
+        buf.append(X(" is not an atomic type [err:XPST0051]"));
+        XQThrow3(StaticErrorException, X("SequenceType::ItemType::staticResolution"), buf.getRawBuffer(), location);
       }
     }
-    else if(XPath2Utils::equals(m_TypeName, SchemaSymbols::fgATTVAL_ANYTYPE) &&
+    else if(XPath2Utils::equals(m_pType->getName(), SchemaSymbols::fgATTVAL_ANYTYPE) &&
             XPath2Utils::equals(m_TypeURI, SchemaSymbols::fgURI_SCHEMAFORSCHEMA)) {
       // xs:anyType is the same as a type wildcard
-      m_TypePrefix = m_TypeURI = m_TypeName = 0;
+      m_pType = 0;
+      m_TypeURI = 0;
     }
-    else if(!context->getDocumentCache()->isTypeDefined(m_TypeURI, m_TypeName)) {
+    else if(!context->getDocumentCache()->isTypeDefined(m_TypeURI, m_pType->getName())) {
       XMLBuffer msg;
       msg.set(X("Type {"));
       msg.append(m_TypeURI);
       msg.append(X("}"));
-      msg.append(m_TypeName);
+      msg.append(m_pType->getName());
       msg.append(X(" is not defined [err:XPTY0004]"));
-      XQThrow3(XPath2ErrorException,X("ItemType::matchesNameType"), msg.getRawBuffer(), location);
+      XQThrow3(XPath2ErrorException,X("SequenceType::ItemType::matchesNameType"), msg.getRawBuffer(), location);
     }
   }
 
@@ -331,282 +222,260 @@ ItemType *ItemType::staticResolution(StaticContext *context, const LocationInfo 
   case TEST_SCHEMA_DOCUMENT:
   case TEST_SCHEMA_ELEMENT: {
     // retrieve the type of the element name
-    SchemaElementDecl *elemDecl = context->getDocumentCache()->getElementDecl(m_NameURI, m_NameName);
+    SchemaElementDecl *elemDecl = context->getDocumentCache()->getElementDecl(m_NameURI, m_pName->getName());
     if(elemDecl == NULL) {
-      XMLBuffer msg;
+      XMLBuffer msg(1023, context->getMemoryManager());
       msg.set(X("Element {"));
       msg.append(m_NameURI);
       msg.append(X("}"));
-      msg.append(m_NameName);
+      msg.append(m_pName->getName());
       msg.append(X(" is not defined as a global element [err:XPST0081]"));
-      XQThrow3(StaticErrorException,X("ItemType::staticResolution"), msg.getRawBuffer(), location);
+      XQThrow3(StaticErrorException,X("SequenceType::ItemType::staticResolution"), msg.getRawBuffer(), location);
     }
     break;
   }
   case TEST_SCHEMA_ATTRIBUTE: {
     // retrieve the type of the attribute name
-    SchemaAttDef *attrDecl = context->getDocumentCache()->getAttributeDecl(m_NameURI, m_NameName);
+    SchemaAttDef *attrDecl = context->getDocumentCache()->getAttributeDecl(m_NameURI, m_pName->getName());
     if(attrDecl == NULL) {
-      XMLBuffer msg;
+      XMLBuffer msg(1023, context->getMemoryManager());
       msg.set(X("Attribute {"));
       msg.append(m_NameURI);
       msg.append(X("}"));
-      msg.append(m_NameName);
+      msg.append(m_pName->getName());
       msg.append(X(" is not defined as a global attribute [err:XPST0081]"));
-      XQThrow3(StaticErrorException,X("ItemType::staticResolution"), msg.getRawBuffer(), location);
+      XQThrow3(StaticErrorException,X("SequenceType::ItemType::staticResolution"), msg.getRawBuffer(), location);
     }
     break;
   }
   default: break;
   }
 
-  if(signature_)
-    signature_->staticResolution(context);
-
-  if(tupleMembers_) {
-    // Re-create the TupleMembers hash, this time hashing under the uriname of the member
-    TupleMembers newMembers(tupleMembers_->size(), false, context->getMemoryManager());
-    TupleMembers::iterator i = const_cast<TupleMembers*>(tupleMembers_)->begin();
-    for(; i != const_cast<TupleMembers*>(tupleMembers_)->end(); ++i) {
-      i.getValue()->staticResolution(context);
-      newMembers.put(i.getValue()->getURIName(), i.getValue());
-    }
-    const_cast<TupleMembers*>(tupleMembers_)->swap(newMembers);
-  }
-
-  if(key_)
-    key_->staticResolution(context);
-  if(value_)
-    value_->staticResolution(context);
-
-  return this;
+  if(returnType_)
+    returnType_->staticResolution(context);
 }
 
-ItemType::ItemType(ItemTestType test, QualifiedName* name, QualifiedName* type)
-  : alias_(0),
-    m_nTestType(test),
-    m_primitiveType(AnyAtomicType::NumAtomicObjectTypes),
-    m_primitive(false),
-    m_NamePrefix(name ? name->getPrefix() : 0),
+SequenceType::ItemType::ItemType(ItemTestType test,QualifiedName* name, QualifiedName* type)
+  : m_nTestType(test),
+    m_pName(name),
+    m_pType(type),
     m_NameURI(0),
-    m_NameName(name ? name->getName() : 0),
-    m_TypePrefix(type ? type->getPrefix() : 0),
     m_TypeURI(0),
-    m_TypeName(type ? type->getName() : 0),
     m_bAllowNil(false),
-    signature_(0),
-    tupleMembers_(0),
-    key_(0),
-    value_(0),
-    dc_(0),
+    argTypes_(0),
+    returnType_(0),
     staticallyResolved_(false)
 {
 }
 
-ItemType::ItemType(ItemTestType test, const DocumentCache *dc)
-  : alias_(0),
-    m_nTestType(test),
-    m_primitiveType(AnyAtomicType::NumAtomicObjectTypes),
-    m_primitive(false),
-    m_NamePrefix(0),
+SequenceType::ItemType::ItemType(const XMLCh *typeURI,const XMLCh *typeName, XPath2MemoryManager *mm)
+  : m_nTestType(TEST_ATOMIC_TYPE),
+    m_pName(0),
+    m_pType(new (mm) QualifiedName(typeName, mm)),
     m_NameURI(0),
-    m_NameName(0),
-    m_TypePrefix(0),
-    m_TypeURI(0),
-    m_TypeName(0),
-    m_bAllowNil(false),
-    signature_(0),
-    tupleMembers_(0),
-    key_(0),
-    value_(0),
-    dc_(dc),
-    staticallyResolved_(dc != 0)
-{
-}
-
-ItemType::ItemType(AnyAtomicType::AtomicObjectType primitiveType, bool primitive,
-  const XMLCh *typeURI, const XMLCh *typeName, const DocumentCache *dc)
-  : alias_(0),
-    m_nTestType(TEST_ATOMIC_TYPE),
-    m_primitiveType(primitiveType),
-    m_primitive(primitive),
-    m_NamePrefix(0),
-    m_NameURI(0),
-    m_NameName(0),
-    m_TypePrefix(0),
     m_TypeURI(typeURI),
-    m_TypeName(typeName),
     m_bAllowNil(false),
-    signature_(0),
-    tupleMembers_(0),
-    key_(0),
-    value_(0),
-    dc_(dc),
-    staticallyResolved_(primitiveType != AnyAtomicType::NumAtomicObjectTypes && dc != 0)
+    argTypes_(0),
+    returnType_(0),
+    staticallyResolved_(true)
 {
 }
 
-ItemType::ItemType(FunctionSignature *sig, const DocumentCache *dc)
-  : alias_(0),
-    m_nTestType(TEST_FUNCTION),
-    m_primitiveType(AnyAtomicType::NumAtomicObjectTypes),
-    m_primitive(false),
-    m_NamePrefix(0),
+SequenceType::ItemType::ItemType(VectorOfSequenceTypes *argTypes, SequenceType *returnType)
+  : m_nTestType(TEST_FUNCTION),
+    m_pName(0),
+    m_pType(0),
     m_NameURI(0),
-    m_NameName(0),
-    m_TypePrefix(0),
     m_TypeURI(0),
-    m_TypeName(0),
     m_bAllowNil(false),
-    signature_(sig),
-    tupleMembers_(0),
-    key_(0),
-    value_(0),
-    dc_(dc),
-    staticallyResolved_(dc != 0)
+    argTypes_(argTypes),
+    returnType_(returnType),
+    staticallyResolved_(true)
 {
 }
 
-ItemType::ItemType(const TupleMembers *members, const DocumentCache *dc)
-  : alias_(0),
-    m_nTestType(TEST_TUPLE),
-    m_primitiveType(AnyAtomicType::NumAtomicObjectTypes),
-    m_primitive(false),
-    m_NamePrefix(0),
-    m_NameURI(0),
-    m_NameName(0),
-    m_TypePrefix(0),
-    m_TypeURI(0),
-    m_TypeName(0),
-    m_bAllowNil(false),
-    signature_(0),
-    tupleMembers_(members),
-    key_(0),
-    value_(0),
-    dc_(dc),
-    staticallyResolved_(dc != 0)
+SequenceType::ItemType::~ItemType()
 {
+    delete m_pName;
+    delete m_pType;
+    delete returnType_;
 }
 
-ItemType::ItemType(SequenceType *key, SequenceType *value, const DocumentCache *dc)
-  : alias_(0),
-    m_nTestType(TEST_MAP),
-    m_primitiveType(AnyAtomicType::NumAtomicObjectTypes),
-    m_primitive(false),
-    m_NamePrefix(0),
-    m_NameURI(0),
-    m_NameName(0),
-    m_TypePrefix(0),
-    m_TypeURI(0),
-    m_TypeName(0),
-    m_bAllowNil(false),
-    signature_(0),
-    tupleMembers_(0),
-    key_(key),
-    value_(value),
-    dc_(dc),
-    staticallyResolved_(dc != 0)
+SequenceType::ItemType::ItemTestType SequenceType::ItemType::getItemTestType() const
 {
+  return m_nTestType;
 }
 
-ItemType::~ItemType()
-{
-  if(signature_) signature_->release();
-}
-
-ItemType::ItemTestType ItemType::getItemTestType() const
-{
-  return alias_ ? alias_->getType()->getItemTestType() : m_nTestType;
-}
-
-void ItemType::setItemTestType(ItemTestType t)
+void SequenceType::ItemType::setItemTestType(ItemTestType t)
 {
   m_nTestType = t;
 }
 
-void ItemType::setAllowNilled(bool value)
+void SequenceType::ItemType::setAllowNilled(bool value)
 {
   m_bAllowNil=value;
 }
 
-bool ItemType::getAllowNilled() const
+bool SequenceType::ItemType::getAllowNilled() const
 {
-  return alias_ ? alias_->getType()->getAllowNilled() : m_bAllowNil;
+  return m_bAllowNil;
 }
 
-FunctionSignature *ItemType::getFunctionSignature() const
+void SequenceType::ItemType::setName(QualifiedName * name)
 {
-  return alias_ ? alias_->getType()->getFunctionSignature() : signature_;
+    m_pName=name;
 }
 
-const TupleMembers *ItemType::getTupleMembers() const
-{
-  return alias_ ? alias_->getType()->getTupleMembers() : tupleMembers_;
+QualifiedName *SequenceType::ItemType::getName() const {
+
+  return m_pName;
 }
 
-SequenceType *ItemType::getKeyType() const
+void SequenceType::ItemType::setType(QualifiedName * type)
 {
-  return alias_ ? alias_->getType()->getKeyType() : key_;
+    m_pType=type;
 }
 
-SequenceType *ItemType::getValueType() const
-{
-  return alias_ ? alias_->getType()->getValueType() : value_;
+QualifiedName *SequenceType::ItemType::getType() const {
+
+  return m_pType;
 }
 
-const DocumentCache *ItemType::getDocumentCache() const
+const XMLCh* SequenceType::ItemType::getTypeURI() const
 {
-  return alias_ ? alias_->getType()->getDocumentCache() : dc_;
+  return m_TypeURI;
 }
 
-bool ItemType::isPrimitive() const
+const XMLCh* SequenceType::ItemType::getNameURI() const
 {
-  return alias_ ? alias_->getType()->isPrimitive() : m_primitive;
-}
-AnyAtomicType::AtomicObjectType ItemType::getPrimitiveType() const
-{
-  return alias_ ? alias_->getType()->getPrimitiveType() : m_primitiveType;
+  return m_NameURI;
 }
 
-const XMLCh *ItemType::getTypePrefix() const
+void SequenceType::getStaticType(StaticType &st, const StaticContext *context,
+                                 bool &isExact, const LocationInfo *location) const
 {
-  return alias_ ? alias_->getType()->getTypePrefix() : m_TypePrefix;
+  if(m_pItemType == 0) {
+    st = StaticType();
+    isExact = true;
+  }
+  else {
+    m_pItemType->getStaticType(st, context, isExact, location);
+
+    switch(m_nOccurrence) {
+    case EXACTLY_ONE: break;
+    case STAR: st.multiply(0, StaticType::UNLIMITED); break;
+    case PLUS: st.multiply(1, StaticType::UNLIMITED); break;
+    case QUESTION_MARK: st.multiply(0, 1); break;
+    }
+  }
 }
 
-const XMLCh *ItemType::getTypeURI() const
+void SequenceType::ItemType::getStaticType(StaticType &st, const StaticContext *context, bool &isExact, const LocationInfo *location) const
 {
-  return alias_ ? alias_->getType()->getTypeURI() : m_TypeURI;
+  if(this == NULL) {
+    st = StaticType();
+    isExact = true;
+    return;
+  }
+
+  switch(m_nTestType) {
+  case TEST_ANYTHING: {
+    st = StaticType::ITEM_TYPE;
+    isExact = true;
+    break;
+  }
+  case TEST_ATOMIC_TYPE: {
+    st = StaticType::create(m_TypeURI, m_pType->getName(), context, isExact);
+    break;
+  }
+  case TEST_DOCUMENT: {
+    st = StaticType::DOCUMENT_TYPE;
+    if(m_pName == NULL && m_pType == NULL)
+      isExact = true;
+    else isExact = false;
+    break;
+  }
+  case TEST_ELEMENT: {
+    st = StaticType::ELEMENT_TYPE;
+    if(m_pName == NULL && m_pType == NULL)
+      isExact = true;
+    else isExact = false;
+    break;
+  }
+  case TEST_ATTRIBUTE: {
+    st = StaticType::ATTRIBUTE_TYPE;
+    if(m_pName == NULL && m_pType == NULL)
+      isExact = true;
+    else isExact = false;
+    break;
+  }
+  case TEST_PI: {
+    st = StaticType::PI_TYPE;
+    if(m_pName == NULL && m_pType == NULL)
+      isExact = true;
+    else isExact = false;
+    break;
+  }
+  case TEST_SCHEMA_ELEMENT: {
+    st = StaticType::ELEMENT_TYPE;
+    isExact = false;
+    break;
+  }
+  case TEST_SCHEMA_ATTRIBUTE: {
+    st = StaticType::ATTRIBUTE_TYPE;
+    isExact = false;
+    break;
+  }
+  case TEST_SCHEMA_DOCUMENT: {
+    st = StaticType::DOCUMENT_TYPE;
+    isExact = false;
+    break;
+  }
+  case TEST_COMMENT: {
+    st = StaticType::COMMENT_TYPE;
+    isExact = true;
+    break;
+  }
+  case TEST_TEXT: {
+    st = StaticType::TEXT_TYPE;
+    isExact = true;
+    break;
+  }
+  case TEST_NAMESPACE: {
+    st = StaticType::NAMESPACE_TYPE;
+    isExact = true;
+    break;
+  }
+  case TEST_NODE: {
+    st = StaticType::NODE_TYPE;
+    isExact = true;
+    break;
+  }
+  case TEST_FUNCTION: {
+    if(returnType_ == 0) {
+      st = StaticType::FUNCTION_TYPE;
+      isExact = true;
+    }
+    else {
+      StaticType ret;
+      returnType_->getStaticType(ret, context, isExact, location);
+
+      isExact = isExact && argTypes_->size() == 0;
+
+      st = StaticType(context->getMemoryManager(), (unsigned int)argTypes_->size(), ret);
+    }
+    break;
+  }
+  }
 }
 
-const XMLCh *ItemType::getTypeName() const
+void SequenceType::toBuffer(XMLBuffer &buffer) const
 {
-  return alias_ ? alias_->getType()->getTypeName() : m_TypeName;
-}
-
-const XMLCh *ItemType::getNamePrefix() const
-{
-  return alias_ ? alias_->getType()->getNamePrefix() : m_NamePrefix;
-}
-
-const XMLCh *ItemType::getNameURI() const
-{
-  return alias_ ? alias_->getType()->getNameURI() : m_NameURI;
-}
-
-const XMLCh *ItemType::getNameName() const
-{
-  return alias_ ? alias_->getType()->getNameName() : m_NameName;
-}
-
-void SequenceType::toBuffer(XMLBuffer &buffer, bool forStaticType) const
-{
-  if(this == 0) {
-    buffer.append(X("item()*"));
-  } else if(m_pItemType == 0) {
+  if(m_pItemType == 0) {
     buffer.append(X("empty-sequence()"));
   }
   else {
-    m_pItemType->toBuffer(buffer, forStaticType, m_nOccurrence != EXACTLY_ONE);
+    m_pItemType->toBuffer(buffer, m_nOccurrence != EXACTLY_ONE);
 
     switch(m_nOccurrence) {
     case EXACTLY_ONE: break;
@@ -633,49 +502,41 @@ inline void outputPrefixOrURI(const XMLCh *prefix, const XMLCh *uri, XMLBuffer &
   }
 }
 
-void ItemType::toBuffer(XMLBuffer &buffer, bool forStaticType, bool addBrackets) const
+void SequenceType::ItemType::toBuffer(XMLBuffer &buffer, bool addBrackets) const
 {
-  static const XMLCh XMLChXS[] = { chLatin_x, chLatin_s, chNull };
-
   switch(m_nTestType) {
   case TEST_ANYTHING: {
     buffer.append(X("item()"));
     break;
   }
-  case TEST_EXPRESSION:
   case TEST_ATOMIC_TYPE: {
-    if(m_TypeName) {
-      outputPrefixOrURI(m_TypePrefix, m_TypeURI, buffer);
-      buffer.append(m_TypeName);
-    } else {
-      outputPrefixOrURI(XMLChXS, SchemaSymbols::fgURI_SCHEMAFORSCHEMA, buffer);
-      buffer.append(AnyAtomicType::fgDT_ANYATOMICTYPE);
-    }
+    outputPrefixOrURI(m_pType->getPrefix(), m_TypeURI, buffer);
+    buffer.append(m_pType->getName());
     break;
   }
   case TEST_SCHEMA_DOCUMENT:
   case TEST_DOCUMENT: {
     buffer.append(X("document-node("));
 
-    if(m_NameName != NULL || m_TypeName != NULL) {
+    if(m_pName != NULL || m_pType != NULL) {
 
       if(m_nTestType == TEST_DOCUMENT)
         buffer.append(X("element("));
       else
         buffer.append(X("schema-element("));
 
-      if(m_NameName != NULL) {
-        outputPrefixOrURI(m_NamePrefix, m_NameURI, buffer);
-        buffer.append(m_NameName);
+      if(m_pName != NULL) {
+        outputPrefixOrURI(m_pName->getPrefix(), m_NameURI, buffer);
+        buffer.append(m_pName->getName());
       }
 
-      if(m_TypeName != NULL) {
-        if(m_NameName == NULL) {
+      if(m_pType != NULL) {
+        if(m_pName == NULL) {
           buffer.append('*');
         }
         buffer.append(X(", "));
-        outputPrefixOrURI(m_TypePrefix, m_TypeURI, buffer);
-        buffer.append(m_TypeName);
+        outputPrefixOrURI(m_pType->getPrefix(), m_TypeURI, buffer);
+        buffer.append(m_pType->getName());
       }
 
       buffer.append(')');
@@ -687,18 +548,18 @@ void ItemType::toBuffer(XMLBuffer &buffer, bool forStaticType, bool addBrackets)
   case TEST_ELEMENT: {
     buffer.append(X("element("));
 
-    if(m_NameName != NULL) {
-      outputPrefixOrURI(m_NamePrefix, m_NameURI, buffer);
-      buffer.append(m_NameName);
+    if(m_pName != NULL) {
+      outputPrefixOrURI(m_pName->getPrefix(), m_NameURI, buffer);
+      buffer.append(m_pName->getName());
     }
 
-    if(m_TypeName != NULL) {
-      if(m_NameName == NULL) {
+    if(m_pType != NULL) {
+      if(m_pName == NULL) {
         buffer.append('*');
       }
       buffer.append(X(", "));
-      outputPrefixOrURI(m_TypePrefix, m_TypeURI, buffer);
-      buffer.append(m_TypeName);
+      outputPrefixOrURI(m_pType->getPrefix(), m_TypeURI, buffer);
+      buffer.append(m_pType->getName());
     }
 
     buffer.append(')');
@@ -707,18 +568,18 @@ void ItemType::toBuffer(XMLBuffer &buffer, bool forStaticType, bool addBrackets)
   case TEST_ATTRIBUTE: {
     buffer.append(X("attribute("));
 
-    if(m_NameName != NULL) {
-      outputPrefixOrURI(m_NamePrefix, m_NameURI, buffer);
-      buffer.append(m_NameName);
+    if(m_pName != NULL) {
+      outputPrefixOrURI(m_pName->getPrefix(), m_NameURI, buffer);
+      buffer.append(m_pName->getName());
     }
 
-    if(m_TypeName != NULL) {
-      if(m_NameName == NULL) {
+    if(m_pType != NULL) {
+      if(m_pName == NULL) {
         buffer.append('*');
       }
       buffer.append(X(", "));
-      outputPrefixOrURI(m_TypePrefix, m_TypeURI, buffer);
-      buffer.append(m_TypeName);
+      outputPrefixOrURI(m_pType->getPrefix(), m_TypeURI, buffer);
+      buffer.append(m_pType->getName());
     }
 
     buffer.append(')');
@@ -727,9 +588,9 @@ void ItemType::toBuffer(XMLBuffer &buffer, bool forStaticType, bool addBrackets)
   case TEST_PI: {
     buffer.append(X("processing-instruction("));
 
-    if(m_NameName != NULL) {
-      outputPrefixOrURI(m_NamePrefix, m_NameURI, buffer);
-      buffer.append(m_NameName);
+    if(m_pName != NULL) {
+      outputPrefixOrURI(m_pName->getPrefix(), m_NameURI, buffer);
+      buffer.append(m_pName->getName());
     }
 
     buffer.append(')');
@@ -738,9 +599,9 @@ void ItemType::toBuffer(XMLBuffer &buffer, bool forStaticType, bool addBrackets)
   case TEST_SCHEMA_ELEMENT: {
     buffer.append(X("schema-element("));
 
-    if(m_NameName != NULL) {
-      outputPrefixOrURI(m_NamePrefix, m_NameURI, buffer);
-      buffer.append(m_NameName);
+    if(m_pName != NULL) {
+      outputPrefixOrURI(m_pName->getPrefix(), m_NameURI, buffer);
+      buffer.append(m_pName->getName());
     }
 
     buffer.append(')');
@@ -749,9 +610,9 @@ void ItemType::toBuffer(XMLBuffer &buffer, bool forStaticType, bool addBrackets)
   case TEST_SCHEMA_ATTRIBUTE: {
     buffer.append(X("schema-attribute("));
 
-    if(m_NameName != NULL) {
-      outputPrefixOrURI(m_NamePrefix, m_NameURI, buffer);
-      buffer.append(m_NameName);
+    if(m_pName != NULL) {
+      outputPrefixOrURI(m_pName->getPrefix(), m_NameURI, buffer);
+      buffer.append(m_pName->getName());
     }
 
     buffer.append(')');
@@ -774,71 +635,42 @@ void ItemType::toBuffer(XMLBuffer &buffer, bool forStaticType, bool addBrackets)
     break;
   }
   case TEST_FUNCTION: {
-    if(signature_ == 0) {
+    if(returnType_ == 0) {
       buffer.append(X("function(*)"));
     }
     else {
-      addBrackets = addBrackets && signature_->returnType->getOccurrenceIndicator() == SequenceType::EXACTLY_ONE;
+      addBrackets = addBrackets && returnType_->getOccurrenceIndicator() == EXACTLY_ONE;
       if(addBrackets) buffer.append('(');
-      signature_->toBuffer(buffer, /*typeSyntax*/true);
-      if(addBrackets) buffer.append(')');
-    }
-    break;
-  }
-  case TEST_TUPLE: {
-    buffer.append(X("tuple("));
 
-    bool doneOne = false;
-    if(tupleMembers_) {
-      TupleMembers::iterator i = const_cast<TupleMembers*>(tupleMembers_)->begin();
-      for(; i != const_cast<TupleMembers*>(tupleMembers_)->end(); ++i) {
+      buffer.append(X("function("));
+
+      bool doneOne = false;
+      for(VectorOfSequenceTypes::const_iterator i = argTypes_->begin();
+          i != argTypes_->end(); ++i) {
         if(doneOne) buffer.append(',');
         doneOne = true;
-
-        if(i.getValue()->getQName()) {
-          buffer.append(i.getValue()->getQName());
-        } else {
-          if(i.getValue()->getURI()) {
-            buffer.append('{');
-            buffer.append(i.getValue()->getURI());
-            buffer.append('}');
-          }
-          buffer.append(i.getValue()->getName());
-        }
-
-        buffer.append(X(" as "));
-        if(forStaticType)
-          i.getValue()->getStaticType().typeToBuf(buffer);
-        else
-          i.getValue()->getType()->toBuffer(buffer);
+        (*i)->toBuffer(buffer);
       }
+      buffer.append(X(") as "));
+      returnType_->toBuffer(buffer);
+
+      if(addBrackets) buffer.append(')');
     }
-    buffer.append(')');
-    break;
-  }
-  case TEST_MAP: {
-    buffer.append(X("map("));
-    if(key_) {
-      key_->toBuffer(buffer, forStaticType);
-      buffer.append(',');
-      value_->toBuffer(buffer, forStaticType);
-    }
-    buffer.append(')');
     break;
   }
   }
 }
 
-bool ItemType::matchesNameType(const Item::Ptr &toBeTested, const DynamicContext* context) const
+bool SequenceType::ItemType::matchesNameType(const Item::Ptr &toBeTested, const DynamicContext* context) const
 {
   // Check name constraint
-  if(m_NameName) {
-    if(toBeTested->getType() == Item::NODE) {
+  if(m_pName) {
+    if(toBeTested->isNode()) {
       ATQNameOrDerived::Ptr name = ((const Node*)(const Item*)toBeTested)->dmNodeName(context);
       if(name.isNull()) return false;
 
       // Match node name
-      if(!(XPath2Utils::equals(m_NameName, ((const ATQNameOrDerived*)name.get())->getName())))
+      if(!(XPath2Utils::equals(m_pName->getName(), ((const ATQNameOrDerived*)name.get())->getName())))
         return false;
 
       // Match node uri
@@ -855,14 +687,11 @@ bool ItemType::matchesNameType(const Item::Ptr &toBeTested, const DynamicContext
   //matches a value whose dynamic type is shoesize, if shoesize is an
   //atomic type derived from xs:decimal.
 
-  if(m_TypeName) {
-    if(toBeTested->getType() == Item::ATOMIC) {
-      AnyAtomicType::AtomicObjectType testType = ((AnyAtomicType*)toBeTested.get())->getPrimitiveTypeIndex();
-      return (m_primitiveType == testType || (m_primitiveType == AnyAtomicType::DURATION &&
-          (testType == AnyAtomicType::YEAR_MONTH_DURATION || testType == AnyAtomicType::DAY_TIME_DURATION))) &&
-        ((AnyAtomicType*)toBeTested.get())->isInstanceOfType(m_TypeURI, m_TypeName, context);
-    } else if (toBeTested->getType() == Item::NODE) {
-      return ((Node*)toBeTested.get())->hasInstanceOfType(m_TypeURI, m_TypeName, context);
+  if(m_pType) {
+    if(toBeTested->isAtomicValue()) {
+      return ((AnyAtomicType*)toBeTested.get())->isInstanceOfType(m_TypeURI, m_pType->getName(), context);
+    } else if (toBeTested->isNode()) {
+      return ((Node*)toBeTested.get())->hasInstanceOfType(m_TypeURI, m_pType->getName(), context);
     }
     return false;
   }
@@ -870,14 +699,13 @@ bool ItemType::matchesNameType(const Item::Ptr &toBeTested, const DynamicContext
   return true;
 }
 
-bool ItemType::matchesSchemaElement(const Node::Ptr &toBeTested, const DynamicContext* context) const
+bool SequenceType::ItemType::matchesSchemaElement(const Node::Ptr &toBeTested, const DynamicContext* context) const
 {
   // retrieve the type of the element name
-  assert(m_NameName!=NULL);
+  assert(m_pName!=NULL);
   const XMLCh* elementNS=m_NameURI;
-  const XMLCh* elementName=m_NameName;
+  const XMLCh* elementName=m_pName->getName();
   SchemaElementDecl *elemDecl=context->getDocumentCache()->getElementDecl(elementNS, elementName);
-  assert(elemDecl != NULL);
 
   // 1. The name of the candidate node matches the specified ElementName or matches the name of an element in a 
   //    substitution group headed by an element named ElementName.
@@ -911,6 +739,8 @@ bool ItemType::matchesSchemaElement(const Node::Ptr &toBeTested, const DynamicCo
       return false;
   }
 
+  if (elemDecl == NULL)
+	  return false;
   // 2. derives-from(AT, ET) is true, where AT is the type of the candidate node and ET is the type declared for 
   //    element ElementName in the in-scope element declarations.
   ComplexTypeInfo* pTypeInfo=elemDecl->getComplexTypeInfo();
@@ -926,10 +756,8 @@ bool ItemType::matchesSchemaElement(const Node::Ptr &toBeTested, const DynamicCo
   return true;
 }
 
-bool ItemType::matches(const Node::Ptr &toBeTested, DynamicContext* context) const
+bool SequenceType::ItemType::matches(const Node::Ptr &toBeTested, DynamicContext* context) const
 {
-  if(alias_) return alias_->getType()->matches(toBeTested, context);
-
   switch(m_nTestType) {
     case TEST_ELEMENT:
     {
@@ -969,9 +797,9 @@ bool ItemType::matches(const Node::Ptr &toBeTested, DynamicContext* context) con
         return false;
 
       // retrieve the type of the attribute name
-      assert(m_NameName!=NULL);
+      assert(m_pName!=NULL);
       const XMLCh* attributeNS=m_NameURI;
-      const XMLCh* attributeName=m_NameName;
+      const XMLCh* attributeName=m_pName->getName();
       SchemaAttDef* attrDecl=context->getDocumentCache()->getAttributeDecl(attributeNS, attributeName);
       assert(attrDecl != NULL);
 
@@ -1024,7 +852,7 @@ bool ItemType::matches(const Node::Ptr &toBeTested, DynamicContext* context) con
         if(toBeTested->dmNodeKind() != Node::document_string)
           return false;
 
-        if(m_NameName == NULL && m_TypeName == NULL)
+        if(m_pName == NULL && m_pType == NULL)
           return true;
 
         // if we have a constraint on name/type, they apply to the document element
@@ -1047,11 +875,8 @@ bool ItemType::matches(const Node::Ptr &toBeTested, DynamicContext* context) con
       return true;
     }
 
-    case TEST_EXPRESSION:
     case TEST_ATOMIC_TYPE:
     case TEST_FUNCTION:
-    case TEST_TUPLE:
-    case TEST_MAP:
     {
         return false;
     }
@@ -1060,15 +885,13 @@ bool ItemType::matches(const Node::Ptr &toBeTested, DynamicContext* context) con
   return true;
 }
 
-bool ItemType::matches(const FunctionRef::Ptr &toBeTested) const
+bool SequenceType::ItemType::matches(const FunctionRef::Ptr &toBeTested, DynamicContext* context) const
 {
-  return matches(toBeTested->getSignature());
+  return matches(toBeTested->getSignature(), context);
 }
 
-bool ItemType::matches(const FunctionSignature *sig) const
+bool SequenceType::ItemType::matches(const FunctionSignature *sig, DynamicContext* context) const
 {
-  if(alias_) return alias_->getType()->matches(sig);
-
   switch(m_nTestType) {
     case TEST_ELEMENT:
     case TEST_ATTRIBUTE:
@@ -1081,10 +904,7 @@ bool ItemType::matches(const FunctionSignature *sig) const
     case TEST_DOCUMENT:
     case TEST_SCHEMA_DOCUMENT:
     case TEST_NAMESPACE:
-    case TEST_EXPRESSION:
     case TEST_ATOMIC_TYPE:
-    case TEST_TUPLE:
-    case TEST_MAP:
     {
       return false;
     }
@@ -1097,116 +917,38 @@ bool ItemType::matches(const FunctionSignature *sig) const
     case TEST_FUNCTION:
     {
       // function(*) matches any function item.
-      if(signature_ == 0) return true;
+      if(returnType_ == 0) return true;
 
       // A TypedFunctionTest matches an item if it is a function item, and the function
       // item's type signature is a subtype of the TypedFunctionTest.
-      if(sig->numArgs() != signature_->numArgs()) return false;
+      size_t numArgs = sig->argSpecs ? sig->argSpecs->size() : 0;
+      if(numArgs != argTypes_->size()) return false;
 
-      if(sig->argSpecs && signature_->argSpecs) {
+      if(sig->argSpecs) {
         ArgumentSpecs::const_iterator aa_i = sig->argSpecs->begin();
-        ArgumentSpecs::const_iterator ba_i = signature_->argSpecs->begin();
-        for(; aa_i != sig->argSpecs->end() && ba_i != signature_->argSpecs->end(); ++aa_i, ++ba_i) {
-          if(!(*ba_i)->getType()->isSubtypeOf((*aa_i)->getType())) return false;
+        VectorOfSequenceTypes::const_iterator ba_i = argTypes_->begin();
+        for(; aa_i != sig->argSpecs->end() && ba_i != argTypes_->end(); ++aa_i, ++ba_i) {
+          if(!(*ba_i)->isSubtypeOf((*aa_i)->getType(), context)) return false;
         }
       }
 
-      return sig->returnType->isSubtypeOf(signature_->returnType);
+      if(sig->returnType)
+        return sig->returnType->isSubtypeOf(returnType_, context);
+
+      return returnType_->m_nOccurrence == STAR && returnType_->m_pItemType &&
+        returnType_->m_pItemType->getItemTestType() == TEST_ANYTHING;
     }
   }
   return true;
 }
 
-static const XMLCh s_key[] = { 'k', 'e', 'y', 0 };
-static const XMLCh s_value[] = { 'v', 'a', 'l', 'u', 'e', 0 };
-
-bool ItemType::matches(const Tuple::Ptr &tuple, DynamicContext* context) const
+bool SequenceType::ItemType::matches(const Item::Ptr &toBeTested, DynamicContext* context) const
 {
-  if(alias_) return alias_->getType()->matches(tuple, context);
-
-  switch(m_nTestType) {
-    case TEST_ELEMENT:
-    case TEST_ATTRIBUTE:
-    case TEST_SCHEMA_ELEMENT:
-    case TEST_SCHEMA_ATTRIBUTE:
-    case TEST_NODE:
-    case TEST_PI:
-    case TEST_COMMENT:
-    case TEST_TEXT:
-    case TEST_DOCUMENT:
-    case TEST_SCHEMA_DOCUMENT:
-    case TEST_NAMESPACE:
-    case TEST_ATOMIC_TYPE:
-    {
-      return false;
-    }
+  if(toBeTested->isNode())
+    return matches((Node::Ptr)toBeTested, context);
+  if(toBeTested->isFunction())
+    return matches((FunctionRef::Ptr)toBeTested, context);
     
-    case TEST_ANYTHING:
-    {
-      return true;
-    }
-
-    case TEST_FUNCTION:
-    case TEST_EXPRESSION:
-    {
-      if(signature_ == 0) return true;
-      if(signature_->numArgs() != 1) return false;
-      return matches(tuple->getSignature());
-    }
-
-    case TEST_MAP:
-    {
-      if(key_ == 0) return true;
-
-      Item::Ptr key = context->getItemFactory()->createString(s_key, context);
-      Item::Ptr value = context->getItemFactory()->createString(s_value, context);
-
-      Result entries = tuple->entries(this);
-      Item::Ptr item;
-      while((item = entries->next(context)).notNull()) {
-        if(!key_->matches(((Tuple*)item.get())->get(key), context) ||
-           !value_->matches(((Tuple*)item.get())->get(value), context))
-          return false;
-      }
-      return true;
-    }
-    case TEST_TUPLE:
-    {
-      if(tupleMembers_ == 0) return true;
-
-      TupleMembers::iterator i = const_cast<TupleMembers*>(tupleMembers_)->begin();
-      for(; i != const_cast<TupleMembers*>(tupleMembers_)->end(); ++i) {
-        Result value(0);
-        tuple->get(i.getValue()->getURI(), i.getValue()->getName(), context, value);
-        if(!i.getValue()->getType()->matches(value, context))
-          return false;
-      }
-
-      return true;
-    }
-  }
-  return true;
-}
-
-bool ItemType::matches(const Item::Ptr &toBeTested, DynamicContext* context) const
-{
-  switch(toBeTested->getType()) {
-  case Item::NODE:
-     return matches((Node::Ptr)toBeTested, context);
-  case Item::FUNCTION:
-     return matches((FunctionRef::Ptr)toBeTested);
-  case Item::TUPLE:
-    return matches((Tuple::Ptr)toBeTested, context);
-  case Item::EXPRESSION:
-    if(!alias_)
-      return m_nTestType == TEST_EXPRESSION;
-    break;
-  case Item::ATOMIC:
-    break;
-  }
-     
-  if(alias_) return alias_->getType()->matches(toBeTested, context);
-
   switch(m_nTestType) {
     case TEST_ELEMENT:
     case TEST_ATTRIBUTE:
@@ -1220,8 +962,6 @@ bool ItemType::matches(const Item::Ptr &toBeTested, DynamicContext* context) con
     case TEST_SCHEMA_DOCUMENT:
     case TEST_NAMESPACE:
     case TEST_FUNCTION:
-    case TEST_TUPLE:
-    case TEST_MAP:
     {
       return false;
     }
@@ -1231,30 +971,18 @@ bool ItemType::matches(const Item::Ptr &toBeTested, DynamicContext* context) con
       return true;
     }
 
-    case TEST_EXPRESSION:
-    {
-      return toBeTested->getType() == Item::EXPRESSION;
-    }
-
     case TEST_ATOMIC_TYPE:
     {
-      if(toBeTested->getType() != Item::ATOMIC) return false;
-      if(m_TypeName == 0) return true;
+      if(!toBeTested->isAtomicValue()) return false;
       return matchesNameType(toBeTested, context);
     }
   }
   return true;
 }
 
-bool SequenceType::isSubtypeOf(const SequenceType *b, bool forStaticType) const
+bool SequenceType::isSubtypeOf(const SequenceType *b, const StaticContext* context) const
 {
   const SequenceType *a = this;
-
-  if(b == 0) return true;
-
-  if(a == 0)
-    return b->m_nOccurrence == SequenceType::STAR && b->m_pItemType &&
-      b->m_pItemType->getItemTestType() == ItemType::TEST_ANYTHING;
 
   if(b->m_pItemType == 0)
     return a->m_pItemType == 0;
@@ -1275,59 +1003,44 @@ bool SequenceType::isSubtypeOf(const SequenceType *b, bool forStaticType) const
     break;
   }
 
-  return a->m_pItemType->isSubtypeOf(b->m_pItemType, forStaticType);
+  return a->m_pItemType->isSubtypeOf(b->m_pItemType, context);
 }
 
-bool ItemType::isSubtypeOfNameType(const ItemType *b) const
+bool SequenceType::ItemType::isSubtypeOfNameType(const ItemType *b, const StaticContext* context) const
 {
   const ItemType *a = this;
 
-  if(b->m_NameName) {
-    if(a->m_NameName == 0) return false;
-    if(!XPath2Utils::equals(a->m_NameName, b->m_NameName) ||
+  if(a->m_pName) {
+    if(b->m_pName == 0) return false;
+    if(!XPath2Utils::equals(a->m_pName->getName(), b->m_pName->getName()) ||
        !XPath2Utils::equals(a->m_NameURI, b->m_NameURI))
       return false;
   }
 
-  if(b->m_TypeName) {
-    if(a->m_TypeName == 0) return false;
-    if(!b->dc_->isTypeOrDerivedFromType(a->m_TypeURI, a->m_TypeName, b->m_TypeURI, b->m_TypeName))
+  if(a->m_pType) {
+    if(b->m_pType == 0) return false;
+    if(!context->isTypeOrDerivedFromType(a->m_TypeURI, a->m_pType->getName(), b->m_TypeURI, b->m_pType->getName()))
       return false;
   }
 
   return true;
 }
 
-bool ItemType::isSubtypeOf(const ItemType *b, bool forStaticType) const
+bool SequenceType::ItemType::isSubtypeOf(const ItemType *b, const StaticContext* context) const
 {
   const ItemType *a = this;
-  while(a->alias_) a = a->alias_->getType();
-  while(b->alias_) b = b->alias_->getType();
 
   switch(b->m_nTestType) {
 
   case TEST_ATOMIC_TYPE: {
     // Ai and Bi are AtomicTypes, and derives-from(Ai, Bi) returns true.
-    if(a->m_nTestType != TEST_ATOMIC_TYPE) return false;
-    if(a->m_primitiveType != b->m_primitiveType) {
-      if((b->m_primitiveType != AnyAtomicType::DURATION ||
-        (a->m_primitiveType != AnyAtomicType::DAY_TIME_DURATION &&
-         b->m_primitiveType != AnyAtomicType::YEAR_MONTH_DURATION)))
-        return false;
-    } else {
-      if(b->m_primitive) return true;
-      if(a->m_primitive) return false;
-    }
-    return a->isSubtypeOfNameType(b);
+    if(b->m_nTestType != TEST_ATOMIC_TYPE) return false;
+    return a->isSubtypeOfNameType(b, context);
   }
 
   case TEST_ANYTHING: {
     // Bi is item().
     return true;
-  }
-
-  case TEST_EXPRESSION: {
-    return a->m_nTestType == TEST_EXPRESSION;
   }
 
   case TEST_NODE: {
@@ -1351,7 +1064,7 @@ bool ItemType::isSubtypeOf(const ItemType *b, bool forStaticType) const
 
   case TEST_TEXT: {
     // Bi is text() and Ai is also text().
-    return a->m_nTestType == TEST_TEXT;
+    return b->m_nTestType == TEST_TEXT;
   }
 
   case TEST_COMMENT: {
@@ -1368,7 +1081,7 @@ bool ItemType::isSubtypeOf(const ItemType *b, bool forStaticType) const
     // Bi is processing-instruction() and Ai is either processing-instruction() or processing-instruction(N) for any name N..
     // Bi is processing-instruction(Bn), and Ai is also processing-instruction(Bn).
     if(a->m_nTestType != TEST_PI) return false;
-    return a->isSubtypeOfNameType(b);
+    return a->isSubtypeOfNameType(b, context);
   }
 
   case TEST_DOCUMENT:
@@ -1382,7 +1095,7 @@ bool ItemType::isSubtypeOf(const ItemType *b, bool forStaticType) const
     // Bi is element(*, Bt), Ai is either element(*, At), or element(N, At) for any name N, and derives-from(At, Bt) returns true.
     // Bi is element(*, Bt?), Ai is either element(*, At), element(*, At?), element(N, At), or element(N, At?) for any name N, and derives-from(At, Bt) returns true.
     if(a->m_nTestType != b->m_nTestType) return false;
-    if(!a->isSubtypeOfNameType(b)) return false;
+    if(!a->isSubtypeOfNameType(b, context)) return false;
     return !a->m_bAllowNil || b->m_bAllowNil;
   }
 
@@ -1393,13 +1106,13 @@ bool ItemType::isSubtypeOf(const ItemType *b, bool forStaticType) const
     // Bi is schema-element(Bn), Ai is schema-element(An), and either the expanded QName An equals the expanded QName Bn or
     // the element declaration named An is in the substitution group of the element declaration named Bn.
     if(a->m_nTestType != b->m_nTestType) return false;
-    if(a->isSubtypeOfNameType(b)) return true;
+    if(a->isSubtypeOfNameType(b, context)) return true;
 
     // Check substitution groups
-    SchemaElementDecl* aElemDecl = a->dc_->getElementDecl(a->m_NameURI, a->m_NameName);
+    SchemaElementDecl* aElemDecl = context->getDocumentCache()->getElementDecl(a->m_NameURI, a->m_pName->getName());
     while(aElemDecl) {
-      if(XPath2Utils::equals(aElemDecl->getBaseName(), b->m_NameName) &&
-         XPath2Utils::equals(a->dc_->getSchemaUri(aElemDecl->getURI()), b->m_NameURI))
+      if(XPath2Utils::equals(aElemDecl->getBaseName(), b->m_pName->getName()) &&
+         XPath2Utils::equals(context->getDocumentCache()->getSchemaUri(aElemDecl->getURI()), b->m_NameURI))
         return true;
       aElemDecl = aElemDecl->getSubstitutionGroupElem();
     }
@@ -1412,87 +1125,33 @@ bool ItemType::isSubtypeOf(const ItemType *b, bool forStaticType) const
     // Bi is attribute(Bn, Bt), Ai is attribute(Bn, At), and derives-from(At, Bt) returns true.
     // Bi is attribute(*, Bt), Ai is either attribute(*, At), or attribute(N, At) for any name N, and derives-from(At, Bt) returns true.
     if(a->m_nTestType != TEST_ATTRIBUTE) return false;
-    if(!a->isSubtypeOfNameType(b)) return false;
+    if(!a->isSubtypeOfNameType(b, context)) return false;
     return true;
   }
 
   case TEST_SCHEMA_ATTRIBUTE: {
     // Bi is schema-attribute(Bn) and Ai is also schema-attribute(Bn).
     if(a->m_nTestType != TEST_SCHEMA_ATTRIBUTE) return false;
-    return a->isSubtypeOfNameType(b);
+    return a->isSubtypeOfNameType(b, context);
   }
 
   case TEST_FUNCTION: {
-    if(a->m_nTestType == TEST_MAP || a->m_nTestType == TEST_TUPLE) {
-      if(b->signature_ == 0) return true;
-      if(b->signature_->numArgs() != 1) return false;
-      if(!(*b->signature_->argSpecs)[0]->getType()->
-        isSubtypeOf(&SequenceType::ANY_ATOMIC_TYPE)) return false;
-      return SequenceType::ITEM_STAR.isSubtypeOf(b->signature_->returnType);
-    }
-
     // Bi is function(*), and Ai is a FunctionTest.
     if(a->m_nTestType != TEST_FUNCTION) return false;
-    if(b->signature_ == 0) return true;
-    if(a->signature_ == 0) return false;
+    if(b->returnType_ == 0) return true;
+    if(a->returnType_ == 0) return false;
 
     // Bi is function(Ba_1, Ba_2, ... Ba_N) as Br, Ai is function(Aa_1, Aa_2, ... Aa_M) as Ar, N (arity of Bi) equals M (arity of Ai),
     // subtype(Ar, Br), and for values of I between 1 and N, subtype(Ba_I, Aa_I).
-    if(a->signature_->numArgs() != b->signature_->numArgs()) return false;
+    if(a->argTypes_->size() != b->argTypes_->size()) return false;
 
-    if(a->signature_->numArgs() != 0) {
-      ArgumentSpecs::const_iterator aa_i = a->signature_->argSpecs->begin();
-      ArgumentSpecs::const_iterator ba_i = b->signature_->argSpecs->begin();
-      for(; aa_i != a->signature_->argSpecs->end() && ba_i != b->signature_->argSpecs->end(); ++aa_i, ++ba_i) {
-        if(!(*ba_i)->getType()->isSubtypeOf((*aa_i)->getType())) return false;
-      }
+    VectorOfSequenceTypes::const_iterator aa_i = a->argTypes_->begin();
+    VectorOfSequenceTypes::const_iterator ba_i = b->argTypes_->begin();
+    for(; aa_i != a->argTypes_->end() && ba_i != b->argTypes_->end(); ++aa_i, ++ba_i) {
+      if(!(*ba_i)->isSubtypeOf(*aa_i, context)) return false;
     }
 
-    return a->signature_->returnType->isSubtypeOf(b->signature_->returnType);
-  }
-
-  case TEST_TUPLE: {
-    // Bi is tuple(), and Ai is a MapTest
-    if(a->m_nTestType == TEST_MAP) return b->tupleMembers_ == 0;
-    if(a->m_nTestType != TEST_TUPLE) return false;
-
-    // Bi is tuple(), and Ai is a TupleTest
-    if(b->tupleMembers_ == 0) return true;
-
-    // Bi is tuple(Bn_1 as Bt_1, ... Bn_N as Bt_N), Ai is tuple(An_1 as At_1, ... An_M as At_M)
-    // and for I between 1 and N, subtype(type(Ai, Bn_I), type(Bi, Bn_I))
-    // where type(T, N) return the type of the member name N from the TupleTest T, or item()* if not specified
-    TupleMembers::iterator i = const_cast<TupleMembers*>(b->tupleMembers_)->begin();
-    for(; i != const_cast<TupleMembers*>(b->tupleMembers_)->end(); ++i) {
-      ArgumentSpec* const *spec = a->tupleMembers_ == 0 ? 0 : a->tupleMembers_->get(i.getKey());
-      if(forStaticType) {
-        const StaticType &a_type = spec == 0 ? StaticType::ITEM_STAR : (*spec)->getStaticType();
-        SequenceType::TypeMatch match = i.getValue()->getType()->matches(a_type);
-        if(match.type != SequenceType::ALWAYS || match.cardinality != SequenceType::ALWAYS)
-          return false;
-      } else {
-        const SequenceType *a_type = spec == 0 ? &SequenceType::ITEM_STAR : (*spec)->getType();
-        if(!a_type->isSubtypeOf(i.getValue()->getType())) return false;
-      }
-    }
-    return true;
-  }
-  case TEST_MAP: {
-    // Bi is map(), and Ai is a TupleTest
-    if(a->m_nTestType == TEST_TUPLE) return b->key_ == 0;
-    if(a->m_nTestType != TEST_MAP) return false;
-
-    // Bi is map(), and Ai is a MapTest
-    if(b->key_ == 0) return true;
-
-    // Bi is map(Bk, Bv), Ai is map(), subtype(xs:anyAtomicType, Bk), and subtype(item()*, Bv)
-    if(a->key_ == 0)
-      return SequenceType::ANY_ATOMIC_TYPE.isSubtypeOf(b->key_, forStaticType) &&
-        SequenceType::ITEM_STAR.isSubtypeOf(b->value_, forStaticType);
-
-    // Bi is map(Bk, Bv), Ai is map(Ak, Av), subtype(Ak, Bk), and subtype(Av, Bv)
-    return a->key_->isSubtypeOf(b->key_, forStaticType) &&
-      a->value_->isSubtypeOf(b->value_, forStaticType);
+    return a->returnType_->isSubtypeOf(b->returnType_, context);
   }
   }
   return true;
@@ -1511,7 +1170,7 @@ Result SequenceType::convertFunctionArg(const Result &input, DynamicContext *con
 
   if(m_pItemType!=NULL)
   {
-    ItemType::ItemTestType testType = getItemTestType();
+    SequenceType::ItemType::ItemTestType testType = getItemTestType();
     // FS says we atomize first if the sequence type is atomic, and I think that's sensible - jpcs
     if(testType == ItemType::TEST_ATOMIC_TYPE) {
       result = new AtomizeResult(location, result);
@@ -1528,7 +1187,7 @@ Result SequenceType::convertFunctionArg(const Result &input, DynamicContext *con
 
         if(testType == ItemType::TEST_ATOMIC_TYPE) {
           const XMLCh* typeURI = m_pItemType->getTypeURI();
-          const XMLCh* typeName = m_pItemType->getTypeName();
+          const XMLCh* typeName = m_pItemType->getType()->getName();
 
           // 2. If the expected type is xs:string or xs:string?, then the value V is effectively replaced by
           //    fn:string(V).
@@ -1550,13 +1209,17 @@ Result SequenceType::convertFunctionArg(const Result &input, DynamicContext *con
     }
     // If the expected type is a sequence of an atomic type (possibly with an occurrence indicator *, +, or ?),
     // the following conversions are applied:
-    else if(testType == ItemType::TEST_ATOMIC_TYPE && m_pItemType->getTypeName() != 0) {
+    else if(testType == ItemType::TEST_ATOMIC_TYPE) {
       const XMLCh *uri = m_pItemType->getTypeURI();
-      const XMLCh *name = m_pItemType->getTypeName();
-      bool isPrimitive = m_pItemType->isPrimitive();
-      AnyAtomicType::AtomicObjectType typeIndex = m_pItemType->getPrimitiveType();;
+      const XMLCh *name = m_pItemType->getType()->getName();
 
-      result = new PromoteUntypedResult(location, result, isPrimitive, typeIndex, uri, name);
+      bool isPrimitive = false;
+      AnyAtomicType::AtomicObjectType typeIndex = context->getItemFactory()->getPrimitiveTypeIndex(uri, name, isPrimitive);
+
+      if(!XPath2Utils::equals(name, AnyAtomicType::fgDT_ANYATOMICTYPE) ||
+         !XPath2Utils::equals(uri, SchemaSymbols::fgURI_SCHEMAFORSCHEMA)) {
+        result = new PromoteUntypedResult(location, result, isPrimitive, typeIndex, uri, name);
+      }
 
       if(XPath2Utils::equals(uri, SchemaSymbols::fgURI_SCHEMAFORSCHEMA)) {
         if(XPath2Utils::equals(name, SchemaSymbols::fgDT_DOUBLE) ||
@@ -1576,7 +1239,7 @@ Result SequenceType::convertFunctionArg(const Result &input, DynamicContext *con
   return matches(result, location, errorCode);
 }
 
-ASTNode *SequenceType::convertFunctionArg(ASTNode *arg, const StaticContext *context, bool numericFunction,
+ASTNode *SequenceType::convertFunctionArg(ASTNode *arg, StaticContext *context, bool numericFunction,
                                           const LocationInfo *location)
 {
   XPath2MemoryManager *mm = context->getMemoryManager();
@@ -1589,7 +1252,7 @@ ASTNode *SequenceType::convertFunctionArg(ASTNode *arg, const StaticContext *con
 
   if(m_pItemType!=NULL)
   {
-    ItemType::ItemTestType testType = getItemTestType();
+    SequenceType::ItemType::ItemTestType testType = getItemTestType();
 
     // If XPath 1.0 compatibility mode is true and an argument is not of the expected type, then the following
     // conversions are applied sequentially to the argument value V:
@@ -1605,7 +1268,7 @@ ASTNode *SequenceType::convertFunctionArg(ASTNode *arg, const StaticContext *con
 
         if(testType == ItemType::TEST_ATOMIC_TYPE) {
           const XMLCh *typeURI = m_pItemType->getTypeURI();
-          const XMLCh *typeName = m_pItemType->getTypeName();
+          const XMLCh *typeName = m_pItemType->getType()->getName();
 
           // 2. If the expected type is xs:string or xs:string?, then the value V is effectively replaced by
           //    fn:string(V).
@@ -1635,21 +1298,29 @@ ASTNode *SequenceType::convertFunctionArg(ASTNode *arg, const StaticContext *con
       arg = new (mm) XQAtomize(arg, mm);
       arg->setLocationInfo(location);
 
-      if(numericFunction && m_pItemType->getTypeName() == 0) {
-        arg = new (mm) XQPromoteUntyped(arg, (ItemType*)&ItemType::DOUBLE, mm);
+      const XMLCh *uri = m_pItemType->getTypeURI();
+      const XMLCh *name = m_pItemType->getType()->getName();
+
+      if(numericFunction &&
+         XPath2Utils::equals(uri, SchemaSymbols::fgURI_SCHEMAFORSCHEMA) &&
+         XPath2Utils::equals(name, AnyAtomicType::fgDT_ANYATOMICTYPE)) {
+        arg = new (mm) XQPromoteUntyped(arg, 
+                                        SchemaSymbols::fgURI_SCHEMAFORSCHEMA,
+                                        SchemaSymbols::fgDT_DOUBLE, 
+                                        mm);
         arg->setLocationInfo(location);
       }
       else {
-        arg = new (mm) XQPromoteUntyped(arg, m_pItemType, mm);
+        arg = new (mm) XQPromoteUntyped(arg, uri, name, mm);
         arg->setLocationInfo(location);
       }
 
-      arg = new (mm) XQPromoteNumeric(arg, m_pItemType, mm);
+      arg = new (mm) XQPromoteNumeric(arg, uri, name, mm);
       arg->setLocationInfo(location);
-      arg = new (mm) XQPromoteAnyURI(arg, m_pItemType, mm);
+      arg = new (mm) XQPromoteAnyURI(arg, uri, name, mm);
       arg->setLocationInfo(location);
     }
-    else if(testType == ItemType::TEST_FUNCTION && m_pItemType->getFunctionSignature() != 0) {
+    else if(testType == ItemType::TEST_FUNCTION && m_pItemType->getReturnType() != 0) {
       arg = new (mm) XQFunctionCoercion(arg, this, mm);
     }
   }
@@ -1662,7 +1333,7 @@ ASTNode *SequenceType::convertFunctionArg(ASTNode *arg, const StaticContext *con
   return arg;
 }
 
-const ItemType *SequenceType::getItemType() const {
+const SequenceType::ItemType *SequenceType::getItemType() const {
   return m_pItemType;
 }
 

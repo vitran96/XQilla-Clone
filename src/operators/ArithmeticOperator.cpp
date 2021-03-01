@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,8 +40,8 @@
 XERCES_CPP_NAMESPACE_USE
 #endif
 
-ArithmeticOperator::ArithmeticOperator(whichType type, const XMLCh *opName, const VectorOfASTNodes &args, XPath2MemoryManager* memMgr)
-  : XQOperator(type, opName, args, memMgr)
+ArithmeticOperator::ArithmeticOperator(const XMLCh* opName, const VectorOfASTNodes &args, XPath2MemoryManager* memMgr)
+  : XQOperator(opName, args, memMgr)
 {
 }
 
@@ -64,9 +64,8 @@ ASTNode* ArithmeticOperator::staticResolution(StaticContext *context)
     //        Otherwise, a type error is raised.
 
     if(!context->getXPath1CompatibilityMode()) {
-      ItemType *itemType = new (mm) ItemType(ItemType::TEST_ANYTHING);
-      itemType->setLocationInfo(*i);
-      SequenceType *seqType = new (mm) SequenceType(itemType, SequenceType::QUESTION_MARK);
+      SequenceType *seqType = new (mm) SequenceType(new (mm) SequenceType::ItemType(SequenceType::ItemType::TEST_ANYTHING),
+                                                    SequenceType::QUESTION_MARK);
       seqType->setLocationInfo(*i);
 
       *i = new (mm) XQTreatAs(*i, seqType, mm);
@@ -76,7 +75,8 @@ ASTNode* ArithmeticOperator::staticResolution(StaticContext *context)
     // 4. If either operand is now of type xdt:untypedAtomic, it is cast to the default type for the given operator.
     //    If the cast fails, a type error is raised.
 
-    *i = new (mm) XQPromoteUntyped(*i, (ItemType*)&ItemType::DOUBLE, mm);
+    *i = new (mm) XQPromoteUntyped(*i, SchemaSymbols::fgURI_SCHEMAFORSCHEMA,
+                                   SchemaSymbols::fgDT_DOUBLE, mm);
     (*i)->setLocationInfo(this);
 
     *i = (*i)->staticResolution(context);
@@ -105,7 +105,8 @@ ASTNode *ArithmeticOperator::staticTypingImpl(StaticContext *context)
       _src.implicitTimezoneUsed(true);
   }
 
-  calculateStaticType(context);
+  _src.getStaticType() = StaticType();
+  calculateStaticType();
 
   if(!emptyArgument && _src.getStaticType().getMax() == 0) {
     XMLBuffer errMsg;
@@ -122,34 +123,34 @@ ASTNode *ArithmeticOperator::staticTypingImpl(StaticContext *context)
   return this;
 }
 
-void ArithmeticOperator::calculateStaticTypeForNumerics(const StaticType &arg0, const StaticType &arg1, const StaticContext *context)
+void ArithmeticOperator::calculateStaticTypeForNumerics(const StaticType &arg0, const StaticType &arg1)
 {
   // Deal with numerics and numeric type promotion
-  if(arg0.containsType(TypeFlags::DECIMAL)) {
-    if(arg1.containsType(TypeFlags::DECIMAL)) {
-      _src.getStaticType().typeUnion(StaticType::DECIMAL);
+  if(arg0.containsType(StaticType::DECIMAL_TYPE)) {
+    if(arg1.containsType(StaticType::DECIMAL_TYPE)) {
+      _src.getStaticType() |= StaticType::DECIMAL_TYPE;
     }
-    if(arg1.containsType(TypeFlags::FLOAT)) {
-      _src.getStaticType().typeUnion(StaticType::FLOAT);
+    if(arg1.containsType(StaticType::FLOAT_TYPE)) {
+      _src.getStaticType() |= StaticType::FLOAT_TYPE;
     }
     // untypedAtomic will be promoted to xs:double
-    if(arg1.containsType(TypeFlags::DOUBLE|TypeFlags::UNTYPED_ATOMIC)) {
-      _src.getStaticType().typeUnion(StaticType::DOUBLE);
+    if(arg1.containsType(StaticType::DOUBLE_TYPE|StaticType::UNTYPED_ATOMIC_TYPE)) {
+      _src.getStaticType() |= StaticType::DOUBLE_TYPE;
     }
   }
-  if(arg0.containsType(TypeFlags::FLOAT)) {
-    if(arg1.containsType(TypeFlags::DECIMAL|TypeFlags::FLOAT)) {
-      _src.getStaticType().typeUnion(StaticType::FLOAT);
+  if(arg0.containsType(StaticType::FLOAT_TYPE)) {
+    if(arg1.containsType(StaticType::DECIMAL_TYPE|StaticType::FLOAT_TYPE)) {
+      _src.getStaticType() |= StaticType::FLOAT_TYPE;
     }
     // untypedAtomic will be promoted to xs:double
-    if(arg1.containsType(TypeFlags::DOUBLE|TypeFlags::UNTYPED_ATOMIC)) {
-      _src.getStaticType().typeUnion(StaticType::DOUBLE);
+    if(arg1.containsType(StaticType::DOUBLE_TYPE|StaticType::UNTYPED_ATOMIC_TYPE)) {
+      _src.getStaticType() |= StaticType::DOUBLE_TYPE;
     }
   }
   // untypedAtomic will be promoted to xs:double
-  if(arg0.containsType(TypeFlags::DOUBLE|TypeFlags::UNTYPED_ATOMIC)) {
-    if(arg1.containsType(TypeFlags::DECIMAL|TypeFlags::FLOAT|TypeFlags::DOUBLE|TypeFlags::UNTYPED_ATOMIC)) {
-      _src.getStaticType().typeUnion(StaticType::DOUBLE);
+  if(arg0.containsType(StaticType::DOUBLE_TYPE|StaticType::UNTYPED_ATOMIC_TYPE)) {
+    if(arg1.containsType(StaticType::DECIMAL_TYPE|StaticType::FLOAT_TYPE|StaticType::DOUBLE_TYPE|StaticType::UNTYPED_ATOMIC_TYPE)) {
+      _src.getStaticType() |= StaticType::DOUBLE_TYPE;
     }
   }
 }

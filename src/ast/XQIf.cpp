@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,7 +89,7 @@ ASTNode *XQIf::staticTypingImpl(StaticContext *context)
               X("Mixed updating and non-updating operands [err:XUST0001]"));
   }
 
-  _src.getStaticType().typeUnion(_whenFalse->getStaticAnalysis().getStaticType());
+  _src.getStaticType() |= _whenFalse->getStaticAnalysis().getStaticType();
   _src.setProperties(_src.getProperties() & _whenFalse->getStaticAnalysis().getProperties());
   _src.add(_whenFalse->getStaticAnalysis());
 

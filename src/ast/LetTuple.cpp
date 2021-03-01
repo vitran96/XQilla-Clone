@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
  * limitations under the License.
  */
 
-#include <xqilla/ast/ASTNode.hpp>
 #include <xqilla/ast/ForTuple.hpp>
 #include <xqilla/ast/LetTuple.hpp>
 #include <xqilla/ast/CountTuple.hpp>
@@ -30,27 +29,25 @@
 #include <xqilla/utils/XPath2Utils.hpp>
 #include <xqilla/exceptions/StaticErrorException.hpp>
 #include <xqilla/utils/XStr.hpp>
-#include <xqilla/framework/BasicMemoryManager.hpp>
 
 LetTuple::LetTuple(TupleNode *parent, const XMLCh *varQName, ASTNode *expr, XPath2MemoryManager *mm)
   : TupleNode(LET, parent, mm),
-    var_(new (mm) ArgumentSpec(varQName, 0, mm)),
+    seqType(0),
+    varQName_(varQName),
+    varURI_(0),
+    varName_(0),
+    varSrc_(mm),
     expr_(expr)
 {
 }
 
-LetTuple::LetTuple(TupleNode *parent, const XMLCh *uri, const XMLCh *name, ASTNode *expr, XPath2MemoryManager *mm)
+LetTuple::LetTuple(TupleNode *parent, const XMLCh *varURI, const XMLCh *varName, ASTNode *expr, XPath2MemoryManager *mm)
   : TupleNode(LET, parent, mm),
-    var_(new (mm) ArgumentSpec(0, 0, mm)),
-    expr_(expr)
-{
-  var_->setURI(uri);
-  var_->setName(name);
-}
-
-LetTuple::LetTuple(TupleNode *parent, const ArgumentSpec *var, ASTNode *expr, XPath2MemoryManager *mm)
-  : TupleNode(LET, parent, mm),
-    var_(new (mm) ArgumentSpec(var, mm)),
+    seqType(0),
+    varQName_(0),
+    varURI_(varURI),
+    varName_(varName),
+    varSrc_(mm),
     expr_(expr)
 {
 }
@@ -58,8 +55,14 @@ LetTuple::LetTuple(TupleNode *parent, const ArgumentSpec *var, ASTNode *expr, XP
 TupleNode *LetTuple::staticResolution(StaticContext *context)
 {
   parent_ = parent_->staticResolution(context);
-  var_->staticResolution(context);
+
+  if(varName_ == 0) {
+    varURI_ = context->getUriBoundToPrefix(XPath2NSUtils::getPrefix(varQName_, context->getMemoryManager()), this);
+    varName_ = XPath2NSUtils::getLocalName(varQName_);
+  }
+
   expr_ = expr_->staticResolution(context);
+
   return this;
 }
 
@@ -113,36 +116,20 @@ TupleNode *LetTuple::staticTypingImpl(StaticContext *context)
     return tmp->staticTypingImpl(context);
   }
 
-  const StaticType &pType = parent_->getStaticAnalysis().getStaticType();
-  const StaticType &sType = expr_->getStaticAnalysis().getStaticType();
+  min_ = parent_->getMin();
+  max_ = parent_->getMax();
 
-  assert(pType.getTypes().size() == 1);
-  const ItemType *pItemType = pType.getTypes()[0];
-  assert(pItemType->getItemTestType() == ItemType::TEST_TUPLE);
+  return this;
+}
 
-  src_.clear();
-  src_.add(expr_->getStaticAnalysis());
+TupleNode *LetTuple::staticTypingTeardown(StaticContext *context, StaticAnalysis &usedSrc)
+{
+  usedSrc.removeVariable(varURI_, varName_);
 
-  TupleMembers *members = new (getMemoryManager()) TupleMembers(true, getMemoryManager());
-  const_cast<StaticType&>(var_->getStaticType()) = sType;
-  members->put(var_->getURIName(), var_);
+  usedSrc.add(expr_->getStaticAnalysis());
+  parent_ = parent_->staticTypingTeardown(context, usedSrc);
 
-  TupleMembers *pMembers = const_cast<TupleMembers*>(pItemType->getTupleMembers());
-  if(pMembers) {
-    members->putAll(*pMembers);
-
-    TupleMembers::iterator i = pMembers->begin();
-    for(; i != pMembers->end(); ++i) {
-      src_.removeVariable(i.getValue()->getURI(), i.getValue()->getName());
-    }
-  }
-
-  ItemType *type = new (getMemoryManager()) ItemType(members, pItemType->getDocumentCache());
-  type->setLocationInfo(this);
-
-  src_.getStaticType() = type;
-  src_.getStaticType().setCardinality(pType.getMin(), pType.getMax());
-  src_.add(parent_->getStaticAnalysis());
+  // TBD Combine LetTuple that compute the same expression? - jpcs
 
   return this;
 }
@@ -183,12 +170,6 @@ public:
     AutoVariableStoreReset vsReset(context, parent_);
     values_ = ResultBuffer(ast_->getExpression()->createResult(context));
     return true;
-  }
-
-  virtual void createTuple(DynamicContext *context, size_t capacity, TupleImpl::Ptr &result) const
-  {
-    parent_->createTuple(context, capacity + 1, result);
-    result->add(ast_->getVar()->getURI(), ast_->getVar()->getName(), values_.createResult(), context);
   }
 
 private:

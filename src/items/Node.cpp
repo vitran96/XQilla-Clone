@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,7 @@
 
 #include "../config/xqilla_config.h"
 #include <xqilla/items/Node.hpp>
-
 #include <xercesc/util/XMLUniDefs.hpp>
-#include <xercesc/framework/XMLBuffer.hpp>
 
 const XMLCh Node::document_string[] = 
 {
@@ -46,6 +44,18 @@ const XMLCh Node::comment_string[] =
 
 const XMLCh Node::namespace_string[] = 
 { XERCES_CPP_NAMESPACE_QUALIFIER chLatin_n, XERCES_CPP_NAMESPACE_QUALIFIER chLatin_a, XERCES_CPP_NAMESPACE_QUALIFIER chLatin_m, XERCES_CPP_NAMESPACE_QUALIFIER chLatin_e, XERCES_CPP_NAMESPACE_QUALIFIER chLatin_s, XERCES_CPP_NAMESPACE_QUALIFIER chLatin_p, XERCES_CPP_NAMESPACE_QUALIFIER chLatin_a, XERCES_CPP_NAMESPACE_QUALIFIER chLatin_c, XERCES_CPP_NAMESPACE_QUALIFIER chLatin_e, XERCES_CPP_NAMESPACE_QUALIFIER chNull };
+
+bool Node::isAtomicValue() const {
+  return false;
+}
+
+bool Node::isNode() const {
+  return true;
+}
+
+bool Node::isFunction() const {
+  return false;
+}
 
 void Node::typeToBuffer(DynamicContext *context, XERCES_CPP_NAMESPACE_QUALIFIER XMLBuffer &buffer) const
 {

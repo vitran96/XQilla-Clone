@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,6 @@
 #include <xqilla/context/ItemFactory.hpp>
 #include <xqilla/items/DatatypeFactory.hpp>
 #include <xqilla/utils/XPath2Utils.hpp>
-#include <xqilla/utils/lookup3.hpp>
 
 #include <xercesc/util/XMLString.hpp>
 
@@ -133,20 +132,6 @@ bool ATGYearMonthOrDerivedImpl::equals(const AnyAtomicType::Ptr &target, const D
 int ATGYearMonthOrDerivedImpl::compare(const ATGYearMonthOrDerived::Ptr &other, const DynamicContext *context) const
 {
   return buildReferenceDateTime(context).compare(((const ATGYearMonthOrDerivedImpl *)other.get())->buildReferenceDateTime(context));
-}
-
-size_t ATGYearMonthOrDerivedImpl::hash(const Collation *collation, const DynamicContext *context) const
-{
-  uint32_t pc = 0xF00BAA56, pb = 0xBADFACE2;
-
-  // Hash the sort type
-  uint32_t u32 = (uint32_t)getSortType();
-  hashword2(&u32, 1, &pc, &pb);
-
-  // Hash the normalized value
-  Numeric::hashMAPM(buildReferenceDateTime(context), &pc, &pb);
-
-  return (size_t)pc + (((size_t)pb)<<32);
 }
 
 /** Returns true if a timezone is defined for this.  False otherwise.*/

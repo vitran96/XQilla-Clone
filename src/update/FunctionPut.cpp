@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,13 +43,13 @@ const unsigned int FunctionPut::maxArgs = 2;
  * fn:put($node as node(), $uri as xs:string?) as empty-sequence()
  */
 FunctionPut::FunctionPut(const VectorOfASTNodes &args, XPath2MemoryManager* memMgr)
-  : XQFunction(name, "%updating ($node as node(), $uri as xs:string?) as empty-sequence()", args, memMgr),
+  : XQFunction(name, "updating ($node as node(), $uri as xs:string?) as empty-sequence()", args, memMgr),
     baseURI_(0)
 {
 }
 
 FunctionPut::FunctionPut(const XMLCh *baseURI, const VectorOfASTNodes &args, XPath2MemoryManager* memMgr)
-  : XQFunction(name, "%updating ($node as node(), $uri as xs:string?) as empty-sequence()", args, memMgr),
+  : XQFunction(name, "updating ($node as node(), $uri as xs:string?) as empty-sequence()", args, memMgr),
     baseURI_(baseURI)
 {
 }

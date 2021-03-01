@@ -279,7 +279,6 @@ local:indent(6),<Tool>
   {attribute{"AssemblerListingLocation"}{"./$(IntDir)/"}}
   {attribute{"ObjectFile"}{"./$(IntDir)/"}}
   {attribute{"WarningLevel"}{$warnLevel}}
-  {if (not($vsversion eq "8.00") and not($project/options/nowp64)) then attribute{"Detect64BitPortabilityProblems"}{"TRUE"} else ()}
   {attribute{"SuppressStartupBanner"}{"TRUE"}}
   {local:addDebugInformation($config)}
   {attribute{"CompileAs"}{"0"}}
@@ -387,12 +386,14 @@ declare function local:getGuid($project)
 declare function local:getPlatforms($version)
 {
 	if ($version eq "7.10") then ("Win32")
-	else ("Win32", "x64", "IA64")
+	else ("Win32", "x64")
 };
 
 declare function local:getOutputName($project, $vsversion)
 {
-  let $vsname := if($vsversion = "7.10") then "VC7.1" else "VC8"
+  let $vsname := if($vsversion = "7.10") then "VC7.1"
+      else if($vsversion = "8.00") then  "VC8"
+      else "VC9"
   return
     concat($outputPath, "/", $vsname, "/", $project/@name, ".vcproj")
 };
@@ -409,6 +410,7 @@ let $static := contains($project/@name,"static")
 let $proj := $project
 return
 if ($vsversion = "10.0") then ()
+else if ($vsversion = "11.0") then ()
 else (
 put(<VisualStudioProject
    ProjectType="Visual C++"
@@ -418,7 +420,6 @@ put(<VisualStudioProject
    {local:indent(2)}<Platforms>
    {local:indent(4)}<Platform Name="Win32"/>
    {local:indent(4)}<Platform Name="x64"/>
-   {local:indent(4)}<Platform Name="IA64"/>
    {local:indent(2)}</Platforms>
    {local:indent(2)}<Configurations>
     {

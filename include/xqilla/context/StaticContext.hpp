@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,9 +41,7 @@ class MessageListener;
 class ExternalFunction;
 class XQillaConfiguration;
 class XQUserFunction;
-class XQTypeAlias;
 class XQillaNSResolver;
-class ASTNode;
 
 // Copied from ASTNode.hpp
 typedef std::vector<ASTNode*,XQillaAllocator<ASTNode*> > VectorOfASTNodes;
@@ -165,11 +163,6 @@ public:
   virtual void setXMLEntityResolver(XERCES_CPP_NAMESPACE_QUALIFIER XMLEntityResolver* const handler) = 0;
   /** Returns the entity resolver currently set */
   virtual XERCES_CPP_NAMESPACE_QUALIFIER XMLEntityResolver* getXMLEntityResolver() const = 0;
-
-  /** Adds a type alias to the context */
-  virtual void addTypeAlias(XQTypeAlias *alias) = 0;
-  /** Retrieve a type alias with the given name, or 0 is none exists */
-  virtual const XQTypeAlias *getTypeAlias(const XMLCh *uri, const XMLCh *name) const = 0;
 
   /** Register a callback object for resolving module URIs */
   virtual void setModuleResolver(ModuleResolver *resolver) = 0;

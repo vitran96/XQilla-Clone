@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -114,9 +114,13 @@ void XQillaPlatformUtils::enableExtendedPrecision(bool bEnable)
     if(bEnable)
     {
         ATDecimalOrDerivedImpl::g_nSignificantDigits=50;
+        ATFloatOrDerivedImpl::g_nSignificantDigits=25;
+        ATDoubleOrDerivedImpl::g_nSignificantDigits=25;
     }
     else
     {
         ATDecimalOrDerivedImpl::g_nSignificantDigits=18;
+        ATFloatOrDerivedImpl::g_nSignificantDigits=7;
+        ATDoubleOrDerivedImpl::g_nSignificantDigits=16;
     }
 }

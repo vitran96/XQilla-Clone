@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@
 #include <xqilla/runtime/ResultBuffer.hpp>
 
 #include <xercesc/util/StringPool.hpp>
+#include <xercesc/util/RefHash2KeysTableOf.hpp>
 
 class DynamicContext;
 class StaticAnalysis;

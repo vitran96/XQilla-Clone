@@ -272,33 +272,6 @@ else
 }
 /****************************************************************************/
 /*
- *
- *	convert a uint64_t to ASCII in base 10
- *
- */
-void M_u64_2_ascii(char *output, uint64_t input)
-{
-  uint64_t    m;
-  int     i;
-  char    *p, tbuf[64];
-
-  m = input;
-  p = output;
-  i = 0;
-
-  while(m != 0) {           /* build the digits in reverse order */
-    tbuf[i++] = (char)(m % 10 + '0');
-    m = m / 10;
-  }
-   
-  while (i != 0) {           /* fill output string in the correct order */
-    *p++ = tbuf[--i];
-  }
-   
-  *p = '\0';
-}
-/****************************************************************************/
-/*
  *      this function will convert a string to lowercase
  */
 char    *M_lowercase(char *s)

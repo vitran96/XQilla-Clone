@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,8 +76,9 @@ AnyAtomicType::AtomicObjectType ATAnyURIOrDerivedImpl::getTypeIndex() {
 /* If possible, cast this type to the target type */
 AnyAtomicType::Ptr ATAnyURIOrDerivedImpl::castAsInternal(AtomicObjectType targetIndex, const XMLCh* targetURI, const XMLCh* targetType, const DynamicContext* context) const {
   switch (targetIndex) {
+    case ANY_SIMPLE_TYPE:
     case UNTYPED_ATOMIC:
-      // untypedAtomic follows the same casting rules as string.
+      //anySimpleType and untypedAtomic follow the same casting rules as string.
     case STRING: {
       return context->getItemFactory()->createDerivedFromAtomicType(targetIndex, targetURI, targetType, _uri, context);
     }

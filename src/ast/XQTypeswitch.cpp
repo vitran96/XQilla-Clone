@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,6 +57,8 @@ ASTNode* XQTypeswitch::staticResolution(StaticContext *context)
   return this;
 }
 
+static const XMLCh no_err[] = { 0 };
+
 ASTNode *XQTypeswitch::staticTypingImpl(StaticContext *context)
 {
   _src.clear();
@@ -96,14 +98,14 @@ ASTNode *XQTypeswitch::staticTypingImpl(StaticContext *context)
     bool found = false;
     Cases newCases = Cases(XQillaAllocator<Case*>(mm));
     for(it = cases_->begin(); it != cases_->end(); ++it) {
-      SequenceType::TypeMatch match = (*it)->getSequenceType()->matches(sType);
-      if(found || match.type == SequenceType::NEVER || match.cardinality == SequenceType::NEVER) {
+      StaticType::TypeMatch match = (*it)->getTreatType().matches(sType);
+      if(found || match.type == StaticType::NEVER || match.cardinality == StaticType::NEVER) {
         // It never matches
         (*it)->getExpression()->release();
         mm->deallocate(*it);
       }
-      else if(match.type == SequenceType::ALWAYS &&
-         match.cardinality == SequenceType::ALWAYS) {
+      else if((*it)->getIsExact() && match.type == StaticType::ALWAYS &&
+         match.cardinality == StaticType::ALWAYS) {
         // It always matches, so set this clause as the
         // default clause and remove all clauses after it
         default_->getExpression()->release();
@@ -189,16 +191,19 @@ XQTypeswitch::Case::Case(const XMLCh *qname, SequenceType *seqType, ASTNode *exp
     uri_(0),
     name_(0),
     seqType_(seqType),
+    isExact_(false),
     expr_(expr)
 {
 }
 
 XQTypeswitch::Case::Case(const XMLCh *qname, const XMLCh *uri, const XMLCh *name, SequenceType *seqType,
-                         ASTNode *expr)
+                         const StaticType &treatType, bool isExact, ASTNode *expr)
   : qname_(qname),
     uri_(uri),
     name_(name),
     seqType_(seqType),
+    treatType_(treatType),
+    isExact_(isExact),
     expr_(expr)
 {
 }
@@ -207,6 +212,7 @@ void XQTypeswitch::Case::staticResolution(StaticContext* context)
 {
   if(seqType_) {
     seqType_->staticResolution(context);
+    seqType_->getStaticType(treatType_, context, isExact_, this);
   }
   expr_ = expr_->staticResolution(context);
 
@@ -247,7 +253,7 @@ void XQTypeswitch::Case::staticTyping(const StaticAnalysis &var_src, StaticConte
     src.getStaticType() = expr_->getStaticAnalysis().getStaticType();
     src.setProperties(expr_->getStaticAnalysis().getProperties());
   } else {
-    src.getStaticType().typeUnion(expr_->getStaticAnalysis().getStaticType());
+    src.getStaticType() |= expr_->getStaticAnalysis().getStaticType();
     src.setProperties(src.getProperties() & expr_->getStaticAnalysis().getProperties());
   }
   if(qname_ != 0) {
@@ -268,10 +274,14 @@ const XQTypeswitch::Case *XQTypeswitch::chooseCase(DynamicContext *context, Sequ
 
   // find the effective case
   for(Cases::const_iterator it = cases_->begin(); it != cases_->end(); ++it) {
-    // if((*it)->getSequenceType()->matches(value.createResult(), context)) {
-    if((*it)->getSequenceType()->matches(value, context)) {
+    try {
+//       (*it)->getSequenceType()->matches(value.createResult(), (*it)->getSequenceType(), no_err)->toSequence(context);
+      (*it)->getSequenceType()->matches(value, (*it)->getSequenceType(), no_err)->toSequence(context);
       cse = *it;
       break;
+    }
+    catch(const XPath2TypeMatchException &ex) {
+      // Well, it doesn't match that one then...
     }
   }
 

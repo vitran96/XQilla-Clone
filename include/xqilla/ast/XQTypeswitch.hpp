@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ public:
   public:
     Case(const XMLCh *qname, SequenceType *seqType, ASTNode *expr);
     Case(const XMLCh *qname, const XMLCh *uri, const XMLCh *name, SequenceType *seqType,
-         ASTNode *expr);
+         const StaticType &treatType, bool isExact, ASTNode *expr);
 
     void staticResolution(StaticContext* context);
     void staticTyping(const StaticAnalysis &var_src, StaticContext* context,
@@ -51,6 +51,9 @@ public:
     SequenceType *getSequenceType() const { return seqType_; }
     void setSequenceType(SequenceType *s) { seqType_ = s; }
 
+    const StaticType &getTreatType() const { return treatType_; }
+    bool getIsExact() const { return isExact_; }
+
     ASTNode *getExpression() const { return expr_; }
     void setExpression(ASTNode *expr) { expr_ = expr; }
 
@@ -59,6 +62,8 @@ public:
     const XMLCh *uri_;
     const XMLCh *name_;
     SequenceType *seqType_;
+    StaticType treatType_;
+    bool isExact_;
     ASTNode *expr_;
   };
 

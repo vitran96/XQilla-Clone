@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,9 @@
 
 #include <xqilla/framework/XQillaExport.hpp>
 #include <xqilla/items/AnyAtomicType.hpp>
-#include <xqilla/utils/HashMap.hpp>
 
 #include <xercesc/util/XercesDefs.hpp>
+#include <xercesc/util/RefHashTableOf.hpp>
 #include <xercesc/util/XMemory.hpp>
 
 class DatatypeFactory;
@@ -42,6 +42,7 @@ public:
   ///returns the appropriate Datatype object
   const DatatypeFactory* lookupDatatype(const XMLCh* typeURI, const XMLCh* typeName, bool &isPrimitive) const;
 
+  DatatypeFactory *getAnySimpleTypeFactory() const;
   DatatypeFactory *getAnyURIFactory() const;
   DatatypeFactory *getBase64BinaryFactory() const;
   DatatypeFactory *getBooleanFactory() const;
@@ -73,6 +74,7 @@ private:
   void insertDatatype(DatatypeFactory *datatype);
     
 private:
+  DatatypeFactory *anySimpleType_;
   DatatypeFactory *anyURI_;
   DatatypeFactory *base64Binary_;
   DatatypeFactory *boolean_;
@@ -96,7 +98,7 @@ private:
   DatatypeFactory *yearMonthDuration_;
   DatatypeFactory *untypedAtomic_;
 
-  HashMap<const XMLCh*, DatatypeFactory*> fDatatypeTable;
+  XERCES_CPP_NAMESPACE_QUALIFIER RefHashTableOf< DatatypeFactory > fDatatypeTable;
     
   const DocumentCache *fDocumentCache;
 

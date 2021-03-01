@@ -1,9 +1,8 @@
-/* -*- mode: c++; indent-tabs-mode: nil -*-
- *
+/*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2010,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -283,9 +282,6 @@ void XQLexer::undoLessThan()
 <INITIAL>"["                      RECOGNIZE(_LSQUARE_);
 <INITIAL>"]"                      RECOGNIZE(_RSQUARE_);
 <INITIAL>"?"                      RECOGNIZE(_QUESTION_MARK_);
-<INITIAL>":"                      RECOGNIZE(_COLON_);
-<INITIAL>"~"                      RECOGNIZE(_TILDE_);
-<INITIAL>"->"                     RECOGNIZE(_MINUS_GREATER_THAN_);
 
 <INITIAL>"external"               RECOGNIZE_VALUE(_EXTERNAL_, yytext);
 <INITIAL>"ascending"              RECOGNIZE_VALUE(_ASCENDING_, yytext);
@@ -478,29 +474,8 @@ void XQLexer::undoLessThan()
     RECOGNIZE_VALUE(_QNAME_, yytext);
   }
 }
-<INITIAL>"tuple" {
-  if(isExtensions()) {
-    RECOGNIZE_VALUE(_TUPLE_, yytext);
-  } else {
-    RECOGNIZE_VALUE(_QNAME_, yytext);
-  }
-}
-<INITIAL>"map" {
-  if(isExtensions()) {
-    RECOGNIZE_VALUE(_MAP_, yytext);
-  } else {
-    RECOGNIZE_VALUE(_QNAME_, yytext);
-  }
-}
-<INITIAL>"type-alias" {
-  if(isExtensions()) {
-    RECOGNIZE_VALUE(_TYPE_ALIAS_, yytext);
-  } else {
-    RECOGNIZE_VALUE(_QNAME_, yytext);
-  }
-}
 <INITIAL>"function" {
-  if(isVersion3() && lookAhead() == _LPAR_) {
+  if(isVersion3()) {
     RECOGNIZE_VALUE(_FUNCTION_EXT_, yytext);
   } else {
     RECOGNIZE_VALUE(_FUNCTION_, yytext);
@@ -513,37 +488,37 @@ void XQLexer::undoLessThan()
     return error("Unrecognized token '#'");
   }
 }
-<INITIAL>"%" {
-  if(isVersion3()) {
-    RECOGNIZE(_PERCENT_);
-  } else {
-    return error("Unrecognized token '%'");
-  }
-}
-<INITIAL>"||" {
-  if(isVersion3()) {
-    RECOGNIZE(_BAR_BAR_);
-  } else {
-    return error("Unrecognized token '||'");
-  }
-}
-<INITIAL>"!" {
-  if(isVersion3()) {
-    RECOGNIZE(_BANG_);
-  } else {
-    return error("Unrecognized token '!'");
-  }
-}
-<INITIAL>"^" {
-  if(isCarrot()) {
-    RECOGNIZE(_CARROT_);
-  } else {
-    return error("Unrecognized token '^'");
-  }
-}
 <INITIAL>"count" {
   if(isVersion3() && lookAhead() == _DOLLAR_) {
     RECOGNIZE_VALUE(_COUNT_, yytext);
+  } else {
+    RECOGNIZE_VALUE(_QNAME_, yytext);
+  }
+}
+<INITIAL>"private" {
+  if(isVersion3()) {
+    RECOGNIZE_VALUE(_PRIVATE_, yytext);
+  } else {
+    RECOGNIZE_VALUE(_QNAME_, yytext);
+  }
+}
+<INITIAL>"public" {
+  if(isVersion3()) {
+    RECOGNIZE_VALUE(_PUBLIC_, yytext);
+  } else {
+    RECOGNIZE_VALUE(_QNAME_, yytext);
+  }
+}
+<INITIAL>"deterministic" {
+  if(isVersion3()) {
+    RECOGNIZE_VALUE(_DETERMINISTIC_, yytext);
+  } else {
+    RECOGNIZE_VALUE(_QNAME_, yytext);
+  }
+}
+<INITIAL>"nondeterministic" {
+  if(isVersion3()) {
+    RECOGNIZE_VALUE(_NONDETERMINISTIC_, yytext);
   } else {
     RECOGNIZE_VALUE(_QNAME_, yytext);
   }
@@ -587,13 +562,6 @@ void XQLexer::undoLessThan()
 <INITIAL>"typeswitch" {
   if(isXQuery()) {
     RECOGNIZE_VALUE(_TYPESWITCH_, yytext);
-  } else {
-    RECOGNIZE_VALUE(_QNAME_, yytext);
-  }
-}
-<INITIAL>"switch" {
-  if(isXQuery() && isVersion3()) {
-    RECOGNIZE_VALUE(_SWITCH_, yytext);
   } else {
     RECOGNIZE_VALUE(_QNAME_, yytext);
   }

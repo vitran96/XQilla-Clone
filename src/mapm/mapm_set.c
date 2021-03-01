@@ -81,54 +81,6 @@ for (ii=0; ii < nbytes; ii++)
   }
 }
 /****************************************************************************/
-void	m_apm_set_u64(M_APM atmp, uint64_t mm)
-{
-int     ii, nbytes, len;
-char	*p, *buf, ch, buf2[64];
-
-/* if zero, return right away */
-
-if (mm == 0)
-  {
-   M_set_to_zero(atmp);
-   return;
-  }
-
-M_u64_2_ascii(buf2, mm);     /* convert long -> ascii in base 10 */
-buf = buf2;
-
-atmp->m_apm_sign = 1;
-
-len = (int) strlen(buf);
-atmp->m_apm_exponent = len;
-
-/* least significant nibble of ODD data-length must be 0 */
-
-if ((len & 1) != 0)
-  {
-   buf[len] = '0';
-  }
-
-/* remove any trailing '0' ... */
-
-while (TRUE)
-  {
-   if (buf[--len] != '0')
-     break;
-  }
-
-atmp->m_apm_datalength = ++len;
-
-nbytes = (len + 1) >> 1;
-p = buf;
-
-for (ii=0; ii < nbytes; ii++)
-  {
-   ch = *p++ - '0';
-   atmp->m_apm_data[ii] = 10 * ch + *p++ - '0';
-  }
-}
-/****************************************************************************/
 void	m_apm_set_string(M_APM ctmp, char *s_in)
 {
 char *M_buf;

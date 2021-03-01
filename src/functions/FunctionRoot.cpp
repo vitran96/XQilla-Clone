@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,12 +64,20 @@ ASTNode* FunctionRoot::staticResolution(StaticContext *context)
 ASTNode *FunctionRoot::staticTypingImpl(StaticContext *context)
 {
   _src.clear();
-  calculateSRCForArguments(context);
 
   _src.setProperties(StaticAnalysis::DOCORDER | StaticAnalysis::GROUPED |
                      StaticAnalysis::PEER | StaticAnalysis::SAMEDOC | StaticAnalysis::ONENODE);
+  _src.getStaticType() = StaticType(StaticType::NODE_TYPE, 0, 1);
 
-  if(_args[0]->getStaticAnalysis().getStaticType().isType(TypeFlags::DOCUMENT)) {
+  _src.add(_args[0]->getStaticAnalysis());
+
+  if(_args[0]->getStaticAnalysis().isUpdating()) {
+    XQThrow(StaticErrorException,X("FunctionRoot::staticTyping"),
+            X("It is a static error for an argument to a function "
+              "to be an updating expression [err:XUST0001]"));
+  }
+
+  if(_args[0]->getStaticAnalysis().getStaticType().isType(StaticType::DOCUMENT_TYPE)) {
     return _args[0];
   }
 

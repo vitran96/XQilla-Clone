@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@
 // Turn OFF use of windows heap by default.
 // There is a fragmentation problem resulting
 // in less available memory
-#if defined(WIN32) && !defined(__CYGWIN__)
+#if defined(WIN32) && !defined(__CYGWIN__) && !defined(__MINGW__)
 #define WIN_USE_HEAP
 #endif
 #endif
@@ -49,6 +49,9 @@ public:
 
 protected:
 #if defined(WIN_USE_HEAP)
+  virtual void initialise();
+  virtual void releaseAll();
+
   virtual void *internal_allocate(size_t size) { return 0; }
   virtual void internal_deallocate(void *p) {}
 #else
@@ -62,5 +65,5 @@ private:
 #endif
 };
 
-#endif
+#endif //__XPATH2MEMORYMANAGERIMPL_HPP
 

@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,8 +32,11 @@ public:
   virtual ~Collation() {};
 
   virtual const XMLCh* getCollationName() const = 0;
+  virtual Sequence sort(Sequence data, const DynamicContext* context) const = 0;
   virtual int compare(const XMLCh* const string1, const XMLCh* const string2) const = 0;
-  virtual size_t hash(const XMLCh* const string) const = 0;
+
+protected:
+  Collation() {}
 };
 
 #endif

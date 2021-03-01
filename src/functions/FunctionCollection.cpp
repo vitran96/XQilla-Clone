@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ ASTNode *FunctionCollection::staticTypingImpl(StaticContext *context)
 
   _src.setProperties(StaticAnalysis::DOCORDER | StaticAnalysis::GROUPED |
                      StaticAnalysis::SUBTREE);
-  _src.getStaticType() = StaticType::NODE_STAR;
+  _src.getStaticType() = StaticType(StaticType::NODE_TYPE, 0, StaticType::UNLIMITED);
   _src.availableCollectionsUsed(true);
   calculateSRCForArguments(context);
 

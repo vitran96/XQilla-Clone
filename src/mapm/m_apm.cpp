@@ -123,12 +123,6 @@ MAPM::MAPM(long l)
     m_apm_set_long(val(),l);
 }
 
-MAPM::MAPM(uint64_t l)
-{
-    create();
-    m_apm_set_u64(val(),l);
-}
-
 MAPM::~MAPM() 
 {
     destroy();

@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,11 @@ XERCES_CPP_NAMESPACE_USE;
 
 XPathNamespaceImpl::XPathNamespaceImpl(const XMLCh* const nsPrefix, 
 		const XMLCh* const nsUri, DOMElement *owner, DOMDocument *docOwner) 
+#if _XERCES_VERSION >= 30200 
+	: fNode(this, docOwner)
+#else
 	: fNode(docOwner)
+#endif
 {
     DOMNodeImpl *argImpl = castToNodeImpl(this);
 
@@ -54,7 +58,13 @@ XPathNamespaceImpl::XPathNamespaceImpl(const XMLCh* const nsPrefix,
 }
 
 XPathNamespaceImpl::XPathNamespaceImpl(const XPathNamespaceImpl &other) 
-	: fNode(other.fNode), uri(other.uri), prefix(other.prefix)
+#if _XERCES_VERSION >= 30200 
+	: fNode(this, other.fNode),
+#else
+	: fNode(other.fNode), 
+
+#endif
+	  uri(other.uri), prefix(other.prefix)
 {
 }
 
@@ -196,7 +206,11 @@ short            XPathNamespaceImpl::compareTreePosition(const DOMNode* other) c
 
     //if it is a custom node and bigger than us we must ask it for the order
     if(otherType > DOMXPathNamespace::XPATH_NAMESPACE_NODE) {
+#if _XERCES_VERSION >= 30200 
+        DOMNodeImpl tmp(const_cast<XPathNamespaceImpl *>(this), 0);
+#else
         DOMNodeImpl tmp(0);
+#endif
 #if _XERCES_VERSION >= 30000
         return tmp.reverseTreeOrderBitPattern(other->compareDocumentPosition(this));
 #else
@@ -492,4 +506,8 @@ const XMLCh* XPathNamespaceImpl::getLocalName() const {
            void*            XPathNamespaceImpl::getFeature(const XMLCh* feature, const XMLCh* version) const {return fNode.getFeature(feature, version); }
 #else
            DOMNode*         XPathNamespaceImpl::getInterface(const XMLCh* feature)      {return fNode.getInterface(feature); };
+#endif
+
+#if _XERCES_VERSION >= 30200 
+	   DOMNODEIMPL_IMPL(XPathNamespaceImpl);
 #endif

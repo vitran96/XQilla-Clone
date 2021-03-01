@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@
 #include <xqilla/utils/XPath2NSUtils.hpp>
 #include <xqilla/framework/XPath2MemoryManager.hpp>
 #include <xqilla/context/DynamicContext.hpp>
-#include <xqilla/utils/lookup3.hpp>
 
 #if defined(XERCES_HAS_CPP_NAMESPACE)
 XERCES_CPP_NAMESPACE_USE
@@ -117,23 +116,6 @@ int ATNotationOrDerivedImpl::compare(const ATNotationOrDerivedImpl::Ptr &other, 
   if(cmp != 0) return cmp;
 
   return XPath2Utils::compare(_uri, otherImpl->_uri);
-}
-
-size_t ATNotationOrDerivedImpl::hash(const Collation *collation, const DynamicContext *context) const
-{
-  uint32_t pc = 0xF00BAA56, pb = 0xBADFACE2;
-
-  // Hash the sort type
-  uint32_t ptype = (uint32_t)getSortType();
-  hashword2(&ptype, 1, &pc, &pb);
-
-  // Hash the name
-  hashlittle2((void*)_name, XPath2Utils::uintStrlen(_name) * sizeof(XMLCh), &pc, &pb);
-
-  // Hash the uri
-  hashlittle2((void*)_uri, XPath2Utils::uintStrlen(_uri) * sizeof(XMLCh), &pc, &pb);
-
-  return (size_t)pc + (((size_t)pb)<<32);
 }
 
 AnyAtomicType::AtomicObjectType ATNotationOrDerivedImpl::getPrimitiveTypeIndex() const {

@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ class XQILLA_API ATStringOrDerivedImpl : public ATStringOrDerived
 {
 
 public:
+
   /* constructor */
   ATStringOrDerivedImpl(const XMLCh* typeURI, const XMLCh* typeName, const XMLCh* value, const StaticContext* context);
 
@@ -53,7 +54,13 @@ public:
   virtual Result asCodepoints(const DynamicContext* context) const;
 
   /* returns the substring starting at startingLoc of given length */
-  virtual ATStringOrDerived::Ptr substring(unsigned startIndex, unsigned endIndex, const DynamicContext* context) const;
+  virtual ATStringOrDerived::Ptr substring(const Numeric::Ptr &startingLoc, const Numeric::Ptr &length, const DynamicContext* context) const;
+
+  /* returns the substring that occurs after the first occurence of pattern */
+  virtual ATStringOrDerived::Ptr substringAfter(const ATStringOrDerived::Ptr &pattern, Collation* collation, const DynamicContext* context) const;
+
+  /* returns the substring that occurs before the first occurence of pattern */
+  virtual ATStringOrDerived::Ptr substringBefore(const ATStringOrDerived::Ptr &pattern, Collation* collation, const DynamicContext* context) const;
 
   /* returns the length of this string */
   virtual unsigned int getLength() const;
@@ -89,4 +96,4 @@ private:
  
 };
 
-#endif
+#endif // _ATSTRINGORDERIVEDIMPL_HPP

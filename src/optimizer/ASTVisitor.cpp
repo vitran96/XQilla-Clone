@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,11 +52,6 @@ void ASTVisitor::optimize(XQQuery *query)
   if(query->getQueryBody() != 0) {
     query->setQueryBody(optimize(query->getQueryBody()));
   }
-
-  RewriteRules &rules = const_cast<RewriteRules&>(query->getRewriteRules());
-  for(RewriteRules::iterator it3 = rules.begin(); it3 != rules.end(); ++it3) {
-    (*it3) = optimizeRewriteRule(*it3);
-  }
 }
 
 XQGlobalVariable *ASTVisitor::optimizeGlobalVar(XQGlobalVariable *item)
@@ -64,20 +59,6 @@ XQGlobalVariable *ASTVisitor::optimizeGlobalVar(XQGlobalVariable *item)
   if(item->getVariableExpr()) {
     item->setVariableExpr(optimize(const_cast<ASTNode *>(item->getVariableExpr())));
   }
-  return item;
-}
-
-XQRewriteRule *ASTVisitor::optimizeRewriteRule(XQRewriteRule *item)
-{
-  if(item->getWhere())
-    item->setWhere(optimize(item->getWhere()));
-
-  RewriteCase::Vector::iterator i = item->getCases().begin();
-  for(; i != item->getCases().end(); ++i) {
-    (*i)->result = optimize((*i)->result);
-    if((*i)->where) (*i)->where = optimize((*i)->where);
-  }
-
   return item;
 }
 
@@ -105,12 +86,8 @@ ASTNode *ASTVisitor::optimize(ASTNode *item)
     return optimizeLiteral((XQLiteral *)item);
   case ASTNode::QNAME_LITERAL:
     return optimizeQNameLiteral((XQQNameLiteral *)item);
-  case ASTNode::DECIMAL_LITERAL:
-    return optimizeDecimalLiteral((XQDecimalLiteral *)item);
-  case ASTNode::FLOAT_LITERAL:
-    return optimizeFloatLiteral((XQFloatLiteral *)item);
-  case ASTNode::DOUBLE_LITERAL:
-    return optimizeDoubleLiteral((XQDoubleLiteral *)item);
+  case ASTNode::NUMERIC_LITERAL:
+    return optimizeNumericLiteral((XQNumericLiteral *)item);
   case ASTNode::SEQUENCE:
     return optimizeSequence((XQSequence *)item);
   case ASTNode::FUNCTION:
@@ -131,42 +108,16 @@ ASTNode *ASTVisitor::optimize(ASTNode *item)
     return optimizeTreatAs((XQTreatAs *)item);
   case ASTNode::FUNCTION_COERCION:
     return optimizeFunctionCoercion((XQFunctionCoercion *)item);
-  case ASTNode::AND:
-  case ASTNode::DIVIDE:
-  case ASTNode::EQUALS:
-  case ASTNode::EXCEPT:
-  case ASTNode::GENERAL_COMP:
-  case ASTNode::GREATER_THAN:
-  case ASTNode::GREATER_THAN_EQUAL:
-  case ASTNode::INTEGER_DIVIDE:
-  case ASTNode::INTERSECT:
-  case ASTNode::LESS_THAN:
-  case ASTNode::LESS_THAN_EQUAL:
-  case ASTNode::MINUS:
-  case ASTNode::MOD:
-  case ASTNode::MULTIPLY:
-  case ASTNode::NODE_COMPARISON:
-  case ASTNode::NOT_EQUALS:
-  case ASTNode::ORDER_COMPARISON:
-  case ASTNode::OR:
-  case ASTNode::PLUS:
-  case ASTNode::UNARY_MINUS:
-  case ASTNode::UNION:
+  case ASTNode::OPERATOR:
     return optimizeOperator((XQOperator *)item);
   case ASTNode::CONTEXT_ITEM:
     return optimizeContextItem((XQContextItem *)item);
   case ASTNode::RETURN:
     return optimizeReturn((XQReturn *)item);
-  case ASTNode::TUPLE_CONSTRUCTOR:
-    return optimizeTupleConstructor((XQTupleConstructor *)item);
-  case ASTNode::TUPLE_MEMBER:
-    return optimizeTupleMember((XQTupleMember *)item);
   case ASTNode::QUANTIFIED:
     return optimizeQuantified((XQQuantified *)item);
   case ASTNode::TYPESWITCH:
     return optimizeTypeswitch((XQTypeswitch *)item);
-  case ASTNode::SWITCH:
-    return optimizeSwitch((XQSwitch *)item);
   case ASTNode::VALIDATE:
     return optimizeValidate((XQValidate *)item);
   case ASTNode::FUNCTION_CALL:
@@ -183,8 +134,6 @@ ASTNode *ASTVisitor::optimize(ASTNode *item)
     return optimizeEffectiveBooleanValue((XQEffectiveBooleanValue *)item);
   case ASTNode::MAP:
     return optimizeMap((XQMap *)item);
-  case ASTNode::EXPR_SUBSTITUTION:
-    return optimizeExprSubstitution((XQExprSubstitution *)item);
   case ASTNode::PROMOTE_UNTYPED:
     return optimizePromoteUntyped((XQPromoteUntyped *)item);
   case ASTNode::PROMOTE_NUMERIC:
@@ -284,17 +233,7 @@ ASTNode *ASTVisitor::optimizeQNameLiteral(XQQNameLiteral *item)
   return item;
 }
 
-ASTNode *ASTVisitor::optimizeDecimalLiteral(XQDecimalLiteral *item)
-{
-  return item;
-}
-
-ASTNode *ASTVisitor::optimizeFloatLiteral(XQFloatLiteral *item)
-{
-  return item;
-}
-
-ASTNode *ASTVisitor::optimizeDoubleLiteral(XQDoubleLiteral *item)
+ASTNode *ASTVisitor::optimizeNumericLiteral(XQNumericLiteral *item)
 {
   return item;
 }
@@ -377,17 +316,6 @@ ASTNode *ASTVisitor::optimizeReturn(XQReturn *item)
   return item;
 }
 
-ASTNode *ASTVisitor::optimizeTupleConstructor(XQTupleConstructor *item)
-{
-  item->setParent(optimizeTupleNode(const_cast<TupleNode*>(item->getParent())));
-  return item;
-}
-
-ASTNode *ASTVisitor::optimizeTupleMember(XQTupleMember *item)
-{
-  return item;
-}
-
 ASTNode *ASTVisitor::optimizeQuantified(XQQuantified *item)
 {
   item->setParent(optimizeTupleNode(const_cast<TupleNode*>(item->getParent())));
@@ -406,23 +334,6 @@ ASTNode *ASTVisitor::optimizeTypeswitch(XQTypeswitch *item)
 
   const_cast<XQTypeswitch::Case *>(item->getDefaultCase())->
     setExpression(optimize(item->getDefaultCase()->getExpression()));
-
-  return item;
-}
-
-ASTNode *ASTVisitor::optimizeSwitch(XQSwitch *item)
-{
-  item->setExpression(optimize(const_cast<ASTNode *>(item->getExpression())));
-
-  XQSwitch::Cases &clauses = item->getCases();
-  for(XQSwitch::Cases::iterator i = clauses.begin(); i != clauses.end(); ++i) {
-    for(VectorOfASTNodes::iterator v = (*i)->getValues().begin(); v != (*i)->getValues().end(); ++v) {
-      (*v) = optimize(*v);
-    }
-    (*i)->setExpression(optimize((*i)->getExpression()));
-  }
-
-  item->setDefault(optimize(const_cast<ASTNode *>(item->getDefault())));
 
   return item;
 }
@@ -531,11 +442,6 @@ ASTNode *ASTVisitor::optimizeMap(XQMap *item)
 {
   item->setArg1(optimize(item->getArg1()));
   item->setArg2(optimize(item->getArg2()));
-  return item;
-}
-
-ASTNode *ASTVisitor::optimizeExprSubstitution(XQExprSubstitution *item)
-{
   return item;
 }
 

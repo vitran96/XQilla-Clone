@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,8 @@
 
 #include <xqilla/framework/XQillaExport.hpp>
 #include <xqilla/framework/XPath2MemoryManager.hpp>
-#include <xqilla/utils/HashMap.hpp>
+
+#include <xercesc/util/RefHashTableOf.hpp>
 
 // Define ALLOCATE_IN_CHUNKS to 1 to allocate
 // CHUNK_SIZE blocks of memory at a time, and
@@ -47,7 +48,6 @@ class StringPool;
 class XQILLA_API BaseMemoryManager : public XPath2MemoryManager
 {
 public:
-  BaseMemoryManager();
   virtual ~BaseMemoryManager();
 
   // from MemoryManager
@@ -66,6 +66,9 @@ public:
   /** Returns a copy of the transcoding of the given string */
   virtual const XMLCh* getPooledString(const char *src);
 
+  /** Use with extreme caution! */
+  virtual void reset();
+
   virtual void dumpStatistics() const;
   virtual size_t getAllocatedObjectCount() const { return objectsAllocated_; }
   virtual size_t getTotalAllocatedMemory() const { return totalMemoryAllocated_; }
@@ -73,6 +76,9 @@ public:
     return fStringPool;
   }
   
+  /** create a collation */
+  virtual Collation* createCollation(CollationHelper* helper);
+
   /** create a resolver */
   virtual XQillaNSResolver* createNSResolver(XERCES_CPP_NAMESPACE_QUALIFIER DOMNode *resolverNode);
   
@@ -114,7 +120,12 @@ protected:
   size_t totalMemoryAllocated_;
 
   StringPool *fStringPool;
-  HashMap<int,ATDecimalOrDerived*> *fIntegerPool;
+
+#if _XERCES_VERSION >= 30000
+  XERCES_CPP_NAMESPACE_QUALIFIER RefHashTableOf<ATDecimalOrDerived, XERCES_CPP_NAMESPACE_QUALIFIER PtrHasher>* fIntegerPool;
+#else
+  XERCES_CPP_NAMESPACE_QUALIFIER RefHashTableOf<ATDecimalOrDerived>* fIntegerPool;
+#endif
 };
 
 #endif

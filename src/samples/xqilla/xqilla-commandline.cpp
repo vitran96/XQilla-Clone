@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2010,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,14 +64,14 @@ public:
     if(len == 1) {
       cerr << UTF8(sequence.first()->asString(context));
     }
-    else {
+    else if(len > 1) {
       cerr << "(";
       Sequence::const_iterator i = sequence.begin();
       Sequence::const_iterator end = sequence.end();
       while(i != end) {
         cerr << UTF8((*i)->asString(context));
         if(++i != end)
-          cerr << ", ";
+          cerr << ",";
       }
       cerr << ")";
     }
@@ -128,7 +128,7 @@ struct CommandLineArgs
       outputFile(0),
       baseURIDir(0),
       conf(&fastConf),
-      language(XQilla::XQUERY|XQilla::VERSION3),
+      language(XQilla::XQUERY3),
       parseFlags(0),
       xpathCompatible(false),
       quiet(false),
@@ -250,9 +250,6 @@ int main(int argc, char *argv[])
       else if(argv[i][1] == 's') {
         args.language |= XQilla::XSLT2;
       }
-      else if(argv[i][1] == 'c') {
-        args.language |= XQilla::CARROT | XQilla::XQUERY;
-      }
       else if(argv[i][1] == 't') {
         args.printAST = true;
       }
@@ -352,7 +349,7 @@ int main(int argc, char *argv[])
             seq = dynamic_context->resolveDocument(X(args.inputFile), 0);
           }
 
-          if(!seq.isEmpty() && seq.first()->getType() == Item::NODE) {
+          if(!seq.isEmpty() && seq.first()->isNode()) {
             dynamic_context->setContextItem(seq.first());
             dynamic_context->setContextPosition(1);
             dynamic_context->setContextSize(1);
@@ -426,7 +423,7 @@ void usage(const char *progname)
 
   cerr << "Usage: " << name << " [options] <XQuery file>..." << endl << endl;
   cerr << "-h                : Show this display" << endl;
-  cerr << "-p                : Parse in XPath 2 mode (default is XQuery mode)" << endl;
+  cerr << "-p                : Parse in XPath 3.0 mode (default is XQuery mode)" << endl;
   cerr << "-P                : Parse in XPath 1.0 compatibility mode (default is XQuery mode)" << endl;
   cerr << "-s                : Parse XSLT 2.0" << endl;
   cerr << "-f                : Parse using W3C Full-Text extensions" << endl;

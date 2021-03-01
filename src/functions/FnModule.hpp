@@ -10,61 +10,46 @@ static const XMLCh fn_prefix[] = { 102, 110, 0 };
 // http://www.w3.org/2005/xpath-functions
 static const XMLCh fn_uri[] = { 104, 116, 116, 112, 58, 47, 47, 119, 119, 119, 46, 119, 51, 46, 111, 114, 103, 47, 50, 48, 48, 53, 47, 120, 112, 97, 116, 104, 45, 102, 117, 110, 99, 116, 105, 111, 110, 115, 0 };
 
-static const DelayedModule::Decl fn_declarations[] = {
+static const DelayedModule::FuncDef fn_functions[] = {
   {
-    DelayedModule::Decl::NAMESPACE, "rw", 0, false, 24, 1,
-    "http://xqilla.sourceforge.net/rewrite"
-  },
-  {
-    DelayedModule::Decl::NAMESPACE, "math", 0, false, 25, 1,
-    "http://www.w3.org/2005/xpath-functions/math"
-  },
-  {
-    DelayedModule::Decl::NAMESPACE, "emath", 0, false, 26, 1,
-    "http://exslt.org/math"
-  },
-  {
-    DelayedModule::Decl::FUNCTION, "data", 1, false, 28, 1,
+    "data", 1, false, 20, 1,
     "declare function data($a as item()*) as xs:anyAtomicType*\n"
     "{\n"
     "  $a\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "string-join", 1, false, 36, 1,
-    "declare %xqilla:inline\n"
-    "function string-join($seq as xs:string*) as xs:string\n"
+    "string-join", 1, false, 28, 1,
+    "declare function string-join($seq as xs:string*) as xs:string\n"
     "{\n"
     "  string-join($seq, \"\")\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "string-join", 2, false, 42, 1,
-    "declare %xqilla:inline\n"
-    "function string-join($seq as xs:string*, $join as xs:string) as xs:string\n"
+    "string-join", 2, false, 33, 1,
+    "declare function string-join($seq as xs:string*, $join as xs:string) as xs:string\n"
     "{\n"
     "  if(empty($seq)) then \"\"\n"
     "  else string-join-helper($seq, $join)\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "string-join-helper", 2, true, 49, 1,
-    "declare %private function string-join-helper($seq as xs:string*, $join as xs:string) as xs:string\n"
+    "string-join-helper", 2, true, 39, 1,
+    "declare private function string-join-helper($seq as xs:string*, $join as xs:string) as xs:string\n"
     "{\n"
     "  if(empty(tail($seq))) then head($seq)\n"
     "  else concat(head($seq), $join, string-join-helper(tail($seq), $join))\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "substring-before", 2, false, 55, 1,
-    "declare %xqilla:inline\n"
-    "function substring-before($arg1 as xs:string?, $arg2 as xs:string?) as xs:string\n"
+    "substring-before", 2, false, 45, 1,
+    "declare function substring-before($arg1 as xs:string?, $arg2 as xs:string?) as xs:string\n"
     "{\n"
     "  substring-before($arg1, $arg2, default-collation())\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "substring-before", 3, false, 61, 1,
+    "substring-before", 3, false, 50, 1,
     "declare function substring-before($arg1 as xs:string?, $arg2 as xs:string?, $collation as xs:string)\n"
     "  as xs:string\n"
     "{\n"
@@ -74,18 +59,17 @@ static const DelayedModule::Decl fn_declarations[] = {
     "  return\n"
     "    substring($arg1, 1,\n"
     "      string-index-of($arg1, 1, 1 + string-length($arg1) - $arg2len, $arg2, $arg2len, $collation) - 1)\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "substring-after", 2, false, 72, 1,
-    "declare %xqilla:inline\n"
-    "function substring-after($arg1 as xs:string?, $arg2 as xs:string?) as xs:string\n"
+    "substring-after", 2, false, 61, 1,
+    "declare function substring-after($arg1 as xs:string?, $arg2 as xs:string?) as xs:string\n"
     "{\n"
     "  substring-after($arg1, $arg2, default-collation())\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "substring-after", 3, false, 78, 1,
+    "substring-after", 3, false, 66, 1,
     "declare function substring-after($arg1 as xs:string?, $arg2 as xs:string?, $collation as xs:string)\n"
     "  as xs:string\n"
     "{\n"
@@ -95,28 +79,27 @@ static const DelayedModule::Decl fn_declarations[] = {
     "  let $index := string-index-of($arg1, 1, 1 + string-length($arg1) - $arg2len, $arg2, $arg2len, $collation)\n"
     "  return\n"
     "    if($index eq 0) then \"\" else substring($arg1, $index + $arg2len)\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "string-index-of", 6, true, 89, 1,
-    "declare %private function string-index-of($str as xs:string, $index as xs:decimal, $endindex as xs:decimal,\n"
+    "string-index-of", 6, true, 77, 1,
+    "declare private function string-index-of($str as xs:string, $index as xs:decimal, $endindex as xs:decimal,\n"
     "  $tofind as xs:string, $tofindlen as xs:decimal, $collation as xs:string) as xs:decimal\n"
     "{\n"
     "  if($index gt $endindex) then 0\n"
     "  else if(compare($tofind, substring($str, $index, $tofindlen), $collation) eq 0) then $index\n"
     "  else string-index-of($str, $index + 1, $endindex, $tofind, $tofindlen, $collation)\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "codepoint-equal", 2, false, 97, 1,
-    "declare %xqilla:inline\n"
-    "function codepoint-equal($arg1 as xs:string?, $arg2 as xs:string?) as xs:boolean?\n"
+    "codepoint-equal", 2, false, 85, 1,
+    "declare function codepoint-equal($arg1 as xs:string?, $arg2 as xs:string?) as xs:boolean?\n"
     "{\n"
     "  compare($arg1, $arg2, \"http://www.w3.org/2005/xpath-functions/collation/codepoint\") eq 0\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "translate", 3, false, 103, 1,
+    "translate", 3, false, 90, 1,
     "declare function translate($arg as xs:string?, $mapString as xs:string, $transString as xs:string) as xs:string\n"
     "{\n"
     "  codepoints-to-string(\n"
@@ -128,11 +111,11 @@ static const DelayedModule::Decl fn_declarations[] = {
     "    return\n"
     "      if(empty($index)) then $c else $trans[$index]\n"
     "  )\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "codepoint-in-utf8", 1, true, 116, 1,
-    "declare %private function codepoint-in-utf8($c as xs:integer) as xs:integer+\n"
+    "codepoint-in-utf8", 1, true, 103, 1,
+    "declare private function codepoint-in-utf8($c as xs:integer) as xs:integer+\n"
     "{\n"
     "  if($c < 128) then $c\n"
     "  else if($c < 2048) then (\n"
@@ -150,11 +133,11 @@ static const DelayedModule::Decl fn_declarations[] = {
     "    (($c idiv 64) mod 64) + 128,\n"
     "    ($c mod 64) + 128\n"
     "  )\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "percent-encode", 1, true, 136, 1,
-    "declare %private function percent-encode($c as xs:integer) as xs:integer+\n"
+    "percent-encode", 1, true, 123, 1,
+    "declare private function percent-encode($c as xs:integer) as xs:integer+\n"
     "{\n"
     "  (: Codepoint for \"%\" :)\n"
     "  let $percent := 37\n"
@@ -166,10 +149,10 @@ static const DelayedModule::Decl fn_declarations[] = {
     "    $hex[($byte idiv 16) + 1],\n"
     "    $hex[($byte mod 16) + 1]\n"
     "  )\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "encode-for-uri", 1, false, 150, 1,
+    "encode-for-uri", 1, false, 137, 1,
     "declare function encode-for-uri($uri-part as xs:string?) as xs:string\n"
     "{\n"
     "  codepoints-to-string(\n"
@@ -194,10 +177,10 @@ static const DelayedModule::Decl fn_declarations[] = {
     "      then $c\n"
     "      else percent-encode($c)\n"
     "  )\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "iri-to-uri", 1, false, 176, 1,
+    "iri-to-uri", 1, false, 163, 1,
     "declare function iri-to-uri($iri as xs:string?) as xs:string\n"
     "{\n"
     "  codepoints-to-string(\n"
@@ -223,10 +206,10 @@ static const DelayedModule::Decl fn_declarations[] = {
     "      then percent-encode($c)\n"
     "      else $c\n"
     "  )\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "escape-html-uri", 1, false, 203, 1,
+    "escape-html-uri", 1, false, 190, 1,
     "declare function escape-html-uri($iri as xs:string?) as xs:string\n"
     "{\n"
     "  codepoints-to-string(\n"
@@ -236,10 +219,10 @@ static const DelayedModule::Decl fn_declarations[] = {
     "      then percent-encode($c)\n"
     "      else $c\n"
     "  )\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "resolve-QName", 2, false, 217, 1,
+    "resolve-QName", 2, false, 204, 1,
     "declare function resolve-QName($qname as xs:string?, $element as element()) as xs:QName?\n"
     "{\n"
     "  typeswitch($qname)\n"
@@ -250,250 +233,168 @@ static const DelayedModule::Decl fn_declarations[] = {
     "      if(empty(prefix-from-QName($mock)) or exists($uri)) then QName($uri, $qname)\n"
     "      else error(xs:QName(\"err:FONS0004\"), concat(\"No namespace found for prefix: \"\"\", prefix-from-QName($mock), \"\"\"\"))\n"
     "  default return ()\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "namespace-uri-for-prefix", 2, false, 229, 1,
+    "namespace-uri-for-prefix", 2, false, 216, 1,
     "declare function namespace-uri-for-prefix($prefix as xs:string?, $element as element()) as xs:anyURI?\n"
     "{\n"
     "  let $prefix := if(empty($prefix)) then \"\" else $prefix\n"
     "  return $element/namespace::*[name() eq $prefix]/xs:anyURI(.)\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "in-scope-prefixes", 1, false, 235, 1,
+    "in-scope-prefixes", 1, false, 222, 1,
     "declare function in-scope-prefixes($element as element()) as xs:string*\n"
     "{\n"
     "  $element/namespace::*/name()\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "true", 0, false, 243, 1,
-    "declare %xqilla:inline\n"
-    "function true() as xs:boolean\n"
+    "true", 0, false, 230, 1,
+    "declare function true() as xs:boolean\n"
     "{\n"
     "  xs:boolean(\"1\")\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "false", 0, false, 249, 1,
-    "declare %xqilla:inline\n"
-    "function false() as xs:boolean\n"
+    "false", 0, false, 235, 1,
+    "declare function false() as xs:boolean\n"
     "{\n"
     "  xs:boolean(\"0\")\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "boolean", 1, false, 255, 1,
-    "declare %xqilla:inline\n"
-    "function boolean($arg as item()*) as xs:boolean\n"
+    "boolean", 1, false, 240, 1,
+    "declare function boolean($arg as item()*) as xs:boolean\n"
     "{\n"
     "  $arg and true()\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::REWRITE_RULE, "", 0, false, 261, 25,
-    "fn:EBVFold: boolean(~e)\n"
-    "-> false() where rw:subtype(~e, 'empty-sequence()')\n"
-    "-> exists(~e) where rw:subtype(~e, 'node()*')\n"
-    "-> ~e where rw:subtype(~e, 'xs:boolean?')"
-  },
-  {
-    DelayedModule::Decl::FUNCTION, "exists", 1, false, 266, 1,
-    "declare %xqilla:inline\n"
-    "function exists($arg as item()*) as xs:boolean\n"
+    "exists", 1, false, 245, 1,
+    "declare function exists($arg as item()*) as xs:boolean\n"
     "{\n"
     "  not(empty($arg))\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::REWRITE_RULE, "", 0, false, 272, 25,
-    "fn:CountEqZero:\n"
-    "count(~e) eq 0 -> empty(~e)"
-  },
-  {
-    DelayedModule::Decl::REWRITE_RULE, "", 0, false, 274, 25,
-    "fn:CountNeZero:\n"
-    "count(~e) ne 0 -> exists(~e)"
-  },
-  {
-    DelayedModule::Decl::REWRITE_RULE, "", 0, false, 276, 25,
-    "fn:CountGtZero:\n"
-    "count(~e) gt 0 -> exists(tail(~e))"
-  },
-  {
-    DelayedModule::Decl::REWRITE_RULE, "", 0, false, 279, 25,
-    "fn:FnEmptyFold: empty(~e)\n"
-    "-> false() where rw:subtype(~e, 'item()+')\n"
-    "-> true() where rw:subtype(~e, 'empty-sequence()')"
-  },
-  {
-    DelayedModule::Decl::REWRITE_RULE, "", 0, false, 283, 25,
-    "fn:AndTrueFold:  ~e and true()  -> ~e"
-  },
-  {
-    DelayedModule::Decl::REWRITE_RULE, "", 0, false, 284, 25,
-    "fn:AndFalseFold: ~e and false() -> false()"
-  },
-  {
-    DelayedModule::Decl::REWRITE_RULE, "", 0, false, 285, 25,
-    "fn:OrTrueFold:   ~e or  true()  -> true()"
-  },
-  {
-    DelayedModule::Decl::REWRITE_RULE, "", 0, false, 286, 25,
-    "fn:OrFalseFold:  ~e or  false() -> ~e"
-  },
-  {
-    DelayedModule::Decl::REWRITE_RULE, "", 0, false, 288, 25,
-    "fn:PredTypeAnalysis: ~e[~p]\n"
-    "-> ~e[boolean(~p)] where (rw:never-subtype(~p, 'xs:decimal') and rw:never-subtype(~p, 'xs:float') and\n"
-    "  rw:never-subtype(~p, 'xs:double') and rw:never-subtype(~p, 'xs:boolean'))"
-  },
-  {
-    DelayedModule::Decl::REWRITE_RULE, "", 0, false, 297, 25,
-    "fn:PredTrueFold: ~e[true()] -> ~e"
-  },
-  {
-    DelayedModule::Decl::REWRITE_RULE, "", 0, false, 298, 25,
-    "fn:PredFalseFold: ~e[false()] -> ()"
-  },
-  {
-    DelayedModule::Decl::REWRITE_RULE, "", 0, false, 299, 25,
-    "fn:PredEmptyFold: ()[~e] -> ()"
-  },
-  {
-    DelayedModule::Decl::FUNCTION, "zero-or-one", 1, false, 304, 1,
+    "zero-or-one", 1, false, 253, 1,
     "declare function zero-or-one($arg as item()*) as item()?\n"
     "{\n"
     "  typeswitch($arg)\n"
     "  case $arg_ as item()? return $arg_\n"
     "  default return error(xs:QName(\"err:FORG0003\"), \"Sequence contains more then one item\")\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "one-or-more", 1, false, 311, 1,
+    "one-or-more", 1, false, 260, 1,
     "declare function one-or-more($arg as item()*) as item()+\n"
     "{\n"
     "  typeswitch($arg)\n"
     "  case $arg_ as item()+ return $arg_\n"
     "  default return error(xs:QName(\"err:FORG0004\"), \"Sequence is empty\")\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "exactly-one", 1, false, 318, 1,
+    "exactly-one", 1, false, 267, 1,
     "declare function exactly-one($arg as item()*) as item()\n"
     "{\n"
     "  typeswitch($arg)\n"
     "  case $arg_ as item() return $arg_\n"
     "  case empty-sequence() return error(xs:QName(\"err:FORG0005\"), \"Sequence is empty\")\n"
     "  default return error(xs:QName(\"err:FORG0005\"), \"Sequence contains more then one item\")\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "index-of", 2, false, 326, 1,
-    "declare %xqilla:inline\n"
-    "function index-of($seq as xs:anyAtomicType*, $search as xs:anyAtomicType) as xs:integer*\n"
+    "index-of", 2, false, 275, 1,
+    "declare function index-of($seq as xs:anyAtomicType*, $search as xs:anyAtomicType) as xs:integer*\n"
     "{\n"
     "  (: Check for NaN :)\n"
     "  if($search ne $search) then () else index-of-helper($seq, $search, default-collation())\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "index-of", 3, false, 333, 1,
-    "declare %xqilla:inline\n"
-    "function index-of($seq as xs:anyAtomicType*, $search as xs:anyAtomicType,\n"
+    "index-of", 3, false, 281, 1,
+    "declare function index-of($seq as xs:anyAtomicType*, $search as xs:anyAtomicType,\n"
     "   $collation as xs:string) as xs:integer*\n"
     "{\n"
     "  (: Check for NaN :)\n"
     "  if($search ne $search) then () else index-of-helper($seq, $search, $collation)\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "index-of-helper", 3, true, 341, 1,
-    "declare %private function index-of-helper($seq as xs:anyAtomicType*, $search as xs:anyAtomicType,\n"
+    "index-of-helper", 3, true, 288, 1,
+    "declare private function index-of-helper($seq as xs:anyAtomicType*, $search as xs:anyAtomicType,\n"
     "  $collation as xs:string) as xs:integer*\n"
     "{\n"
     "  for $s at $p in $seq\n"
     "  where empty(tail(distinct-values(($s, $search), $collation)))\n"
     "  return $p\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "insert-before", 3, false, 349, 1,
+    "insert-before", 3, false, 296, 1,
     "declare function insert-before($target as item()*, $position as xs:integer, $inserts as item()*)\n"
     "  as item()*\n"
     "{\n"
     "  if($position le 1 or empty($inserts)) then ($inserts, $target)\n"
     "  else (head($target), insert-before(tail($target), $position - 1, $inserts))\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "remove", 2, false, 356, 1,
-    "declare %xqilla:inline\n"
-    "function remove($target as item()*, $position as xs:integer) as item()*\n"
+    "remove", 2, false, 303, 1,
+    "declare function remove($target as item()*, $position as xs:integer) as item()*\n"
     "{\n"
     "  $target[position() ne $position]\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "reverse", 1, false, 362, 1,
+    "reverse", 1, false, 308, 1,
     "declare function reverse($seq as item()*) as item()*\n"
     "{\n"
     "  if(empty($seq)) then ()\n"
     "  else (reverse(tail($seq)), head($seq))\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "subsequence", 2, false, 369, 1,
-    "declare %xqilla:inline\n"
-    "function subsequence($sourceSeq as item()*, $startingLoc as xs:double) as item()*\n"
+    "subsequence", 2, false, 314, 1,
+    "declare function subsequence($sourceSeq as item()*, $startingLoc as xs:double) as item()*\n"
     "{\n"
     "  let $s := round($startingLoc)\n"
     "  return\n"
     "    if($s < 1) then $sourceSeq\n"
     "    else xqilla:drop($sourceSeq, $s - 1)\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "subsequence", 3, false, 378, 1,
-    "declare %xqilla:inline\n"
-    "function subsequence($sourceSeq as item()*, $startingLoc as xs:double,\n"
+    "subsequence", 3, false, 322, 1,
+    "declare function subsequence($sourceSeq as item()*, $startingLoc as xs:double,\n"
     "  $length as xs:double) as item()*\n"
     "{\n"
     "  let $s := round($startingLoc)\n"
     "  return\n"
     "    if($s < 1) then take($sourceSeq, round($length) + $s - 1)\n"
     "    else take(xqilla:drop($sourceSeq, $s - 1), round($length))\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "subsequence-helper", 2, true, 389, 1,
-    "declare %private (: %xqilla:inline-if-constant(\"start\") :)\n"
-    "function subsequence-helper($seq as item()*, $start as xs:double) as item()*\n"
-    "{\n"
-    "  if($start le 1) then $seq\n"
-    "  else subsequence-helper(tail($seq), $start - 1)\n"
-    "}"
-  },
-  {
-    DelayedModule::Decl::FUNCTION, "take", 2, true, 397, 1,
-    "declare %private\n"
-    "function take($seq as item()*, $num as xs:double) as item()*\n"
+    "take", 2, true, 331, 1,
+    "declare private function take($seq as item()*, $num as xs:double) as item()*\n"
     "{\n"
     "  if($num le 0 or empty($seq)) then ()\n"
     "  else (head($seq), take(tail($seq), $num - 1))\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "deep-equal", 2, false, 404, 1,
-    "declare %xqilla:inline\n"
-    "function deep-equal($parameter1 as item()*, $parameter2 as item()*) as xs:boolean\n"
+    "deep-equal", 2, false, 337, 1,
+    "declare function deep-equal($parameter1 as item()*, $parameter2 as item()*) as xs:boolean\n"
     "{\n"
     "  deep-equal($parameter1, $parameter2, default-collation())\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "deep-equal", 3, false, 410, 1,
+    "deep-equal", 3, false, 342, 1,
     "declare function deep-equal($p1 as item()*, $p2 as item()*, $collation as xs:string) as xs:boolean\n"
     "{\n"
     "  if(empty($p1)) then empty($p2) else\n"
@@ -522,20 +423,18 @@ static const DelayedModule::Decl fn_declarations[] = {
     "    )\n"
     "\n"
     "    default return deep-equal-error()\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "deep-equal-error", 0, true, 440, 1,
-    "declare %private %xqilla:inline\n"
-    "function deep-equal-error()\n"
+    "deep-equal-error", 0, true, 372, 1,
+    "declare private function deep-equal-error()\n"
     "{\n"
     "  error(xs:QName(\"err:FOTY0015\"), \"An argument to fn:deep-equal() contains a function item\")\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "deep-equal-nodes", 3, true, 446, 1,
-    "declare %private\n"
-    "function deep-equal-nodes($p1 as node()*, $p2 as node()*, $collation as xs:string) as xs:boolean\n"
+    "deep-equal-nodes", 3, true, 377, 1,
+    "declare private function deep-equal-nodes($p1 as node()*, $p2 as node()*, $collation as xs:string) as xs:boolean\n"
     "{\n"
     "  if(empty($p1)) then empty($p2) else\n"
     "  if(empty($p2)) then false() else\n"
@@ -605,26 +504,24 @@ static const DelayedModule::Decl fn_declarations[] = {
     "      codepoint-equal($i1, $i2) and\n"
     "      deep-equal-nodes(tail($p1), tail($p2), $collation)\n"
     "    default return false()\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "avg", 1, false, 522, 1,
-    "declare %xqilla:inline\n"
-    "function avg($arg as xs:anyAtomicType*) as xs:anyAtomicType?\n"
+    "avg", 1, false, 452, 1,
+    "declare function avg($arg as xs:anyAtomicType*) as xs:anyAtomicType?\n"
     "{\n"
     "  sum($arg, ()) div count($arg)\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "sum", 1, false, 528, 1,
-    "declare %xqilla:inline\n"
-    "function sum($arg as xs:anyAtomicType*) as xs:anyAtomicType\n"
+    "sum", 1, false, 457, 1,
+    "declare function sum($arg as xs:anyAtomicType*) as xs:anyAtomicType\n"
     "{\n"
     "  sum($arg, 0)\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "sum", 2, false, 534, 1,
+    "sum", 2, false, 462, 1,
     "declare function sum($arg as xs:anyAtomicType*, $zero as xs:anyAtomicType?) as xs:anyAtomicType?\n"
     "{\n"
     "  typeswitch(head($arg))\n"
@@ -635,11 +532,11 @@ static const DelayedModule::Decl fn_declarations[] = {
     "  case $head as xs:yearMonthDuration return yearMonthDuration-sum(tail($arg), $head)\n"
     "  case $head as xs:dayTimeDuration return dayTimeDuration-sum(tail($arg), $head)\n"
     "  default return error(xs:QName(\"err:FORG0006\"), \"Invalid argument to fn:sum() function\")\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "numeric-sum", 2, true, 546, 1,
-    "declare %private function numeric-sum($arg as xs:anyAtomicType*, $result as xs:anyAtomicType) as xs:anyAtomicType\n"
+    "numeric-sum", 2, true, 474, 1,
+    "declare private function numeric-sum($arg as xs:anyAtomicType*, $result as xs:anyAtomicType) as xs:anyAtomicType\n"
     "{\n"
     "  typeswitch(head($arg))\n"
     "  case empty-sequence() return $result\n"
@@ -647,38 +544,37 @@ static const DelayedModule::Decl fn_declarations[] = {
     "  case $head as xs:double | xs:float | xs:decimal return\n"
     "    if($head ne $head) then $head else numeric-sum(tail($arg), $head + $result)\n"
     "  default return error(xs:QName(\"err:FORG0006\"), \"Invalid argument to fn:sum() function\")\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "yearMonthDuration-sum", 2, true, 556, 1,
-    "declare %private function yearMonthDuration-sum($arg as xs:anyAtomicType*, $result as xs:yearMonthDuration) as xs:yearMonthDuration\n"
+    "yearMonthDuration-sum", 2, true, 484, 1,
+    "declare private function yearMonthDuration-sum($arg as xs:anyAtomicType*, $result as xs:yearMonthDuration) as xs:yearMonthDuration\n"
     "{\n"
     "  typeswitch(head($arg))\n"
     "  case empty-sequence() return $result\n"
     "  case $head as xs:yearMonthDuration return yearMonthDuration-sum(tail($arg), $head + $result)\n"
     "  default return error(xs:QName(\"err:FORG0006\"), \"Invalid argument to fn:sum() function\")\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "dayTimeDuration-sum", 2, true, 564, 1,
-    "declare %private function dayTimeDuration-sum($arg as xs:anyAtomicType*, $result as xs:dayTimeDuration) as xs:dayTimeDuration\n"
+    "dayTimeDuration-sum", 2, true, 492, 1,
+    "declare private function dayTimeDuration-sum($arg as xs:anyAtomicType*, $result as xs:dayTimeDuration) as xs:dayTimeDuration\n"
     "{\n"
     "  typeswitch(head($arg))\n"
     "  case empty-sequence() return $result\n"
     "  case $head as xs:dayTimeDuration return dayTimeDuration-sum(tail($arg), $head + $result)\n"
     "  default return error(xs:QName(\"err:FORG0006\"), \"Invalid argument to fn:sum() function\")\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "max", 1, false, 572, 1,
-    "declare %xqilla:inline\n"
-    "function max($arg as xs:anyAtomicType*) as xs:anyAtomicType?\n"
+    "max", 1, false, 500, 1,
+    "declare function max($arg as xs:anyAtomicType*) as xs:anyAtomicType?\n"
     "{\n"
     "  max($arg, default-collation())\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "max", 2, false, 578, 1,
+    "max", 2, false, 505, 1,
     "declare function max($arg as xs:anyAtomicType*, $collation as xs:string) as xs:anyAtomicType?\n"
     "{\n"
     "  typeswitch(head($arg))\n"
@@ -694,11 +590,11 @@ static const DelayedModule::Decl fn_declarations[] = {
     "  case $head as xs:yearMonthDuration return yearMonthDuration-max(tail($arg), $head)\n"
     "  case $head as xs:dayTimeDuration return dayTimeDuration-max(tail($arg), $head)\n"
     "  default return error(xs:QName(\"err:FORG0006\"), \"Uncomparable items in argument to fn:max() function\")\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "double-max", 2, true, 595, 1,
-    "declare %private function double-max($arg as xs:anyAtomicType*, $result as xs:double) as xs:double\n"
+    "double-max", 2, true, 522, 1,
+    "declare private function double-max($arg as xs:anyAtomicType*, $result as xs:double) as xs:double\n"
     "{\n"
     "  typeswitch(head($arg))\n"
     "  case empty-sequence() return $result\n"
@@ -706,11 +602,11 @@ static const DelayedModule::Decl fn_declarations[] = {
     "    let $head := xs:double($head) return\n"
     "      double-max(tail($arg), if($head gt $result or $head ne $head) then $head else $result)\n"
     "  default return error(xs:QName(\"err:FORG0006\"), \"Uncomparable items in argument to fn:max() function\")\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "float-max", 2, true, 605, 1,
-    "declare %private function float-max($arg as xs:anyAtomicType*, $result as xs:float) as xs:anyAtomicType\n"
+    "float-max", 2, true, 532, 1,
+    "declare private function float-max($arg as xs:anyAtomicType*, $result as xs:float) as xs:anyAtomicType\n"
     "{\n"
     "  typeswitch(head($arg))\n"
     "  case empty-sequence() return $result\n"
@@ -719,11 +615,11 @@ static const DelayedModule::Decl fn_declarations[] = {
     "    let $head := xs:float($head) return\n"
     "      float-max(tail($arg), if($head gt $result or $head ne $head) then $head else $result)\n"
     "  default return error(xs:QName(\"err:FORG0006\"), \"Uncomparable items in argument to fn:max() function\")\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "decimal-max", 2, true, 616, 1,
-    "declare %private function decimal-max($arg as xs:anyAtomicType*, $result as xs:decimal) as xs:anyAtomicType\n"
+    "decimal-max", 2, true, 543, 1,
+    "declare private function decimal-max($arg as xs:anyAtomicType*, $result as xs:decimal) as xs:anyAtomicType\n"
     "{\n"
     "  typeswitch(head($arg))\n"
     "  case empty-sequence() return $result\n"
@@ -731,89 +627,88 @@ static const DelayedModule::Decl fn_declarations[] = {
     "  case $head as xs:float return float-max($arg, xs:float($result))\n"
     "  case $head as xs:decimal return decimal-max(tail($arg), if($head gt $result) then $head else $result)\n"
     "  default return error(xs:QName(\"err:FORG0006\"), \"Uncomparable items in argument to fn:max() function\")\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "string-max", 3, true, 626, 1,
-    "declare %private function string-max($arg as xs:anyAtomicType*, $result as xs:string, $collation as xs:string) as xs:string\n"
+    "string-max", 3, true, 553, 1,
+    "declare private function string-max($arg as xs:anyAtomicType*, $result as xs:string, $collation as xs:string) as xs:string\n"
     "{\n"
     "  typeswitch(head($arg))\n"
     "  case empty-sequence() return $result\n"
     "  case $head as xs:string | xs:anyURI return\n"
     "    string-max(tail($arg), if(compare($head, $result, $collation) gt 0) then xs:string($head) else $result, $collation)\n"
     "  default return error(xs:QName(\"err:FORG0006\"), \"Uncomparable items in argument to fn:max() function\")\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "boolean-max", 2, true, 635, 1,
-    "declare %private function boolean-max($arg as xs:anyAtomicType*, $result as xs:boolean) as xs:boolean\n"
+    "boolean-max", 2, true, 562, 1,
+    "declare private function boolean-max($arg as xs:anyAtomicType*, $result as xs:boolean) as xs:boolean\n"
     "{\n"
     "  typeswitch(head($arg))\n"
     "  case empty-sequence() return $result\n"
     "  case $head as xs:boolean return boolean-max(tail($arg), if($head gt $result) then $head else $result)\n"
     "  default return error(xs:QName(\"err:FORG0006\"), \"Uncomparable items in argument to fn:max() function\")\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "date-max", 2, true, 643, 1,
-    "declare %private function date-max($arg as xs:anyAtomicType*, $result as xs:date) as xs:date\n"
+    "date-max", 2, true, 570, 1,
+    "declare private function date-max($arg as xs:anyAtomicType*, $result as xs:date) as xs:date\n"
     "{\n"
     "  typeswitch(head($arg))\n"
     "  case empty-sequence() return $result\n"
     "  case $head as xs:date return date-max(tail($arg), if($head gt $result) then $head else $result)\n"
     "  default return error(xs:QName(\"err:FORG0006\"), \"Uncomparable items in argument to fn:max() function\")\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "time-max", 2, true, 651, 1,
-    "declare %private function time-max($arg as xs:anyAtomicType*, $result as xs:time) as xs:time\n"
+    "time-max", 2, true, 578, 1,
+    "declare private function time-max($arg as xs:anyAtomicType*, $result as xs:time) as xs:time\n"
     "{\n"
     "  typeswitch(head($arg))\n"
     "  case empty-sequence() return $result\n"
     "  case $head as xs:time return time-max(tail($arg), if($head gt $result) then $head else $result)\n"
     "  default return error(xs:QName(\"err:FORG0006\"), \"Uncomparable items in argument to fn:max() function\")\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "dateTime-max", 2, true, 659, 1,
-    "declare %private function dateTime-max($arg as xs:anyAtomicType*, $result as xs:dateTime) as xs:dateTime\n"
+    "dateTime-max", 2, true, 586, 1,
+    "declare private function dateTime-max($arg as xs:anyAtomicType*, $result as xs:dateTime) as xs:dateTime\n"
     "{\n"
     "  typeswitch(head($arg))\n"
     "  case empty-sequence() return $result\n"
     "  case $head as xs:dateTime return dateTime-max(tail($arg), if($head gt $result) then $head else $result)\n"
     "  default return error(xs:QName(\"err:FORG0006\"), \"Uncomparable items in argument to fn:max() function\")\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "yearMonthDuration-max", 2, true, 667, 1,
-    "declare %private function yearMonthDuration-max($arg as xs:anyAtomicType*, $result as xs:yearMonthDuration) as xs:yearMonthDuration\n"
+    "yearMonthDuration-max", 2, true, 594, 1,
+    "declare private function yearMonthDuration-max($arg as xs:anyAtomicType*, $result as xs:yearMonthDuration) as xs:yearMonthDuration\n"
     "{\n"
     "  typeswitch(head($arg))\n"
     "  case empty-sequence() return $result\n"
     "  case $head as xs:yearMonthDuration return yearMonthDuration-max(tail($arg), if($head gt $result) then $head else $result)\n"
     "  default return error(xs:QName(\"err:FORG0006\"), \"Uncomparable items in argument to fn:max() function\")\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "dayTimeDuration-max", 2, true, 675, 1,
-    "declare %private function dayTimeDuration-max($arg as xs:anyAtomicType*, $result as xs:dayTimeDuration) as xs:dayTimeDuration\n"
+    "dayTimeDuration-max", 2, true, 602, 1,
+    "declare private function dayTimeDuration-max($arg as xs:anyAtomicType*, $result as xs:dayTimeDuration) as xs:dayTimeDuration\n"
     "{\n"
     "  typeswitch(head($arg))\n"
     "  case empty-sequence() return $result\n"
     "  case $head as xs:dayTimeDuration return dayTimeDuration-max(tail($arg), if($head gt $result) then $head else $result)\n"
     "  default return error(xs:QName(\"err:FORG0006\"), \"Uncomparable items in argument to fn:max() function\")\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "min", 1, false, 683, 1,
-    "declare %xqilla:inline\n"
-    "function min($arg as xs:anyAtomicType*) as xs:anyAtomicType?\n"
+    "min", 1, false, 610, 1,
+    "declare function min($arg as xs:anyAtomicType*) as xs:anyAtomicType?\n"
     "{\n"
     "  min($arg, default-collation())\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "min", 2, false, 689, 1,
+    "min", 2, false, 615, 1,
     "declare function min($arg as xs:anyAtomicType*, $collation as xs:string) as xs:anyAtomicType?\n"
     "{\n"
     "  typeswitch(head($arg))\n"
@@ -829,11 +724,11 @@ static const DelayedModule::Decl fn_declarations[] = {
     "  case $head as xs:yearMonthDuration return yearMonthDuration-min(tail($arg), $head)\n"
     "  case $head as xs:dayTimeDuration return dayTimeDuration-min(tail($arg), $head)\n"
     "  default return error(xs:QName(\"err:FORG0006\"), \"Uncomparable items in argument to fn:min() function\")\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "double-min", 2, true, 706, 1,
-    "declare %private function double-min($arg as xs:anyAtomicType*, $result as xs:double) as xs:double\n"
+    "double-min", 2, true, 632, 1,
+    "declare private function double-min($arg as xs:anyAtomicType*, $result as xs:double) as xs:double\n"
     "{\n"
     "  typeswitch(head($arg))\n"
     "  case empty-sequence() return $result\n"
@@ -841,11 +736,11 @@ static const DelayedModule::Decl fn_declarations[] = {
     "    let $head := xs:double($head) return\n"
     "      double-min(tail($arg), if($head lt $result or $head ne $head) then $head else $result)\n"
     "  default return error(xs:QName(\"err:FORG0006\"), \"Uncomparable items in argument to fn:min() function\")\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "float-min", 2, true, 716, 1,
-    "declare %private function float-min($arg as xs:anyAtomicType*, $result as xs:float) as xs:anyAtomicType\n"
+    "float-min", 2, true, 642, 1,
+    "declare private function float-min($arg as xs:anyAtomicType*, $result as xs:float) as xs:anyAtomicType\n"
     "{\n"
     "  typeswitch(head($arg))\n"
     "  case empty-sequence() return $result\n"
@@ -854,11 +749,11 @@ static const DelayedModule::Decl fn_declarations[] = {
     "    let $head := xs:float($head) return\n"
     "      float-min(tail($arg), if($head lt $result or $head ne $head) then $head else $result)\n"
     "  default return error(xs:QName(\"err:FORG0006\"), \"Uncomparable items in argument to fn:min() function\")\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "decimal-min", 2, true, 727, 1,
-    "declare %private function decimal-min($arg as xs:anyAtomicType*, $result as xs:decimal) as xs:anyAtomicType\n"
+    "decimal-min", 2, true, 653, 1,
+    "declare private function decimal-min($arg as xs:anyAtomicType*, $result as xs:decimal) as xs:anyAtomicType\n"
     "{\n"
     "  typeswitch(head($arg))\n"
     "  case empty-sequence() return $result\n"
@@ -866,151 +761,89 @@ static const DelayedModule::Decl fn_declarations[] = {
     "  case $head as xs:float return float-min($arg, xs:float($result))\n"
     "  case $head as xs:decimal return decimal-min(tail($arg), if($head lt $result) then $head else $result)\n"
     "  default return error(xs:QName(\"err:FORG0006\"), \"Uncomparable items in argument to fn:min() function\")\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "string-min", 3, true, 737, 1,
-    "declare %private function string-min($arg as xs:anyAtomicType*, $result as xs:string, $collation as xs:string) as xs:string\n"
+    "string-min", 3, true, 663, 1,
+    "declare private function string-min($arg as xs:anyAtomicType*, $result as xs:string, $collation as xs:string) as xs:string\n"
     "{\n"
     "  typeswitch(head($arg))\n"
     "  case empty-sequence() return $result\n"
     "  case $head as xs:string | xs:anyURI return\n"
     "    string-min(tail($arg), if(compare($head, $result, $collation) lt 0) then xs:string($head) else $result, $collation)\n"
     "  default return error(xs:QName(\"err:FORG0006\"), \"Uncomparable items in argument to fn:min() function\")\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "boolean-min", 2, true, 746, 1,
-    "declare %private function boolean-min($arg as xs:anyAtomicType*, $result as xs:boolean) as xs:boolean\n"
+    "boolean-min", 2, true, 672, 1,
+    "declare private function boolean-min($arg as xs:anyAtomicType*, $result as xs:boolean) as xs:boolean\n"
     "{\n"
     "  typeswitch(head($arg))\n"
     "  case empty-sequence() return $result\n"
     "  case $head as xs:boolean return boolean-min(tail($arg), if($head lt $result) then $head else $result)\n"
     "  default return error(xs:QName(\"err:FORG0006\"), \"Uncomparable items in argument to fn:min() function\")\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "date-min", 2, true, 754, 1,
-    "declare %private function date-min($arg as xs:anyAtomicType*, $result as xs:date) as xs:date\n"
+    "date-min", 2, true, 680, 1,
+    "declare private function date-min($arg as xs:anyAtomicType*, $result as xs:date) as xs:date\n"
     "{\n"
     "  typeswitch(head($arg))\n"
     "  case empty-sequence() return $result\n"
     "  case $head as xs:date return date-min(tail($arg), if($head lt $result) then $head else $result)\n"
     "  default return error(xs:QName(\"err:FORG0006\"), \"Uncomparable items in argument to fn:min() function\")\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "time-min", 2, true, 762, 1,
-    "declare %private function time-min($arg as xs:anyAtomicType*, $result as xs:time) as xs:time\n"
+    "time-min", 2, true, 688, 1,
+    "declare private function time-min($arg as xs:anyAtomicType*, $result as xs:time) as xs:time\n"
     "{\n"
     "  typeswitch(head($arg))\n"
     "  case empty-sequence() return $result\n"
     "  case $head as xs:time return time-min(tail($arg), if($head lt $result) then $head else $result)\n"
     "  default return error(xs:QName(\"err:FORG0006\"), \"Uncomparable items in argument to fn:min() function\")\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "dateTime-min", 2, true, 770, 1,
-    "declare %private function dateTime-min($arg as xs:anyAtomicType*, $result as xs:dateTime) as xs:dateTime\n"
+    "dateTime-min", 2, true, 696, 1,
+    "declare private function dateTime-min($arg as xs:anyAtomicType*, $result as xs:dateTime) as xs:dateTime\n"
     "{\n"
     "  typeswitch(head($arg))\n"
     "  case empty-sequence() return $result\n"
     "  case $head as xs:dateTime return dateTime-min(tail($arg), if($head lt $result) then $head else $result)\n"
     "  default return error(xs:QName(\"err:FORG0006\"), \"Uncomparable items in argument to fn:min() function\")\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "yearMonthDuration-min", 2, true, 778, 1,
-    "declare %private function yearMonthDuration-min($arg as xs:anyAtomicType*, $result as xs:yearMonthDuration) as xs:yearMonthDuration\n"
+    "yearMonthDuration-min", 2, true, 704, 1,
+    "declare private function yearMonthDuration-min($arg as xs:anyAtomicType*, $result as xs:yearMonthDuration) as xs:yearMonthDuration\n"
     "{\n"
     "  typeswitch(head($arg))\n"
     "  case empty-sequence() return $result\n"
     "  case $head as xs:yearMonthDuration return yearMonthDuration-min(tail($arg), if($head lt $result) then $head else $result)\n"
     "  default return error(xs:QName(\"err:FORG0006\"), \"Uncomparable items in argument to fn:min() function\")\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "dayTimeDuration-min", 2, true, 786, 1,
-    "declare %private function dayTimeDuration-min($arg as xs:anyAtomicType*, $result as xs:dayTimeDuration) as xs:dayTimeDuration\n"
+    "dayTimeDuration-min", 2, true, 712, 1,
+    "declare private function dayTimeDuration-min($arg as xs:anyAtomicType*, $result as xs:dayTimeDuration) as xs:dayTimeDuration\n"
     "{\n"
     "  typeswitch(head($arg))\n"
     "  case empty-sequence() return $result\n"
     "  case $head as xs:dayTimeDuration return dayTimeDuration-min(tail($arg), if($head lt $result) then $head else $result)\n"
     "  default return error(xs:QName(\"err:FORG0006\"), \"Uncomparable items in argument to fn:min() function\")\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "map-get", 2, false, 797, 1,
-    "declare %xqilla:inline\n"
-    "function map-get($map as map(), $key as xs:anyAtomicType) as item()*\n"
-    "{\n"
-    "  $map($key)\n"
-    "}"
-  },
-  {
-    DelayedModule::Decl::FUNCTION, "map-keys", 1, false, 803, 1,
-    "declare function map-keys($map as map()) as xs:anyAtomicType*\n"
-    "{\n"
-    "  map(map-get(?, \"key\"), map-entries($map))\n"
-    "}"
-  },
-  {
-    DelayedModule::Decl::FUNCTION, "map-fold", 3, false, 808, 1,
-    "declare function map-fold(\n"
-    "  $f as function(item()*, xs:anyAtomicType, item()*) as item()*,\n"
-    "  $z as item()*,\n"
-    "  $map as map()\n"
-    ") as item()*\n"
-    "{\n"
-    "  fold-left(function($r, $e as map()) { $f($r, $e(\"key\"), $e(\"value\")) },\n"
-    "    $z, map-entries($map))\n"
-    "}"
-  },
-  {
-    DelayedModule::Decl::FUNCTION, "map-put", 2, true, 818, 1,
-    "declare %private \n"
-    "function map-put($map as map(), $entry as map()) as map()\n"
-    "{\n"
-    "  map-put($map, $entry(\"key\"), $entry(\"value\"))\n"
-    "}"
-  },
-  {
-    DelayedModule::Decl::FUNCTION, "map-new", 1, false, 824, 1,
-    "declare %xqilla:inline\n"
-    "function map-new($maps as map()*) as map()\n"
-    "{\n"
-    "  if(empty($maps)) then empty-map() else\n"
-    "  fold-left(map-put#2, head($maps), map(map-entries#1, tail($maps)))\n"
-    "}"
-  },
-  {
-    DelayedModule::Decl::FUNCTION, "map-new", 2, false, 831, 1,
-    "declare %xqilla:inline\n"
-    "function map-new($maps as map()*, $collation as xs:string) as map()\n"
-    "{\n"
-    "  fold-left(map-put#2, empty-map($collation), map(map-entries#1, $maps))\n"
-    "}"
-  },
-  {
-    DelayedModule::Decl::FUNCTION, "map", 2, false, 840, 1,
+    "map", 2, false, 725, 1,
     "declare function map($f as function(item()) as item()*, $seq as item()*) as item()*\n"
     "{\n"
     "  if(empty($seq)) then ()\n"
     "  else ($f(head($seq)), map($f, tail($seq)))\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::REWRITE_RULE, "", 0, false, 846, 25,
-    "fn:MapMapFusion:\n"
-    "map(~f, map(~g, ~e)) -> map(function($a) { map(~f,~g($a)) }, ~e)"
-  },
-  {
-    DelayedModule::Decl::REWRITE_RULE, "", 0, false, 849, 25,
-    "fn:MapSingleton:\n"
-    "map(~f, ~e) where rw:subtype(~e, 'item()') -> ~f(~e)"
-  },
-  {
-    DelayedModule::Decl::FUNCTION, "filter", 2, false, 852, 1,
+    "filter", 2, false, 731, 1,
     "declare function filter($f as function(item()) as xs:boolean, $seq as item()*) as item()*\n"
     "{\n"
     "  if(empty($seq)) then ()\n"
@@ -1018,28 +851,28 @@ static const DelayedModule::Decl fn_declarations[] = {
     "    if($f(head($seq))) then head($seq) else (),\n"
     "    filter($f, tail($seq))\n"
     "  )\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "fold-left", 3, false, 861, 1,
+    "fold-left", 3, false, 740, 1,
     "declare function fold-left($f as function(item()*, item()) as item()*, $zero as item()*,\n"
     "  $seq as item()*) as item()*\n"
     "{\n"
     "  if(empty($seq)) then $zero\n"
     "  else fold-left($f, $f($zero, head($seq)), tail($seq))\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "fold-right", 3, false, 868, 1,
+    "fold-right", 3, false, 747, 1,
     "declare function fold-right($f as function(item(), item()*) as item()*, $zero as item()*,\n"
     "  $seq as item()*) as item()*\n"
     "{\n"
     "  if(empty($seq)) then $zero\n"
     "  else $f(head($seq), fold-right($f, $zero, tail($seq)))\n"
-    "}"
+    "}\n"
   },
   {
-    DelayedModule::Decl::FUNCTION, "map-pairs", 3, false, 875, 1,
+    "map-pairs", 3, false, 754, 1,
     "declare function map-pairs($f as function(item(), item()) as item()*, $seq1 as item()*,\n"
     "  $seq2 as item()*) as item()*\n"
     "{\n"
@@ -1048,62 +881,9 @@ static const DelayedModule::Decl fn_declarations[] = {
     "     $f(head($seq1), head($seq2)),\n"
     "     map-pairs($f, tail($seq1), tail($seq2))\n"
     "   )\n"
-    "}"
+    "}\n"
   },
-  {
-    DelayedModule::Decl::FUNCTION, "round", 2, false, 885, 1,
-    "declare %xqilla:inline\n"
-    "function round($arg as xs:anyAtomicType?, $precision as xs:integer) as xs:anyAtomicType?\n"
-    "{\n"
-    "  let $factor := emath:power(10, $precision)\n"
-    "  return round($arg * $factor) div $factor\n"
-    "}"
-  },
-  {
-    DelayedModule::Decl::FUNCTION, "round-half-to-even", 2, false, 892, 1,
-    "declare %xqilla:inline\n"
-    "function round-half-to-even($arg as xs:anyAtomicType?, $precision as xs:integer) as xs:anyAtomicType?\n"
-    "{\n"
-    "  let $factor := math:exp10($precision)\n"
-    "  return round-half-to-even($arg * $factor) div $factor\n"
-    "}"
-  },
-  {
-    DelayedModule::Decl::FUNCTION, "has-children", 1, false, 899, 1,
-    "declare %xqilla:inline\n"
-    "function has-children($node as node()?) as xs:boolean\n"
-    "{\n"
-    "  exists($node/child::node())\n"
-    "}"
-  },
-  {
-    DelayedModule::Decl::FUNCTION, "innermost", 1, false, 905, 1,
-    "declare %xqilla:inline\n"
-    "function innermost($nodes as node()*) as node()*\n"
-    "{\n"
-    "  $nodes except $nodes/ancestor::node()\n"
-    "}"
-  },
-  {
-    DelayedModule::Decl::FUNCTION, "outermost", 1, false, 911, 1,
-    "declare %xqilla:inline\n"
-    "function outermost($nodes as node()*) as node()*\n"
-    "{\n"
-    "  $nodes[not(ancestor::node() intersect $nodes)]\n"
-    "}"
-  },
-  {
-    DelayedModule::Decl::FUNCTION, "element-with-id", 2, false, 923, 1,
-    "declare %xqilla:inline\n"
-    "function element-with-id($arg as xs:string*, $node as node()) as element()*\n"
-    "{\n"
-    "  for $e in id($arg, $node)\n"
-    "  return typeswitch($e)\n"
-    "    case element(*, xs:ID) return $e/..\n"
-    "    default return $e\n"
-    "}"
-  },
-  { DelayedModule::Decl::NONE, 0, 0, 0, 0, 0 }
+  { 0, 0, 0, 0, 0 }
 };
 
-static const DelayedModule fn_module = { fn_file, fn_prefix, fn_uri, fn_declarations };
+static const DelayedModule fn_module = { fn_file, fn_prefix, fn_uri, fn_functions };

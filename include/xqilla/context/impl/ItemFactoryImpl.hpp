@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,14 +47,14 @@ public:
 
   /* @name Number factory methods */
 
-  virtual ATDoubleOrDerived::Ptr createDouble(double value, const DynamicContext* context);
+  virtual ATDoubleOrDerived::Ptr createDouble(const MAPM value, const DynamicContext* context);
   virtual ATDoubleOrDerived::Ptr createDouble(const XMLCh* value, const DynamicContext* context);
-  virtual ATDoubleOrDerived::Ptr createDoubleOrDerived(const XMLCh* typeURI, const XMLCh* typeName, double value, const DynamicContext* context);
+  virtual ATDoubleOrDerived::Ptr createDoubleOrDerived(const XMLCh* typeURI, const XMLCh* typeName, const MAPM value, const DynamicContext* context);
   virtual ATDoubleOrDerived::Ptr createDoubleOrDerived(const XMLCh* typeURI, const XMLCh* typeName, const XMLCh* value, const DynamicContext* context);
 
-  virtual ATFloatOrDerived::Ptr createFloat(float value, const DynamicContext* context);
+  virtual ATFloatOrDerived::Ptr createFloat(const MAPM value, const DynamicContext* context);
   virtual ATFloatOrDerived::Ptr createFloat(const XMLCh* value, const DynamicContext* context);
-  virtual ATFloatOrDerived::Ptr createFloatOrDerived(const XMLCh* typeURI, const XMLCh* typeName, float value, const DynamicContext* context);
+  virtual ATFloatOrDerived::Ptr createFloatOrDerived(const XMLCh* typeURI, const XMLCh* typeName, const MAPM value, const DynamicContext* context);
   virtual ATFloatOrDerived::Ptr createFloatOrDerived(const XMLCh* typeURI, const XMLCh* typeName, const XMLCh* value, const DynamicContext* context);
 
   virtual ATDecimalOrDerived::Ptr createInteger(const int value, const DynamicContext* context);

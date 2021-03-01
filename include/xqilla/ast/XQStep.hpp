@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@
 #include <xqilla/framework/XQillaExport.hpp>
 
 #include <xqilla/ast/ASTNodeImpl.hpp>
-#include <xqilla/items/Node.hpp>
 
 class NodeTest;
 
@@ -31,8 +30,24 @@ class NodeTest;
 class XQILLA_API XQStep : public ASTNodeImpl
 {
 public:
+  enum Axis {
+    ANCESTOR,
+    ANCESTOR_OR_SELF,
+    ATTRIBUTE,
+    CHILD,
+    DESCENDANT,
+    DESCENDANT_OR_SELF,
+    FOLLOWING,
+    FOLLOWING_SIBLING,
+    NAMESPACE,
+    PARENT,
+    PRECEDING,
+    PRECEDING_SIBLING,
+    SELF
+  };
+
   //constuctor that takes the step this XQ is refuring to
-  XQStep(Node::Axis axis, NodeTest* nodeTest, XPath2MemoryManager* memMgr);
+  XQStep(Axis axis, NodeTest* nodeTest, XPath2MemoryManager* memMgr);
   ~XQStep();
 
   virtual ASTNode* staticResolution(StaticContext *context);
@@ -43,15 +58,15 @@ public:
   NodeTest *getNodeTest() const;
   void setNodeTest(NodeTest *nodeTest);
 
-  Node::Axis getAxis() const;
-  void setAxis(Node::Axis axis);
+  Axis getAxis() const;
+  void setAxis(Axis axis);
 
-  static bool isForwardAxis(Node::Axis axis);
-  static unsigned int getAxisProperties(Node::Axis axis);
+  static bool isForwardAxis(Axis axis);
+  static unsigned int getAxisProperties(Axis axis);
 
 private:
   NodeTest* nodeTest_;
-  Node::Axis axis_;
+  Axis axis_;
 };
 
 #endif

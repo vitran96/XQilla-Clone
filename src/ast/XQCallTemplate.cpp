@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -228,7 +228,7 @@ ASTNode *XQCallTemplate::staticTypingImpl(StaticContext *context)
       _src.getStaticType() = (*inIt)->getBodyStaticAnalysis().getStaticType();
       _src.setProperties((*inIt)->getBodyStaticAnalysis().getProperties());
     } else {
-      _src.getStaticType().typeUnion((*inIt)->getBodyStaticAnalysis().getStaticType());
+      _src.getStaticType() |= (*inIt)->getBodyStaticAnalysis().getStaticType();
       _src.setProperties(_src.getProperties() & (*inIt)->getBodyStaticAnalysis().getProperties());
     }
     _src.add((*inIt)->getBodyStaticAnalysis());

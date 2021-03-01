@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,14 +48,12 @@ ASTNode* URename::staticResolution(StaticContext *context)
 {
   XPath2MemoryManager *mm = context->getMemoryManager();
 
-  ItemType *itemType1 = new (mm) ItemType(ItemType::TEST_ANYTHING);
-  itemType1->setLocationInfo(this);
-  SequenceType *targetType1 = new (mm) SequenceType(itemType1, SequenceType::PLUS);
+  SequenceType *targetType1 = new (mm) SequenceType(new (mm) SequenceType::ItemType(SequenceType::ItemType::TEST_ANYTHING),
+                                                    SequenceType::PLUS);
   targetType1->setLocationInfo(this);
 
-  ItemType *itemType2 = new (mm) ItemType(ItemType::TEST_NODE);
-  itemType2->setLocationInfo(this);
-  SequenceType *targetType2 = new (mm) SequenceType(itemType2, SequenceType::EXACTLY_ONE);
+  SequenceType *targetType2 = new (mm) SequenceType(new (mm) SequenceType::ItemType(SequenceType::ItemType::TEST_NODE),
+                                                    SequenceType::EXACTLY_ONE);
   targetType2->setLocationInfo(this);
 
   target_ = new (mm) XQTreatAs(target_, targetType1, mm, err_XUDY0027);
@@ -86,7 +84,7 @@ ASTNode *URename::staticTypingImpl(StaticContext *context)
   }
 
   if(!target_->getStaticAnalysis().getStaticType().
-     containsType(TypeFlags::ELEMENT|TypeFlags::ATTRIBUTE|TypeFlags::PI)) {
+     containsType(StaticType::ELEMENT_TYPE|StaticType::ATTRIBUTE_TYPE|StaticType::PI_TYPE)) {
     XQThrow(XPath2TypeMatchException,X("URename::staticTyping"),
             X("It is a type error for the target expression of a rename expression not to be a single element, "
               "attribute or processing instruction [err:XUTY0012]"));

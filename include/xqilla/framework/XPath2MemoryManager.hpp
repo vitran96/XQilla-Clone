@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,6 +47,9 @@ class XQILLA_API XPath2MemoryManager : public XERCES_CPP_NAMESPACE_QUALIFIER Mem
 public:
   virtual ~XPath2MemoryManager() {}
 
+  /** Use with extreme caution! */
+  virtual void reset() = 0;
+  
   /** Returns a copy of the given string */ 
   virtual const XMLCh* getPooledString(const XMLCh *src) = 0;
   virtual const XMLCh* getPooledString(const XMLCh *src, unsigned int length) = 0;
@@ -60,6 +63,9 @@ public:
 #endif  
   virtual void deallocate(void* p) = 0;
   
+  /** create a collation */
+  virtual Collation* createCollation(CollationHelper* helper) = 0;
+
   /** create a resolver */
   virtual XQillaNSResolver* createNSResolver(XERCES_CPP_NAMESPACE_QUALIFIER DOMNode *resolverNode) = 0;
   
@@ -116,8 +122,10 @@ public:
 #endif
   pointer allocate(size_t _n, const void* = 0)
   {
+#ifndef _MSC_VER
     if(_n==1)
       return (pointer)_singleton;
+#endif
     //std::cout << "XQillaAllocator::allocate(" << _n << ")" << std::endl;
     if(_memMgr)
       return _n != 0 ? static_cast<pointer>(_memMgr->allocate(_n*sizeof(_Tp))) : 0;
@@ -236,7 +244,7 @@ public:
   }
   void set(TYPE *p)
   {
-    if(p_ != 0 && p_ != p)
+    if(p_ != 0)
       p_->release();
     p_ = p;
   }
@@ -246,61 +254,6 @@ private:
   AutoRelease<TYPE> &operator=(const AutoRelease<TYPE> &);
 
   TYPE *p_;
-};
-
-template<class TYPE>
-class AutoRelease2
-{
-public:
-  AutoRelease2(TYPE *p, XPath2MemoryManager *mm)
-    : p_(p), mm_(mm) {}
-  ~AutoRelease2()
-  {
-    if(p_ != 0)
-      p_->release(mm_);
-  }
-
-  TYPE &operator*() const
-  {
-    return *p_;
-  }
-  TYPE *operator->() const
-  {
-    return p_;
-  }
-  operator TYPE*() const
-  {
-    return p_;
-  }
-  TYPE *get() const
-  {
-    return p_;
-  }
-  TYPE *adopt()
-  {
-    TYPE *tmp = p_;
-    p_ = 0;
-    return tmp;
-  }
-  TYPE *swap(TYPE *p)
-  {
-    TYPE *tmp = p_;
-    p_ = p;
-    return tmp;
-  }
-  void set(TYPE *p)
-  {
-    if(p_ != 0 && p_ != p)
-      p_->release(mm_);
-    p_ = p;
-  }
-
-private:
-  AutoRelease2(const AutoRelease<TYPE> &);
-  AutoRelease2<TYPE> &operator=(const AutoRelease2<TYPE> &);
-
-  TYPE *p_;
-  XPath2MemoryManager *mm_;
 };
 
 template<class TYPE>
@@ -344,8 +297,7 @@ public:
   }
   void set(TYPE *p)
   {
-    if(p_ != p)
-      delete p_;
+    delete p_;
     p_ = p;
   }
 
@@ -397,8 +349,7 @@ public:
   }
   void set(TYPE *p)
   {
-    if(p_ != p)
-      delete [] p_;
+    delete [] p_;
     p_ = p;
   }
 
@@ -455,7 +406,7 @@ public:
   }
   void set(TYPE *p)
   {
-    if(p_ != 0 && p_ != p)
+    if(p_ != 0)
       mmgr_->deallocate((void*)p_);
     p_ = p;
   }
@@ -468,5 +419,5 @@ private:
   XERCES_CPP_NAMESPACE_QUALIFIER MemoryManager *mmgr_;
 };
 
-#endif
+#endif //__XPATH2MEMORYMANAGER_HPP
 

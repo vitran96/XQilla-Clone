@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,9 +33,7 @@
 #include <xqilla/fastxdm/FastXDMConfiguration.hpp>
 #include <xqilla/context/ModuleResolver.hpp>
 #include <xqilla/context/URIResolver.hpp>
-#include <xqilla/runtime/Result.hpp>
 #include <xqilla/runtime/Sequence.hpp>
-
 /**
  * \example simple-basic.cpp
  *

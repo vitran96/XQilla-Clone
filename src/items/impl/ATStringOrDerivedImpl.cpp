@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -121,23 +121,107 @@ Result ATStringOrDerivedImpl::asCodepoints(const DynamicContext* context) const 
 }
 
 /* returns the substring starting at startingLoc of given length */
-ATStringOrDerived::Ptr ATStringOrDerivedImpl::substring(unsigned startIndex, unsigned endIndex, const DynamicContext* context) const
-{
-  if(startIndex > endIndex)
+ATStringOrDerived::Ptr ATStringOrDerivedImpl::substring(const Numeric::Ptr &startingLoc, const Numeric::Ptr &length, const DynamicContext* context) const {
+  const ATDecimalOrDerived::Ptr one = context->getItemFactory()->createInteger(1, context);
+  long nLength=this->getLength();
+  const ATDecimalOrDerived::Ptr strLength = context->getItemFactory()->createInteger(nLength, context); 
+ 
+  // More specifically, returns the characters in $sourceString whose position $p obeys:
+  //    fn:round($startingLoc) <= $p < fn:round($startingLoc) + fn:round($length)
+  const Numeric::Ptr startIndex = startingLoc->round(context);
+  const Numeric::Ptr endIndex = startIndex->add(length->round(context), context);
+
+  if(startIndex->greaterThan(strLength, context) || startIndex->greaterThan(endIndex, context)) {
     return context->getItemFactory()->createString(XMLUni::fgZeroLenString, context);
+  }
 
-  XMLBuffer buffer;
+  XMLBuffer buffer(1023, context->getMemoryManager());
+  Numeric::Ptr index = one;
 
-  unsigned index = 1;
-  const XMLCh *p = _value;
-  for(; *p; ++index, ++p) {
-    if(index >= endIndex) break;
-    bool pair = RegxUtil::isHighSurrogate(p[0]) && RegxUtil::isLowSurrogate(p[1]);
-    if(index >= startIndex) buffer.append(p, 1 + pair);
-    p += pair;
+  // i is kept at one less than index, since XMLCh* start at index 0
+  int i = 0;
+  // for(index = one; index <= strLength; index++)
+  for(; !index->greaterThan(strLength, context); index = index->add(one, context), i++) {
+    // if (index >= startIndex and index < endIndex), add the char at i
+    if(!index->lessThan(startIndex, context) && index->lessThan(endIndex, context))
+    {
+      buffer.append(_value[i]);
+      // if it's a non-BMP char, add the following too
+      if(RegxUtil::isHighSurrogate(_value[i]) && (i+1)<nLength && 
+         RegxUtil::isLowSurrogate(_value[i+1]))
+        buffer.append(_value[++i]);
+    }
+    // otherwise, skip the next one too
+    else if(RegxUtil::isHighSurrogate(_value[i]) && (i+1)<nLength && 
+            RegxUtil::isLowSurrogate(_value[i+1]))
+      i++;
   }
 
   return context->getItemFactory()->createString(buffer.getRawBuffer(), context);
+}
+
+/* returns the substring that occurs after the first occurence of pattern */
+ATStringOrDerived::Ptr ATStringOrDerivedImpl::substringAfter(const ATStringOrDerived::Ptr &pattern, Collation* collation, const DynamicContext* context) const {
+  unsigned int containerLength = this->getLength(); 
+  unsigned int patternLength = pattern->getLength();  
+
+	if(patternLength == 0) {
+		return this;
+	}
+
+	if(patternLength > containerLength) {
+		return context->getItemFactory()->createString(XMLUni::fgZeroLenString, context);
+	}
+
+	const XMLCh* patternStr = pattern->asString(context);
+
+	// search pattern must be shorter than (or same length as) string being searched
+	for(unsigned int i = 0; i <= (containerLength - patternLength); i++) 
+	{
+		// extract a substring of the same length of the pattern and compare them
+		const XMLCh *substr=XPath2Utils::subString(_value, i, patternLength, context->getMemoryManager());
+		bool result = (collation->compare(substr,patternStr)==0);
+
+		if(result)
+		{
+			int index = i + patternLength;
+			const XMLCh* value = XPath2Utils::subString(_value, index, containerLength - index, context->getMemoryManager());
+			return context->getItemFactory()->createString(value, context);
+		}
+	}
+	
+	return context->getItemFactory()->createString(XMLUni::fgZeroLenString, context);
+}
+
+/* returns the substring that occurs before the first occurence of pattern */
+ATStringOrDerived::Ptr ATStringOrDerivedImpl::substringBefore(const ATStringOrDerived::Ptr &pattern, Collation* collation, const DynamicContext* context) const {
+  unsigned int containerLength = this->getLength(); 
+  unsigned int patternLength = pattern->getLength();  
+
+	if(patternLength == 0) {
+		return this;
+	}
+
+	if(patternLength > containerLength) {
+		return context->getItemFactory()->createString(XMLUni::fgZeroLenString, context);
+	}
+
+	const XMLCh* patternStr = pattern->asString(context);
+
+	// search pattern must be shorter than (or same length as) string being searched
+	for(unsigned int i = 0; i <= (containerLength - patternLength); i++) 
+	{
+		// extract a substring of the same length of the pattern and compare them
+		const XMLCh *substr=XPath2Utils::subString(_value, i, patternLength, context->getMemoryManager());
+		bool result = (collation->compare(substr,patternStr)==0);
+
+		if(result)
+		{
+      const XMLCh* value = XPath2Utils::subString(_value, 0, i, context->getMemoryManager());
+			return context->getItemFactory()->createString(value, context);
+    }
+  }
+	return context->getItemFactory()->createString(XMLUni::fgZeroLenString, context);
 }
 
 unsigned int ATStringOrDerivedImpl::getLength() const {

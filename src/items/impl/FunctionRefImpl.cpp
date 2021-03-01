@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,6 @@
 #include <xqilla/ast/XQVariable.hpp>
 #include <xqilla/ast/XQFunction.hpp>
 #include <xqilla/ast/XQCastAs.hpp>
-#include <xqilla/ast/LetTuple.hpp>
-#include <xqilla/ast/XQTupleConstructor.hpp>
-#include <xqilla/ast/XQTypeAlias.hpp>
 #include <xqilla/exceptions/XPath2TypeMatchException.hpp>
 #include <xqilla/functions/FuncFactory.hpp>
 #include <xqilla/functions/FunctionSignature.hpp>
@@ -245,7 +242,9 @@ ASTNode *FunctionRefImpl::createInstance(const XMLCh *uri, const XMLCh *name, un
     cast->setExpression(var);
 
     // Create a signature for the constructor function
-    SequenceType *argType = new (mm) SequenceType((ItemType*)&ItemType::ANY_ATOMIC_TYPE, SequenceType::QUESTION_MARK);
+    SequenceType *argType = new (mm) SequenceType(SchemaSymbols::fgURI_SCHEMAFORSCHEMA,
+                                                  AnyAtomicType::fgDT_ANYATOMICTYPE,
+                                                  SequenceType::QUESTION_MARK, mm);
     argType->setLocationInfo(location);
 
     ArgumentSpec *arg = new (mm) ArgumentSpec(constructorArgName, argType, mm);
@@ -255,34 +254,6 @@ ASTNode *FunctionRefImpl::createInstance(const XMLCh *uri, const XMLCh *name, un
     args->push_back(arg);
 
     signature = new (mm) FunctionSignature(args, cast->getSequenceType(), mm);
-    signature->staticResolution(context);
-    break;
-  }
-  case ASTNode::TUPLE_CONSTRUCTOR: {
-    ArgumentSpecs *args = new (mm) ArgumentSpecs(XQillaAllocator<ArgumentSpec*>(mm));
-    args->resize(numArgs);
-
-    TupleNode *tuple = ((XQTupleConstructor*)result)->getParent();
-    while(tuple->getType() == TupleNode::LET) {
-      LetTuple *let = (LetTuple*)tuple;
-
-      XQVariable *var = new (mm) XQVariable(let->getVarURI(), let->getVarName(), mm);
-      var->setLocationInfo(location);
-      let->setExpression(var);
-
-      tuple = tuple->getParent();
-    }
-
-    ItemType *type = context->getTypeAlias(uri, name)->getType();
-    TupleMembers *members = const_cast<TupleMembers*>(type->getTupleMembers());
-    for(TupleMembers::iterator it = members->begin(); it != members->end(); ++it) {
-      (*args)[it.getValue()->getIndex()] = new (mm) ArgumentSpec(it.getValue(), mm);
-    }
-
-    SequenceType *returnType = new (mm) SequenceType(type);
-    returnType->setLocationInfo(location);
-
-    signature = new (mm) FunctionSignature(args, returnType, mm);
     signature->staticResolution(context);
     break;
   }

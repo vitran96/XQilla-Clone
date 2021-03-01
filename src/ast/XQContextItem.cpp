@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ ASTNode *XQContextItem::staticTypingImpl(StaticContext *context)
 
   _src.clear();
 
-  if(!context->getContextItemType().containsType(TypeFlags::ITEM)) {
+  if(!context->getContextItemType().containsType(StaticType::ITEM_TYPE)) {
     XQThrow(DynamicErrorException,X("XQContextItem::staticTyping"),
             X("It is an error for the context item to be undefined when using it [err:XPDY0002]"));
   }

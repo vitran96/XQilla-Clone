@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,7 +85,7 @@ XQC_ItemType typeOfItem(const Item::Ptr &item)
 {
   if(item.isNull()) return XQC_EMPTY_TYPE;
 
-  if(item->getType() == Item::NODE) {
+  if(item->isNode()) {
     const XMLCh *nodekind = ((const Node*)item.get())->dmNodeKind();
     if(nodekind == Node::document_string) {
       return XQC_DOCUMENT_TYPE;
@@ -109,8 +109,10 @@ XQC_ItemType typeOfItem(const Item::Ptr &item)
       return XQC_NAMESPACE_TYPE;
     }
   }
-  else if(item->getType() == Item::ATOMIC) {
+  else if(item->isAtomicValue()) {
     switch(((AnyAtomicType*)item.get())->getPrimitiveTypeIndex()) {
+    case AnyAtomicType::ANY_SIMPLE_TYPE:
+      return XQC_ANY_SIMPLE_TYPE;
     case AnyAtomicType::ANY_URI:
       return XQC_ANY_URI_TYPE;
     case AnyAtomicType::BASE_64_BINARY:
@@ -264,7 +266,7 @@ XQC_Error XQillaXQCSequence::node_name(const XQC_Sequence *sequence, const char 
       return XQC_NO_CURRENT_ITEM;
     }
 
-    if(me->item_->getType() != Item::NODE) {
+    if(!me->item_->isNode()) {
       return XQC_NOT_NODE;
     }
 

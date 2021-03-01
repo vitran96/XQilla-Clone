@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,10 @@ ASTNode* FunctionStaticBaseURI::staticResolution(StaticContext *context)
 {
   XPath2MemoryManager* mm=context->getMemoryManager();
 
-  ASTNode* newBlock = new (mm) XQLiteral((ItemType*)&ItemType::STRING, context->getBaseURI() ? context->getBaseURI() : XMLUni::fgZeroLenString, mm);
+  ASTNode* newBlock = new (mm) XQLiteral(SchemaSymbols::fgURI_SCHEMAFORSCHEMA,
+                                         SchemaSymbols::fgDT_ANYURI,
+                                         context->getBaseURI() ? context->getBaseURI() : XMLUni::fgZeroLenString,
+                                         AnyAtomicType::ANY_URI, mm);
   newBlock->setLocationInfo(this);
 
   return newBlock->staticResolution(context);

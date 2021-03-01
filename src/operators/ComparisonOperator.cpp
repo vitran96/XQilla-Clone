@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,8 +42,8 @@
 XERCES_CPP_NAMESPACE_USE
 #endif
 
-ComparisonOperator::ComparisonOperator(whichType type, const XMLCh* opName, const VectorOfASTNodes &args, XPath2MemoryManager* memMgr)
-  : XQOperator(type, opName, args, memMgr)
+ComparisonOperator::ComparisonOperator(const XMLCh* opName, const VectorOfASTNodes &args, XPath2MemoryManager* memMgr)
+  : XQOperator(opName, args, memMgr)
 {
 }
 
@@ -64,16 +64,16 @@ ASTNode* ComparisonOperator::staticResolution(StaticContext *context)
     //    and the implementation need not evaluate the other operand or apply the operator. However, an 
     //    implementation may choose to evaluate the other operand in order to determine whether it raises an error.
     // 3. If the atomized operand is a sequence of length greater than one, a type error is raised [err:XPTY0004].
-    ItemType *itemType = new (mm) ItemType(ItemType::TEST_ANYTHING);
-    itemType->setLocationInfo(*i);
-    SequenceType *seqType = new (mm) SequenceType(itemType, SequenceType::QUESTION_MARK);
+    SequenceType *seqType = new (mm) SequenceType(new (mm) SequenceType::ItemType(SequenceType::ItemType::TEST_ANYTHING),
+                                                  SequenceType::QUESTION_MARK);
     seqType->setLocationInfo(*i);
 
     *i = new (mm) XQTreatAs(*i, seqType, mm);
     (*i)->setLocationInfo(this);
 
     // 4. Any atomized operand that has the dynamic type xdt:untypedAtomic is cast to the type xs:string.
-    *i = new (mm) XQPromoteUntyped(*i, (ItemType*)&ItemType::STRING, mm);
+    *i = new (mm) XQPromoteUntyped(*i, SchemaSymbols::fgURI_SCHEMAFORSCHEMA,
+                                   SchemaSymbols::fgDT_STRING, mm);
     (*i)->setLocationInfo(this);
 
     *i = (*i)->staticResolution(context);
@@ -112,8 +112,8 @@ ASTNode *ComparisonOperator::staticTypingImpl(StaticContext *context)
   }
 
   if(emptyArgument)
-    _src.getStaticType() = StaticType::BOOLEAN_QUESTION;
-  else _src.getStaticType() = StaticType::BOOLEAN;
+    _src.getStaticType() = StaticType(StaticType::BOOLEAN_TYPE, 0, 1);
+  else _src.getStaticType() = StaticType(StaticType::BOOLEAN_TYPE, 1, 1);
 
   return this;
 }

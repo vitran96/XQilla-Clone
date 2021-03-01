@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,6 +50,7 @@
 #include <xqilla/context/ItemFactory.hpp>
 #include <xqilla/events/QueryPathTreeFilter.hpp>
 #include <xqilla/runtime/Sequence.hpp>
+
 #include <xercesc/framework/psvi/PSVIElement.hpp>
 #include <xercesc/framework/psvi/PSVIAttribute.hpp>
 #include <xercesc/framework/psvi/PSVIAttributeList.hpp>
@@ -87,8 +88,7 @@ static int checkGrammarResolverHack_int = checkGrammarResolverHack();
 const XMLCh DocumentCache::g_szUntyped[]= { chLatin_u, chLatin_n, chLatin_t, chLatin_y, chLatin_p, chLatin_e, chLatin_d, chNull };
 
 DocumentCacheImpl::DocumentCacheImpl(MemoryManager* memMgr, XMLGrammarPool *xmlgr)
-  : grammarPool_(xmlgr),
-    grammarResolver_(0),
+  : grammarResolver_(0),
     scanner_(0),
     entityResolver_(0),
     doPSVI_(true),
@@ -102,11 +102,11 @@ DocumentCacheImpl::DocumentCacheImpl(MemoryManager* memMgr, XMLGrammarPool *xmlg
     noNamespaceSchemaLocation_(1023, memMgr),
     memMgr_(memMgr)
 {
+  init(xmlgr);
 }
 
 DocumentCacheImpl::DocumentCacheImpl(const DocumentCacheImpl *parent, MemoryManager* memMgr)
-  : grammarPool_(parent->getGrammarResolver()->getGrammarPool()),
-    grammarResolver_(0),
+  : grammarResolver_(0),
     scanner_(0),
     entityResolver_(0),
     doPSVI_(parent->doPSVI_),
@@ -120,6 +120,8 @@ DocumentCacheImpl::DocumentCacheImpl(const DocumentCacheImpl *parent, MemoryMana
     noNamespaceSchemaLocation_(1023, memMgr),
     memMgr_(memMgr)
 {
+  init(parent->grammarResolver_->getGrammarPool());
+
   schemaLocations_.set(parent->schemaLocations_.getRawBuffer());
   noNamespaceSchemaLocation_.set(parent->noNamespaceSchemaLocation_.getRawBuffer());
 
@@ -127,30 +129,26 @@ DocumentCacheImpl::DocumentCacheImpl(const DocumentCacheImpl *parent, MemoryMana
   getScanner()->setExternalSchemaLocation(schemaLocations_.getRawBuffer());
 }
 
-GrammarResolver *DocumentCacheImpl::getGrammarResolver() const
+void DocumentCacheImpl::init(XMLGrammarPool *gramPool)
 {
-  if(grammarResolver_ == 0) {
-    const_cast<GrammarResolver*&>(grammarResolver_) = new (memMgr_) GrammarResolver(grammarPool_, memMgr_);
-    if(grammarPool_) {
-      const_cast<GrammarResolver*&>(grammarResolver_)->cacheGrammarFromParse(true);
-      const_cast<GrammarResolver*&>(grammarResolver_)->useCachedGrammarInParse(true);
+  grammarResolver_ = new (memMgr_) GrammarResolver(gramPool, memMgr_);
+  if(gramPool) {
+    grammarResolver_->cacheGrammarFromParse(true);
+    grammarResolver_->useCachedGrammarInParse(true);
 
-      // Hack around a Xerces bug, where the GrammarResolver doesn't
-      // initialise it's XSModel correctly from a locked XMLGrammarPool - jpcs
+    // Hack around a Xerces bug, where the GrammarResolver doesn't
+    // initialise it's XSModel correctly from a locked XMLGrammarPool - jpcs
 
-      // 2008/06/06 I don't think this is needed anymore - jpcs
-//       ((GrammarResolverHack*)grammarResolver_)->fGrammarPoolXSModel = gramPool->getXSModel();
-    }
+    // 2008/06/06 I don't think this is needed anymore - jpcs
+//     ((GrammarResolverHack*)grammarResolver_)->fGrammarPoolXSModel = gramPool->getXSModel();
   }
-
-  return grammarResolver_;
 }
 
 XMLScanner *DocumentCacheImpl::getScanner()
 {
   if(scanner_ == 0) {
-    scanner_ = new (memMgr_) IGXMLScanner(0, getGrammarResolver(), memMgr_);
-    scanner_->setURIStringPool(getGrammarResolver()->getStringPool());
+    scanner_ = new (memMgr_) IGXMLScanner(0, grammarResolver_, memMgr_);
+    scanner_->setURIStringPool(grammarResolver_->getStringPool());
 
     // hold the loaded schemas in the cache, so that can be reused    
     scanner_->cacheGrammarFromParse(true);
@@ -518,7 +516,7 @@ bool DocumentCacheImpl::isTypeOrDerivedFromType(const XMLCh* const uri, const XM
      XPath2Utils::equals(typeNameToCheck, SchemaSymbols::fgATTVAL_ANYTYPE))
     return true;
 
-  DatatypeValidator* dtvDerived = getGrammarResolver()->getDatatypeValidator(nullToZeroLength(uri), typeName);
+  DatatypeValidator* dtvDerived = grammarResolver_->getDatatypeValidator(nullToZeroLength(uri), typeName);
   if(dtvDerived == NULL) {
     // now lets take a look at complex stuff
     ComplexTypeInfo *cti = getComplexTypeInfo(uri, typeName);
@@ -558,7 +556,7 @@ bool DocumentCacheImpl::isTypeOrDerivedFromType(const XMLCh* const uri, const XM
      XPath2Utils::equals(uriToCheck, SchemaSymbols::fgURI_SCHEMAFORSCHEMA) )
     return dtvDerived->isAtomic();
 
-  DatatypeValidator* dtvBase = getGrammarResolver()->getDatatypeValidator(nullToZeroLength(uriToCheck), typeNameToCheck);
+  DatatypeValidator* dtvBase = grammarResolver_->getDatatypeValidator(nullToZeroLength(uriToCheck), typeNameToCheck);
   if(dtvBase==NULL)
     return false;
   while(dtvDerived != 0) {
@@ -576,7 +574,7 @@ bool DocumentCacheImpl::isTypeDefined(const XMLCh* const uri, const XMLCh* const
   if(getComplexTypeInfo(uri, typeName) != NULL)
     return true;
 
-  if(getGrammarResolver()->getDatatypeValidator(nullToZeroLength(uri), typeName) != NULL)
+  if(grammarResolver_->getDatatypeValidator(nullToZeroLength(uri), typeName) != NULL)
     return true;
 
   // these types are not present in the XMLSchema grammar, but they are defined
@@ -693,24 +691,29 @@ void DocumentCacheImpl::loadSchema(const XMLCh* const uri, const XMLCh* location
 
 unsigned int DocumentCacheImpl::getSchemaUriId(const XMLCh* uri) const
 {
-  return getGrammarResolver()->getStringPool()->getId(uri);
+  return grammarResolver_->getStringPool()->getId(uri);
 }
 
 const XMLCh* DocumentCacheImpl::getSchemaUri(unsigned int id) const
 {
-  return getGrammarResolver()->getStringPool()->getValueForId(id);
+  return grammarResolver_->getStringPool()->getValueForId(id);
+}
+
+GrammarResolver *DocumentCacheImpl::getGrammarResolver() const
+{
+  return grammarResolver_;
 }
 
 DatatypeValidator*  DocumentCacheImpl::getDatatypeValidator(const XMLCh* uri, const XMLCh* typeName) const
 {
-  return getGrammarResolver()->getDatatypeValidator(nullToZeroLength(uri), typeName);
+  return grammarResolver_->getDatatypeValidator(nullToZeroLength(uri), typeName);
 }
 
 SchemaElementDecl* DocumentCacheImpl::getElementDecl(const XMLCh* elementUri, const XMLCh* elementName) const
 {
-  XMLSchemaDescription* gramDesc = getGrammarResolver()->getGrammarPool()->createSchemaDescription(elementUri);
+  XMLSchemaDescription* gramDesc = grammarResolver_->getGrammarPool()->createSchemaDescription(elementUri);
   Janitor<XMLSchemaDescription> janName(gramDesc);
-  SchemaGrammar* schGrammar = (SchemaGrammar*)getGrammarResolver()->getGrammar(gramDesc);
+  SchemaGrammar* schGrammar = (SchemaGrammar*)grammarResolver_->getGrammar(gramDesc);
   if(schGrammar == NULL) return NULL;
 
   // find the definition for this node, as a global definition
@@ -720,9 +723,9 @@ SchemaElementDecl* DocumentCacheImpl::getElementDecl(const XMLCh* elementUri, co
 
 SchemaAttDef* DocumentCacheImpl::getAttributeDecl(const XMLCh* attributeUri, const XMLCh* attributeName) const
 {
-  XMLSchemaDescription* gramDesc = getGrammarResolver()->getGrammarPool()->createSchemaDescription(attributeUri);
+  XMLSchemaDescription* gramDesc = grammarResolver_->getGrammarPool()->createSchemaDescription(attributeUri);
   Janitor<XMLSchemaDescription> janName(gramDesc);
-  SchemaGrammar* schGrammar = (SchemaGrammar*)getGrammarResolver()->getGrammar(gramDesc);
+  SchemaGrammar* schGrammar = (SchemaGrammar*)grammarResolver_->getGrammar(gramDesc);
   if(schGrammar==NULL) return NULL;
 
   // find the definition for this node, as a global definition
@@ -731,7 +734,7 @@ SchemaAttDef* DocumentCacheImpl::getAttributeDecl(const XMLCh* attributeUri, con
 
 ComplexTypeInfo*  DocumentCacheImpl::getComplexTypeInfo(const XMLCh* uri, const XMLCh* typeName) const
 {
-  Grammar* grammar = getGrammarResolver()->getGrammar(uri);
+  Grammar* grammar = grammarResolver_->getGrammar(uri);
   if(grammar==NULL) return NULL;
   if(grammar->getGrammarType() != Grammar::SchemaGrammarType) return NULL;
 
@@ -750,7 +753,7 @@ ComplexTypeInfo*  DocumentCacheImpl::getComplexTypeInfo(const XMLCh* uri, const 
 DocumentCache *DocumentCacheImpl::createDerivedCache(MemoryManager *memMgr) const
 {
   // lock the grammar pool, so we can share it across threads
-  getGrammarResolver()->getGrammarPool()->lockPool();
+  grammarResolver_->getGrammarPool()->lockPool();
 
   // Construct a new DocumentCacheImpl, based on this one
   return new (memMgr) DocumentCacheImpl(this, memMgr);

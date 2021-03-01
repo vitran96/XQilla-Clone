@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,26 +36,24 @@ XQInlineFunction::XQInlineFunction(XQUserFunction *func, XPath2MemoryManager *mm
     prefix_(0),
     uri_(0),
     name_(0),
-    type_(new (mm) ItemType(new (mm) FunctionSignature(func->getSignature(), mm), 0)),
+    numArgs_((unsigned int)(func->getSignature()->argSpecs ? func->getSignature()->argSpecs->size() : 0)),
+    signature_(new (mm) FunctionSignature(func->getSignature(), mm)),
     instance_(0)
 {
 }
 
 XQInlineFunction::XQInlineFunction(XQUserFunction *func, const XMLCh *prefix, const XMLCh *uri, const XMLCh *name,
-  ItemType *type, ASTNode *instance, XPath2MemoryManager *mm)
+                                   unsigned int numArgs, FunctionSignature *signature, ASTNode *instance,
+                                   XPath2MemoryManager *mm)
   : ASTNodeImpl(INLINE_FUNCTION, mm),
     func_(func),
     prefix_(prefix),
     uri_(uri),
     name_(name),
-    type_(type),
+    numArgs_(numArgs),
+    signature_(signature),
     instance_(instance)
 {
-}
-
-unsigned int XQInlineFunction::getNumArgs() const
-{
-  return type_->getFunctionSignature()->numArgs();
 }
 
 ASTNode *XQInlineFunction::staticResolution(StaticContext *context)
@@ -63,9 +61,9 @@ ASTNode *XQInlineFunction::staticResolution(StaticContext *context)
   XPath2MemoryManager *mm = context->getMemoryManager();
 
   func_->staticResolutionStage1(context);
-  type_->staticResolution(context, this);
+  signature_->staticResolution(context);
 
-  instance_ = FunctionRefImpl::createInstance(func_, type_->getFunctionSignature(), mm, this);
+  instance_ = FunctionRefImpl::createInstance(func_, signature_, mm, this);
   instance_ = instance_->staticResolution(context);
 
   func_->staticResolutionStage2(context);
@@ -80,19 +78,20 @@ ASTNode *XQInlineFunction::staticTypingImpl(StaticContext *context)
   _src.addExceptContextFlags(instance_->getStaticAnalysis());
 
   // Remove the argument variables
-  if(type_->getFunctionSignature()->argSpecs) {
-    ArgumentSpecs::const_iterator argsIt = type_->getFunctionSignature()->argSpecs->begin();
-    for(; argsIt != type_->getFunctionSignature()->argSpecs->end(); ++argsIt) {
+  if(signature_->argSpecs) {
+    ArgumentSpecs::const_iterator argsIt = signature_->argSpecs->begin();
+    for(; argsIt != signature_->argSpecs->end(); ++argsIt) {
       _src.removeVariable((*argsIt)->getURI(), (*argsIt)->getName());
     }
   }
 
-  _src.getStaticType() = type_;
+  // TBD Using getMemoryManager() might not be thread safe in DB XML - jpcs
+  _src.getStaticType() = StaticType(getMemoryManager(), numArgs_, instance_->getStaticAnalysis().getStaticType());
 
   return this;
 }
 
 Result XQInlineFunction::createResult(DynamicContext *context, int flags) const
 {
-  return (Item::Ptr)new FunctionRefImpl(prefix_, uri_, name_, type_->getFunctionSignature(), instance_, _src, context);
+  return (Item::Ptr)new FunctionRefImpl(prefix_, uri_, name_, signature_, instance_, _src, context);
 }

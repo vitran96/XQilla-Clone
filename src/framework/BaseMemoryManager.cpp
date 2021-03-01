@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,17 +23,23 @@
 #include <xercesc/util/XMLString.hpp>
 #include <xercesc/util/RuntimeException.hpp>
 #include <xercesc/util/XMLUni.hpp>
+#if _XERCES_VERSION < 30000
+#include <xercesc/util/HashPtr.hpp>
+#endif
 
+#if defined(XERCES_HAS_CPP_NAMESPACE)
+XERCES_CPP_NAMESPACE_USE
+#endif
+
+#include <xqilla/framework/StringPool.hpp>
 #include <xqilla/exceptions/XQillaException.hpp>
 #include <xqilla/utils/XStr.hpp>
+#include <xqilla/context/impl/CollationImpl.hpp>
 #include <xqilla/dom-api/impl/XQillaNSResolverImpl.hpp>
 #include "../context/impl/VarTypeStoreImpl.hpp"
 #include <xqilla/items/impl/ATDecimalOrDerivedImpl.hpp>
-#include <xqilla/framework/StringPool.hpp>
 
 #include <iostream>
-
-XERCES_CPP_NAMESPACE_USE;
 
 static const unsigned int CHUNK_SIZE = 32 * 1024;
 #if (defined(__HP_aCC) && defined(__ia64)) || defined(__sparcv9)
@@ -46,33 +52,29 @@ static const unsigned int CHUNK_SIZE = 32 * 1024;
 
 #define PAD ((sizeof(MemList) + ALLOC_ALIGN - 1)&~(ALLOC_ALIGN-1))
 
-BaseMemoryManager::BaseMemoryManager()
-  : fCurrentBlock(0),
-    objectsAllocated_(0),
-    totalMemoryAllocated_(0),
-    fStringPool(0),
-    fIntegerPool(0)
-{
-}
-
 BaseMemoryManager::~BaseMemoryManager() 
 {
 }
 
+void BaseMemoryManager::reset()
+{
+  releaseAll();
+  initialise();
+}
+
 void BaseMemoryManager::initialise()
 {
+  fCurrentBlock = 0;
+  objectsAllocated_ = 0;
+  totalMemoryAllocated_ = 0;
   fStringPool = new (this) StringPool(this);
+  fIntegerPool = 0;
 }
 
 void BaseMemoryManager::releaseAll()
 {
-  if(fIntegerPool) {
-    HashMap<int,ATDecimalOrDerived*>::iterator i = fIntegerPool->begin();
-    for(; i != fIntegerPool->end(); ++i) {
-      delete i.getValue();
-    }
-  }
-
+  if (fIntegerPool)
+    fIntegerPool->cleanup();
   // Run backwards through the linked list, deleting the blocks of memory
   while(fCurrentBlock) {
     MemList *prev = fCurrentBlock->prev;
@@ -282,6 +284,11 @@ void BaseMemoryManager::dumpStatistics() const
   std::cout << "\tTotal Memory Allocated: " << (unsigned int)totalMemoryAllocated_ << std::endl;
 }
 
+/** create a collation */
+Collation* BaseMemoryManager::createCollation(CollationHelper* helper) {
+  return new (this) CollationImpl(this,helper);
+}
+
 /** create a resolver */
 XQillaNSResolver* BaseMemoryManager::createNSResolver(DOMNode *resolverNode) {
   return new (this) XQillaNSResolverImpl(this, resolverNode);
@@ -293,18 +300,19 @@ VariableTypeStore* BaseMemoryManager::createVariableTypeStore() {
 } 
 
 /** create a ATDecimalOrDerived for the given integer */
-ATDecimalOrDerived* BaseMemoryManager::createInteger(int value)
-{
-  if(!fIntegerPool)
-    fIntegerPool = new (this) HashMap<int,ATDecimalOrDerived*>(true, this);
+ATDecimalOrDerived* BaseMemoryManager::createInteger(int value) {
+  if (!fIntegerPool)
+#if _XERCES_VERSION >= 30000
+    fIntegerPool = new (this) RefHashTableOf<ATDecimalOrDerived, PtrHasher>(53, true, this);
+#else
+    fIntegerPool = new (this) RefHashTableOf<ATDecimalOrDerived>(53,true, new (this) HashPtr(),this);
+#endif
 
-  size_t hash = fIntegerPool->getHash(value);
-  HashMap<int,ATDecimalOrDerived*>::iterator i =
-    fIntegerPool->find(value, hash);
-  if(i != fIntegerPool->end()) return i.getValue();
-
-  ATDecimalOrDerived *item = new ATDecimalOrDerivedImpl(value);
-  item->incrementRefCount();
-  fIntegerPool->put(value, hash, item);
-  return item;
+  ATDecimalOrDerived* itemValue=fIntegerPool->get((const void*)((size_t)value));
+  if(itemValue!=NULL)
+      return itemValue;
+  itemValue=new ATDecimalOrDerivedImpl(value);
+  itemValue->incrementRefCount();
+  fIntegerPool->put((void*)((size_t)value), itemValue);
+  return itemValue;
 }

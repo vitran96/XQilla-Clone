@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,10 +30,9 @@ public:
   ResultBuffer(const Result &result, unsigned int readCount = ResultBufferImpl::UNLIMITED_COUNT);
   ResultBuffer(const Item::Ptr &item, unsigned int readCount = ResultBufferImpl::UNLIMITED_COUNT);
   ResultBuffer(ResultBufferImpl *impl, unsigned start = 0);
-  ResultBuffer();
 
   /// Creates a result that returns the same items as the one used to construct this buffer
-  Result createResult() const;
+  Result createResult();
 
   bool isNull() const
   {

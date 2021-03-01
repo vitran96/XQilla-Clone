@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,10 @@ class XQILLA_API ATQNameOrDerivedImpl : public ATQNameOrDerived
 {
 
 public:
+
+  /* constructor */
   ATQNameOrDerivedImpl(const XMLCh* typeURI, const XMLCh* typeName, const XMLCh* value, const StaticContext* context);
+
   ATQNameOrDerivedImpl(const XMLCh* typeURI, const XMLCh* typeName, const XMLCh* uri, const XMLCh* prefix, const XMLCh* name, const StaticContext* context);
   
   virtual void *getInterface(const XMLCh *name) const;
@@ -66,7 +69,6 @@ public:
   /** Returns less than 0 if this is less that other,
       0 if they are the same, and greater than 0 otherwise */
   virtual int compare(const ATQNameOrDerived::Ptr &other, const DynamicContext *context) const;
-  virtual size_t hash(const Collation *collation, const DynamicContext *context) const;
  
   /* Get the primitive index associated with this type */
   static AnyAtomicType::AtomicObjectType getTypeIndex(); 
@@ -101,4 +103,4 @@ private:
  
 };
 
-#endif
+#endif // _ATQNAMEORDERIVEDIMPL_HPP

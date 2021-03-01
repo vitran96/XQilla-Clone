@@ -14,11 +14,9 @@ declare variable $releaseOptLevel := "MaxSpeed";
 declare variable $warnLevel := "Level3";
 declare variable $debugInfo := "ProgramDatabase";
 declare variable $sourcePath := doc($projectFile)/projects/variable[@name="sourcePath"];
-declare variable $outputBase := doc($projectFile)/projects/variable[@name="outputBase.10.0"];
 declare variable $dllType := "dll";
 declare variable $appType := "Application";
 declare variable $libprop := "library.props";
-
 
 declare function local:genImportProperty($libprop)
 {
@@ -34,8 +32,8 @@ declare function local:indent($n)
 
 declare function local:getPlatforms($version) 
 {
-  if ($version eq "7.10") then ("Win32")
-  else ("Win32", "x64", "IA64")
+  if ($version eq "14.0") then ("Win32", "x64", "ARM")
+  else ("Win32", "x64")
 };
 
 declare function local:getGuid($project)
@@ -72,11 +70,19 @@ declare function local:configurationType($project, $config)
   else error(QName("","xqilla"),"configurationType:unkown project type")
 };
 
+declare function local:getPlatformToolset($vsversion)
+{
+  if ($vsversion = "10.0") then "v100"
+  else if ($vsversion = "11.0") then "v110"
+  else "v140"
+};
+
 declare function local:generateConfigurations($project, $vsversion)
 {
   for $platform in local:getPlatforms($vsversion) return
     for $config in local:getConfiguration($project) 
-      let $configType := local:configurationType($project,$config)	    
+      let $configType := local:configurationType($project,$config)
+      let $platformToolset := local:getPlatformToolset($vsversion)	    
       return 
       (local:indent(2),<PropertyGroup xmlns="http://schemas.microsoft.com/developer/msbuild/2003" 
                         Condition="'$(Configuration)|$(Platform)'=={concat("'",$config,"|",$platform,"'")}"
@@ -84,6 +90,7 @@ declare function local:generateConfigurations($project, $vsversion)
         {local:indent(4)}<ConfigurationType>{$configType}</ConfigurationType>
 	{local:indent(4)}<UseOfMfc>false</UseOfMfc>
 	{local:indent(4)}<CharacterSet>MultiByte</CharacterSet>
+	{local:indent(4)}<PlatformToolset>{$platformToolset}</PlatformToolset>
       {local:indent(2)}</PropertyGroup>
       )
 };
@@ -122,9 +129,10 @@ declare function local:windowsPath($path) as xs:string
   translate($path,"/","\\")
 };
 
-declare function local:generateOutDir($config)
+declare function local:generateOutDir($config, $vsversion)
 {
-  local:windowsPath(concat($outputBase, "$(Platform)", "/", $config, "/"))
+  let $outputBase := doc($projectFile)/projects/variable[@name=concat("outputBase.", $vsversion)]
+  return local:windowsPath(concat($outputBase, "$(Platform)", "/", $config, "/"))
 };
 
 (:becaues zlib has different 32 and 64 bits platform libraries, so use another getLibName:)
@@ -171,7 +179,7 @@ declare function local:genDynamicMacros($project, $vsversion)
       for $config  in local:getConfiguration($project) return
         (local:indent(4),<OutDir xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
                            Condition="'$(Configuration)|$(Platform)'=={concat("'",$config,"|",$platform,"'")}">
-          {local:generateOutDir($config)}</OutDir>,
+          {local:generateOutDir($config, $vsversion)}</OutDir>,
 	 local:indent(4),<IntDir xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
                            Condition="'$(Configuration)|$(Platform)'=={concat("'",$config,"|",$platform,"'")}"> 
 	  {concat("./$(OutDir)",$project/@name,"\")}</IntDir>,
@@ -194,6 +202,11 @@ declare function local:isDebug($config) as xs:boolean
 declare function local:isRelease($config) as xs:boolean
 {
   contains($config,"Release")
+};
+
+declare function local:isStatic($config) as xs:boolean
+{
+  contains($config,"Static")
 };
 
 declare function local:optLevel($config)
@@ -324,7 +337,7 @@ declare function local:makeModuleDefinition($project,$config)
 declare function local:generateCustomBuildTool($project,$config)
 { 
     if (not(empty($project/event[@name="custom"]))) then 
-        let $commandtext := $project/event[@name="custom"]/command[contains(@config,$config)]/text()
+        let $commandtext := $project/event[@name="custom"]/command[matches(@config,$config)]/text()
         let $outputs := concat($project/event[@name="custom"]/output,";%(Outputs)")
         return (	  
             local:indent(4),<CustomBuildStep xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
@@ -339,9 +352,41 @@ declare function local:generateCustomBuildTool($project,$config)
 	    {local:indent(6)}<Command>{$commandtext}</Command>
 	    {local:indent(6)}<Message>{$message}</Message>
 	    {local:indent(4)}</PostBuildEvent>)
+    else if (not(empty($project/event[@name="prebuild"]))) then 
+	let $commandtext := $project/event[@name="prebuild"]/command[contains(@config,$config)]/text()
+        let $message := $project/event[@name="prebuild"]/description
+        return (
+	    local:indent(4),<PreBuildEvent xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+	    {local:indent(6)}<Command>{$commandtext}</Command>
+	    {local:indent(6)}<Message>{$message}</Message>
+	    {local:indent(4)}</PreBuildEvent>)
      else ()
 };
 
+declare function local:enableSharedXerces($config)
+{
+	if (local:isStatic($config)) then "OFF"
+	else "ON"
+};
+
+declare function local:buildXerces($project,$config,$vsversion, $platform)
+{ 
+    if (not(empty($project/xerces))) then 
+	let $prefixtext := $project/xerces/prefixCommand[contains(@config,$config)]/text()
+        let $suffixtext := $project/xerces/suffixCommand[contains(@config,$config)]/text()
+	let $sharedBuild := local:enableSharedXerces($config)
+	let $cmakePlat := if($platform = "Win32") then "" else if($platform = "x64") then "Win64" else $platform
+	let $cmakePlatform := if($vsversion = "10.0") then concat(' -G "Visual Studio 10 2010 ',$cmakePlat,'" ')
+		 else if($vsversion = "11.0") then concat(' -G "Visual Studio 11 2012 ',$cmakePlat,'" ')
+		 else concat(' -G "Visual Studio 14 2015 ',$cmakePlat,'" ')
+ 	let $commandtext := concat($prefixtext,$sharedBuild,$cmakePlatform, $suffixtext)
+        return (
+	    local:indent(4),<PreBuildEvent xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+	    {local:indent(6)}<Command>{$commandtext}</Command>
+	    {local:indent(6)}<Message>Building Xerces-C</Message>
+	    {local:indent(4)}</PreBuildEvent>)
+     else ()
+};
 
 declare function local:genDefinition($project,$vsversion)
 {
@@ -419,6 +464,7 @@ declare function local:genDynamicDefinition($project,$vsversion)
         {if ($static) then local:generateStaticLink($project,$platform,$config, $vsversion)
         else local:generateDynamicLink($project,$platform,$config,$vsversion)}
 	{local:generateCustomBuildTool($project,$config)}
+	{local:buildXerces($project,$config,$vsversion, $platform)}
       {local:indent(2)}</ItemDefinitionGroup>
     )
 };
@@ -433,6 +479,7 @@ declare function local:genStaticDefinition($project, $vsversion)
 	{local:generateConfigCompiler($project,$platform,$config)}
 	{local:generateStaticLink($project,$platform,$config,$vsversion)}
 	{local:generateCustomBuildTool($project,$config)}
+	{local:buildXerces($project,$config,$vsversion, $platform)}
       {local:indent(2)}</ItemDefinitionGroup>
     )
 };
@@ -511,12 +558,10 @@ declare function local:getConfiguration($project)
 
 declare function local:getOutputName($project, $vsversion)
 {
-  let $vsname := if($vsversion = "7.10") then "VC7.1" 
-	         else if($vsversion = "8.00") then "VC8"
-		 else "VC10"
-  let $postfix := if($vsversion = "10.0") then ".vcxproj" 
-		  else ".vcproj"
-  return concat($outputPath, "/", $vsname, "/", $project/@name, $postfix)
+  let $vsname := if($vsversion = "10.0") then "VC10"
+		 else if($vsversion = "11.0") then "VC11"
+		 else "VC14"
+  return concat($outputPath, "/", $vsname, "/", $project/@name, ".vcxproj")
 };
 
 declare function local:getVsversion()

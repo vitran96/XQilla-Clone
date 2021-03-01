@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,40 +26,34 @@
 #include <xqilla/items/ATDecimalOrDerived.hpp>
 #include <xqilla/items/AnyAtomicType.hpp>
 #include <xqilla/context/DynamicContext.hpp>
-#include <xqilla/framework/BasicMemoryManager.hpp>
-
-#include <xercesc/util/XMLUniDefs.hpp>
 
 /*static*/ const XMLCh Divide::name[]={ XERCES_CPP_NAMESPACE_QUALIFIER chLatin_D, XERCES_CPP_NAMESPACE_QUALIFIER chLatin_i, XERCES_CPP_NAMESPACE_QUALIFIER chLatin_v, XERCES_CPP_NAMESPACE_QUALIFIER chNull };
 
 Divide::Divide(const VectorOfASTNodes &args, XPath2MemoryManager* memMgr)
-  : ArithmeticOperator(DIVIDE, name, args, memMgr)
+  : ArithmeticOperator(name, args, memMgr)
 {
   // Nothing to do
 }
 
-void Divide::calculateStaticType(StaticContext *context)
+void Divide::calculateStaticType()
 {
   const StaticType &arg0 = _args[0]->getStaticAnalysis().getStaticType();
   const StaticType &arg1 = _args[1]->getStaticAnalysis().getStaticType();
 
-  calculateStaticTypeForNumerics(arg0, arg1, context);
+  calculateStaticTypeForNumerics(arg0, arg1);
 
   // Dividing a duration by a number
-  if(arg0.containsType(TypeFlags::DAY_TIME_DURATION|TypeFlags::YEAR_MONTH_DURATION)
-     && arg1.containsType(TypeFlags::NUMERIC)) {
-    StaticType tmp(BasicMemoryManager::get());
-    tmp = arg0;
-    tmp.typeIntersect(TypeFlags::DAY_TIME_DURATION|TypeFlags::YEAR_MONTH_DURATION);
-    _src.getStaticType().typeUnion(tmp);
+  if(arg0.containsType(StaticType::DAY_TIME_DURATION_TYPE|StaticType::YEAR_MONTH_DURATION_TYPE)
+     && arg1.containsType(StaticType::NUMERIC_TYPE)) {
+    _src.getStaticType() |= arg0 & (StaticType::DAY_TIME_DURATION_TYPE|StaticType::YEAR_MONTH_DURATION_TYPE);
   }
 
   // Dividing a duration by a duration
-  if(arg0.containsType(TypeFlags::DAY_TIME_DURATION) && arg1.containsType(TypeFlags::DAY_TIME_DURATION)) {
-    _src.getStaticType().typeUnion(StaticType::DECIMAL);
+  if(arg0.containsType(StaticType::DAY_TIME_DURATION_TYPE) && arg1.containsType(StaticType::DAY_TIME_DURATION_TYPE)) {
+    _src.getStaticType() |= StaticType::DECIMAL_TYPE;
   }
-  if(arg0.containsType(TypeFlags::YEAR_MONTH_DURATION) && arg1.containsType(TypeFlags::YEAR_MONTH_DURATION)) {
-    _src.getStaticType().typeUnion(StaticType::DECIMAL);
+  if(arg0.containsType(StaticType::YEAR_MONTH_DURATION_TYPE) && arg1.containsType(StaticType::YEAR_MONTH_DURATION_TYPE)) {
+    _src.getStaticType() |= StaticType::DECIMAL_TYPE;
   }
 }
 

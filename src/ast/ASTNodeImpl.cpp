@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -95,7 +95,7 @@ bool ASTNodeImpl::isDateOrTimeAndHasNoTimezone(StaticContext *context) const
 {
   // To be safe, assume any value that contains a timezone might
   // not have one specified.
-  return _src.getStaticType().containsType(TypeFlags::TIMEZONE);
+  return _src.getStaticType().containsType(StaticType::TIMEZONE_TYPE);
 }
 
 ASTNode::whichType ASTNodeImpl::getType() const
@@ -118,6 +118,9 @@ Result ASTNodeImpl::iterateResult(const Result &contextItems, DynamicContext* co
   }
   return ClosureResult::create(getStaticAnalysis(), context, new NavStepResult(contextItems, this, 0));
 }
+
+#include <iostream>
+#include <xqilla/optimizer/ASTToXML.hpp>
 
 BoolResult ASTNodeImpl::boolResult(DynamicContext* context) const
 {

@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,14 +24,14 @@
 
 class XQUserFunction;
 class FunctionSignature;
-class ItemType;
 
 class XQILLA_API XQInlineFunction : public ASTNodeImpl
 {
 public:
   XQInlineFunction(XQUserFunction *func, XPath2MemoryManager *mm);
   XQInlineFunction(XQUserFunction *func, const XMLCh *prefix, const XMLCh *uri, const XMLCh *name,
-                   ItemType *type, ASTNode *instance, XPath2MemoryManager *mm);
+                   unsigned int numArgs, FunctionSignature *signature, ASTNode *instance,
+                   XPath2MemoryManager *mm);
 
   virtual ASTNode *staticResolution(StaticContext *context);
   virtual ASTNode *staticTypingImpl(StaticContext *context);
@@ -40,12 +40,13 @@ public:
   const XMLCh *getPrefix() const { return prefix_; }
   const XMLCh *getURI() const { return uri_; }
   const XMLCh *getName() const { return name_; }
-  unsigned int getNumArgs() const;
+  unsigned int getNumArgs() const { return numArgs_; }
 
   XQUserFunction *getUserFunction() const { return func_; }
   void setUserFunction(XQUserFunction *func) { func_ = func; }
 
-  ItemType *getItemType() const { return type_; }
+  FunctionSignature *getSignature() const { return signature_; }
+  void setSignature(FunctionSignature *s) { signature_ = s; }
 
   ASTNode *getInstance() const { return instance_; }
   void setInstance(ASTNode *i) { instance_ = i; }
@@ -53,7 +54,8 @@ public:
 private:
   XQUserFunction *func_;
   const XMLCh *prefix_, *uri_, *name_;
-  ItemType *type_;
+  unsigned int numArgs_;
+  FunctionSignature *signature_;
   ASTNode *instance_;
 };
 

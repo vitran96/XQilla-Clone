@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@
 #include <xqilla/exceptions/NamespaceLookupException.hpp>
 #include <xqilla/exceptions/XPath2TypeCastException.hpp>
 #include <xqilla/exceptions/StaticErrorException.hpp>
-#include <xqilla/exceptions/DynamicErrorException.hpp>
 #include <xercesc/util/XMLUni.hpp>
 #include <xercesc/util/XMLUniDefs.hpp>
 #include <xercesc/framework/XMLBuffer.hpp>
@@ -36,11 +35,8 @@
 #include <xqilla/framework/XPath2MemoryManager.hpp>
 #include <xqilla/context/DynamicContext.hpp>
 #include <xqilla/context/ItemFactory.hpp>
-#include <xqilla/functions/FuncFactory.hpp>
-#include <xqilla/ast/XQFunction.hpp>
 
 #include <xercesc/util/XMLString.hpp>
-#include <xercesc/util/XMLChar.hpp>
 
 #if defined(XERCES_HAS_CPP_NAMESPACE)
 XERCES_CPP_NAMESPACE_USE
@@ -140,8 +136,9 @@ AnyAtomicType::Ptr ATQNameOrDerivedImpl::castAsInternal(AtomicObjectType targetI
                                                         const XMLCh* targetType, const DynamicContext* context) const
 {
   switch (targetIndex) {
+    case ANY_SIMPLE_TYPE:
     case UNTYPED_ATOMIC:
-      // untypedAtomic follows the same casting rules as string.
+      //anySimpleType and untypedAtomic follow the same casting rules as string.
     case STRING: {
       return context->getItemFactory()->createDerivedFromAtomicType(targetIndex, targetURI, targetType,
                                                                     this->asLexicalString(context), context);
@@ -224,23 +221,6 @@ int ATQNameOrDerivedImpl::compare(const ATQNameOrDerived::Ptr &other, const Dyna
   return XPath2Utils::compare(_uri, otherImpl->_uri);
 }
 
-size_t ATQNameOrDerivedImpl::hash(const Collation *collation, const DynamicContext *context) const
-{
-  uint32_t pc = 0xF00BAA56, pb = 0xBADFACE2;
-
-  // Hash the sort type
-  uint32_t ptype = (uint32_t)getSortType();
-  hashword2(&ptype, 1, &pc, &pb);
-
-  // Hash the name
-  hashlittle2((void*)_name, XPath2Utils::uintStrlen(_name) * sizeof(XMLCh), &pc, &pb);
-
-  // Hash the uri
-  hashlittle2((void*)_uri, XPath2Utils::uintStrlen(_uri) * sizeof(XMLCh), &pc, &pb);
-
-  return (size_t)pc + (((size_t)pb)<<32);
-}
-
 const XMLCh* ATQNameOrDerivedImpl::getPrimitiveName()  {
   return SchemaSymbols::fgDT_QNAME;
 }
@@ -248,94 +228,3 @@ const XMLCh* ATQNameOrDerivedImpl::getPrimitiveName()  {
 AnyAtomicType::AtomicObjectType ATQNameOrDerivedImpl::getPrimitiveTypeIndex() const {
     return this->getTypeIndex();
 }
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-static Result prefixFromQName(const VectorOfASTNodes &args, DynamicContext *context,
-                              const LocationInfo *info)
-{
-  Item::Ptr item = args[0]->createResult(context)->next(context);
-  if(item.isNull()) return 0;
-
-  const XMLCh *prefix = ((ATQNameOrDerived*)item.get())->getPrefix();
-  if(!prefix || !*prefix) return 0;
-
-  return (Item::Ptr)context->getItemFactory()->createStringOrDerived(
-    SchemaSymbols::fgURI_SCHEMAFORSCHEMA, SchemaSymbols::fgDT_NCNAME, prefix, context);
-}
-
-static const XMLCh prefixFromQNameName[] =
-{ 'p', 'r', 'e', 'f', 'i', 'x', '-', 'f', 'r', 'o', 'm', '-', 'Q', 'N', 'a', 'm', 'e', 0 };
-
-static SimpleBuiltinFactory prefixFromQNameFactory(
-  XQFunction::XMLChFunctionURI, prefixFromQNameName, 1,
-  "($arg as xs:QName?) as xs:NCName?", prefixFromQName
-);
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-static Result namespaceURIFromQName(const VectorOfASTNodes &args, DynamicContext *context,
-                                    const LocationInfo *info)
-{
-  Item::Ptr item = args[0]->createResult(context)->next(context);
-  if(item.isNull()) return 0;
-  return (Item::Ptr)context->getItemFactory()->createAnyURI(((ATQNameOrDerived*)item.get())->getURI(), context);
-}
-
-static const XMLCh namespaceURIFromQNameName[] =
-{ 'n', 'a', 'm', 'e', 's', 'p', 'a', 'c', 'e', '-', 'u', 'r', 'i', '-', 'f', 'r', 'o', 'm', '-', 'Q', 'N', 'a', 'm', 'e', 0 };
-
-static SimpleBuiltinFactory namespaceURIFromQNameFactory(
-  XQFunction::XMLChFunctionURI, namespaceURIFromQNameName, 1,
-  "($arg as xs:QName?) as xs:anyURI?", namespaceURIFromQName
-);
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-static Result localNameFromQName(const VectorOfASTNodes &args, DynamicContext *context,
-                                    const LocationInfo *info)
-{
-  Item::Ptr item = args[0]->createResult(context)->next(context);
-  if(item.isNull()) return 0;
-  return (Item::Ptr)context->getItemFactory()->createStringOrDerived(SchemaSymbols::fgURI_SCHEMAFORSCHEMA,
-    SchemaSymbols::fgDT_NCNAME, ((ATQNameOrDerived*)item.get())->getName(), context);
-}
-
-static const XMLCh localNameFromQNameName[] =
-{ 'l', 'o', 'c', 'a', 'l', '-', 'n', 'a', 'm', 'e', '-', 'f', 'r', 'o', 'm', '-', 'Q', 'N', 'a', 'm', 'e', 0 };
-
-static SimpleBuiltinFactory localNameFromQNameFactory(
-  XQFunction::XMLChFunctionURI, localNameFromQNameName, 1,
-  "($arg as xs:QName?) as xs:NCName?", localNameFromQName
-);
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-static Result QName(const VectorOfASTNodes &args, DynamicContext *context,
-  const LocationInfo *info)
-{
-  Item::Ptr uri_item = args[0]->createResult(context)->next(context);
-  Item::Ptr qname_item = args[1]->createResult(context)->next(context);
-
-  const XMLCh *uri = uri_item.isNull() ? 0 : uri_item->asString(context);
-  const XMLCh *qname = qname_item->asString(context);
-  if(!XMLChar1_0::isValidQName(qname, XMLString::stringLen(qname)))
-    XQThrow3(DynamicErrorException,X("QName"),
-      X("The second argument to fn:QName is not a valid xs:QName [err:FOCA0002]"), info);
-
-  const XMLCh *prefix = XPath2NSUtils::getPrefix(qname, context->getMemoryManager());
-  if((!uri || !*uri) && prefix && *prefix)
-    XQThrow3(DynamicErrorException,X("QName"),
-      X("The second argument to fn:QName specifies a prefix, but the specified uri is empty [err:FOCA0002]"), info);
-
-  return (Item::Ptr)context->getItemFactory()->createQName(uri, prefix, XPath2NSUtils::getLocalName(qname), context);
-}
-
-static const XMLCh QNameName[] =
-{ 'Q', 'N', 'a', 'm', 'e', 0 };
-
-static SimpleBuiltinFactory QNameFactory(
-  XQFunction::XMLChFunctionURI, QNameName, 2,
-  "($uri as xs:string?, $qname as xs:string) as xs:QName", QName
-);
-

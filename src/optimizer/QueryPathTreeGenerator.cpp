@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,6 +55,7 @@
 #include <xqilla/functions/FunctionNormalizeSpace.hpp>
 #include <xqilla/functions/FunctionNumber.hpp>
 #include <xqilla/functions/FunctionParseXML.hpp>
+#include <xqilla/functions/FunctionParseJSON.hpp>
 #include <xqilla/functions/FunctionExplain.hpp>
 #include <xqilla/functions/FunctionRoot.hpp>
 #include <xqilla/functions/FunctionString.hpp>
@@ -164,7 +165,7 @@ XQUserFunction *QueryPathTreeGenerator::optimizeFunctionDef(XQUserFunction *item
       for(ArgumentSpecs::const_iterator it = params->begin();
           it != params->end(); ++it) {
           PathResult paramRes;
-          if((*it)->getStaticType().containsType(TypeFlags::NODE))
+          if((*it)->getStaticAnalysis().getStaticType().containsType(StaticType::NODE_TYPE))
             createAnyNodeResult(paramRes);
           setVariable((*it)->getURI(), (*it)->getName(), paramRes);
       }
@@ -187,7 +188,7 @@ XQGlobalVariable *QueryPathTreeGenerator::optimizeGlobalVar(XQGlobalVariable *it
   if(item->getVariableExpr()) {
     result.join(generate(const_cast<ASTNode *>(item->getVariableExpr())));
   } else {
-    if(item->getStaticAnalysis().getStaticType().containsType(TypeFlags::NODE))
+    if(item->getStaticAnalysis().getStaticType().containsType(StaticType::NODE_TYPE))
       createAnyNodeResult(result);
   }
 
@@ -196,25 +197,20 @@ XQGlobalVariable *QueryPathTreeGenerator::optimizeGlobalVar(XQGlobalVariable *it
   return item;
 }
 
-XQRewriteRule *QueryPathTreeGenerator::optimizeRewriteRule(XQRewriteRule *item)
-{
-  return item;
-}
-
-static QueryPathNode::Type getTypeFromAxis(Node::Axis axis)
+static QueryPathNode::Type getTypeFromAxis(XQStep::Axis axis)
 {
   QueryPathNode::Type result = (QueryPathNode::Type)-1;
   switch(axis) {
-  case Node::CHILD: {
+  case XQStep::CHILD: {
     result = QueryPathNode::CHILD;
     break;
   }
-  case Node::ATTRIBUTE: {
+  case XQStep::ATTRIBUTE: {
     result = QueryPathNode::ATTRIBUTE;
     break;
   }
-  case Node::DESCENDANT_OR_SELF:
-  case Node::DESCENDANT: {
+  case XQStep::DESCENDANT_OR_SELF:
+  case XQStep::DESCENDANT: {
     result = QueryPathNode::DESCENDANT;
     break;
   }
@@ -243,7 +239,7 @@ void QueryPathTreeGenerator::setVariable(const XMLCh *uri, const XMLCh *name, co
 
 ASTNode *QueryPathTreeGenerator::optimizeStep(XQStep *item)
 {
-  Node::Axis axis = item->getAxis();
+  XQStep::Axis axis = item->getAxis();
   const NodeTest *nodeTest = item->getNodeTest();
 
   PathResult result;
@@ -255,47 +251,47 @@ ASTNode *QueryPathTreeGenerator::optimizeStep(XQStep *item)
       it != currentContext.returnPaths.end(); ++it) {
 
     switch(axis) {
-    case Node::PARENT: {
+    case XQStep::PARENT: {
       generateParentStep(*it, dummy, result);
       break;
     }
-    case Node::DESCENDANT_OR_SELF: {
+    case XQStep::DESCENDANT_OR_SELF: {
       generateSelfStep(*it, dummy, result);
       generateBuiltInStep(*it, dummy, result);
       break;
     }
-    case Node::SELF: {
+    case XQStep::SELF: {
       generateSelfStep(*it, dummy, result);
       break;
     }
-    case Node::ANCESTOR: {
+    case XQStep::ANCESTOR: {
       generateAncestorStep(*it, dummy, result);
       break;
     }
-    case Node::ANCESTOR_OR_SELF: {
+    case XQStep::ANCESTOR_OR_SELF: {
       generateAncestorOrSelfStep(*it, dummy, result);
       break;
     }
-    case Node::FOLLOWING: {
+    case XQStep::FOLLOWING: {
       generateFollowingStep(*it, dummy, result);
       break;
     }
-    case Node::PRECEDING: {
+    case XQStep::PRECEDING: {
       generatePrecedingStep(*it, dummy, result);
       break;
     }
-    case Node::PRECEDING_SIBLING:
-    case Node::FOLLOWING_SIBLING: {
+    case XQStep::PRECEDING_SIBLING:
+    case XQStep::FOLLOWING_SIBLING: {
       generateSiblingStep(*it, dummy, result);
       break;
     }
-    case Node::ATTRIBUTE:
-    case Node::CHILD:
-    case Node::DESCENDANT: {
+    case XQStep::ATTRIBUTE:
+    case XQStep::CHILD:
+    case XQStep::DESCENDANT: {
       generateBuiltInStep(*it, dummy, result);
       break;
     }
-    case Node::NAMESPACE:
+    case XQStep::NAMESPACE:
     default: {
       // Do nothing
       break;
@@ -744,6 +740,20 @@ ASTNode *QueryPathTreeGenerator::optimizeFunction(XQFunction *item)
       result.join(root);
     }
 
+    else if(name == FunctionParseJSON::name) {
+      // Returns a sequence of elements
+      generate(args[0]);
+
+      QueryPathNode *root = ((FunctionParseJSON*)item)->getQueryPathTree();
+      if(!root) {
+        NodeTest *nt = createNodeTest(Node::element_string);
+        root = createQueryPathNode(nt, QueryPathNode::CHILD);
+        ((FunctionParseJSON*)item)->setQueryPathTree(root);
+      }
+
+      result.join(root);
+    }
+
     else if(name == FunctionExplain::name) {
       // Returns a sequence of elements
       generate(args[0]);
@@ -908,12 +918,6 @@ ASTNode *QueryPathTreeGenerator::optimizeVariable(XQVariable *item)
   return item;
 }
 
-ASTNode *QueryPathTreeGenerator::optimizeExprSubstitution(XQExprSubstitution *item)
-{
-  push(PathResult());
-  return item;
-}
-
 ASTNode *QueryPathTreeGenerator::optimizeIf(XQIf *item)
 {
   PathResult result;
@@ -1002,36 +1006,6 @@ ASTNode *QueryPathTreeGenerator::optimizeReturn(XQReturn *item)
   return item;
 }
 
-ASTNode *QueryPathTreeGenerator::optimizeTupleConstructor(XQTupleConstructor *item)
-{
-  // TBD Fix path tracing here - jpcs
-  varStore_.addScope(VarStore::MyScope::LOGICAL_BLOCK_SCOPE);
-
-  optimizeTupleNode(const_cast<TupleNode*>(item->getParent()));
-  PathResult result // = generate(item->getExpression())
-    ;
-  
-  delete varStore_.popScope();
-
-  push(result);
-  return item;
-}
-
-ASTNode *QueryPathTreeGenerator::optimizeTupleMember(XQTupleMember *item)
-{
-  // TBD Fix path tracing here - jpcs
-  PathResult result;
-
-  const PathResult &currentContext = getCurrentContext();
-  for(QueryPathNode::Vector::const_iterator it = currentContext.returnPaths.begin();
-      it != currentContext.returnPaths.end(); ++it) {
-    // generateBuiltInStep(*it, dummy, result);
-  }
-
-  push(result);
-  return item;
-}
-
 ASTNode *QueryPathTreeGenerator::optimizeQuantified(XQQuantified *item)
 {
   varStore_.addScope(VarStore::MyScope::LOGICAL_BLOCK_SCOPE);
@@ -1079,26 +1053,6 @@ ASTNode *QueryPathTreeGenerator::optimizeTypeswitch(XQTypeswitch *item)
   if(def->isVariableUsed()) {
     delete varStore_.popScope();
   }
-
-  push(result);
-  return item;
-}
-
-ASTNode *QueryPathTreeGenerator::optimizeSwitch(XQSwitch *item)
-{
-  PathResult result;
-
-  generate(item->getExpression());
-
-  XQSwitch::Cases &clauses = item->getCases();
-  for(XQSwitch::Cases::iterator i = clauses.begin(); i != clauses.end(); ++i) {
-    for(VectorOfASTNodes::iterator v = (*i)->getValues().begin(); v != (*i)->getValues().end(); ++v) {
-      generate(*v);
-    }
-    result.join(generate((*i)->getExpression()));
-  }
-
-  result.join(generate(item->getDefault()));
 
   push(result);
   return item;
@@ -1232,19 +1186,7 @@ ASTNode *QueryPathTreeGenerator::optimizeQNameLiteral(XQQNameLiteral *item)
   return item;
 }
 
-ASTNode *QueryPathTreeGenerator::optimizeDecimalLiteral(XQDecimalLiteral *item)
-{
-  push(PathResult());
-  return item;
-}
-
-ASTNode *QueryPathTreeGenerator::optimizeFloatLiteral(XQFloatLiteral *item)
-{
-  push(PathResult());
-  return item;
-}
-
-ASTNode *QueryPathTreeGenerator::optimizeDoubleLiteral(XQDoubleLiteral *item)
+ASTNode *QueryPathTreeGenerator::optimizeNumericLiteral(XQNumericLiteral *item)
 {
   push(PathResult());
   return item;
@@ -1510,7 +1452,7 @@ ASTNode *QueryPathTreeGenerator::optimizeInlineFunction(XQInlineFunction *item)
   if(item->getUserFunction())
     optimizeFunctionDef(item->getUserFunction());
 
-  const ArgumentSpecs *params = item->getItemType()->getFunctionSignature()->argSpecs;
+  const ArgumentSpecs *params = item->getSignature()->argSpecs;
   if(params) {
     varStore_.addScope(VarStore::MyScope::LOCAL_SCOPE);
 
@@ -1518,7 +1460,7 @@ ASTNode *QueryPathTreeGenerator::optimizeInlineFunction(XQInlineFunction *item)
     unsigned int c = 0;
     for(; it != params->end(); ++it, ++c) {
       PathResult paramRes;
-      if((*it)->getStaticType().containsType(TypeFlags::NODE))
+      if((*it)->getStaticAnalysis().getStaticType().containsType(StaticType::NODE_TYPE))
         createAnyNodeResult(paramRes);
       setVariable((*it)->getURI(), (*it)->getName(), paramRes);
     }

@@ -1,10 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2010,
- *     John Snelson. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,174 +23,151 @@
 #include <xqilla/framework/XQillaExport.hpp>
 #include <xqilla/items/AnyAtomicType.hpp>
 #include <xqilla/framework/XPath2MemoryManager.hpp>
-#include <xqilla/schema/SequenceType.hpp>
 
 #include <xercesc/framework/XMLBuffer.hpp>
 #include <xercesc/util/XMemory.hpp>
-
-struct XQILLA_API TypeFlags
-{
-  /**
-   * Flags that determine what item types are returned from an expression
-   */
-  enum Enum {
-    DOCUMENT            = 0x000000001,
-    ELEMENT             = 0x000000002,
-    ATTRIBUTE           = 0x000000004,
-    TEXT                = 0x000000008,
-    PI                  = 0x000000010,
-    COMMENT             = 0x000000020,
-    NAMESPACE           = 0x000000040,
-
-    ANY_URI             = 0x000000100,
-    BASE_64_BINARY      = 0x000000200,
-    BOOLEAN             = 0x000000400,
-    DATE                = 0x000000800,
-    DATE_TIME           = 0x000001000,
-    DAY_TIME_DURATION   = 0x000002000,
-    DECIMAL             = 0x000004000,
-    DOUBLE              = 0x000008000,
-    DURATION            = 0x000010000,
-    FLOAT               = 0x000020000,
-    G_DAY               = 0x000040000,
-    G_MONTH             = 0x000080000,
-    G_MONTH_DAY         = 0x000100000,
-    G_YEAR              = 0x000200000,
-    G_YEAR_MONTH        = 0x000400000,
-    HEX_BINARY          = 0x000800000,
-    NOTATION            = 0x001000000,
-    QNAME               = 0x002000000,
-    STRING              = 0x004000000,
-    TIME                = 0x008000000,
-    UNTYPED_ATOMIC      = 0x010000000,
-    YEAR_MONTH_DURATION = 0x020000000,
-
-    FUNCTION            = 0x040000000,
-    TUPLE               = 0x080000000,
-    EXPRESSION          = 0x000000080,
-
-    NODE                = (DOCUMENT | ELEMENT | ATTRIBUTE | TEXT | PI | COMMENT |
-                           NAMESPACE),
-
-    NUMERIC             = (DECIMAL | FLOAT | DOUBLE),
-
-    TIMEZONE            = (DATE | DATE_TIME | G_DAY | G_MONTH | G_MONTH_DAY |
-                           G_YEAR | G_YEAR_MONTH | TIME),
-
-    TYPED_ATOMIC        = (NUMERIC | TIMEZONE | ANY_URI | BASE_64_BINARY |
-                           BOOLEAN | DAY_TIME_DURATION | DURATION | HEX_BINARY |
-                           NOTATION | QNAME | STRING | YEAR_MONTH_DURATION),
-
-    ANY_ATOMIC_TYPE     = (TYPED_ATOMIC | UNTYPED_ATOMIC),
-
-    ITEM                = (NODE | ANY_ATOMIC_TYPE | FUNCTION | TUPLE | EXPRESSION),
-
-    EMPTY               = 0
-  };
-
-  static Enum flags(const ItemType *type);
-};
-
-XQILLA_API TypeFlags::Enum operator|(TypeFlags::Enum a, TypeFlags::Enum b);
-XQILLA_API TypeFlags::Enum operator&(TypeFlags::Enum a, TypeFlags::Enum b);
 
 /**
  * Class that represents the static type of an expression
  */
 class XQILLA_API StaticType : public XERCES_CPP_NAMESPACE_QUALIFIER XMemory {
 public:
-  static const StaticType EMPTY;
+  /**
+   * Flags that determine what item types are returned from an expression
+   */
+  enum StaticTypeFlags {
+    DOCUMENT_TYPE            = 0x00000001,
+    ELEMENT_TYPE             = 0x00000002,
+    ATTRIBUTE_TYPE           = 0x00000004,
+    TEXT_TYPE                = 0x00000008,
+    PI_TYPE                  = 0x00000010,
+    COMMENT_TYPE             = 0x00000020,
+    NAMESPACE_TYPE           = 0x00000040,
 
-  static const StaticType ITEM;
-  static const StaticType ITEM_STAR;
-  static const StaticType FUNCTION;
-  static const StaticType TUPLE;
+    ANY_SIMPLE_TYPE          = 0x00000080,
+    ANY_URI_TYPE             = 0x00000100,
+    BASE_64_BINARY_TYPE      = 0x00000200,
+    BOOLEAN_TYPE             = 0x00000400,
+    DATE_TYPE                = 0x00000800,
+    DATE_TIME_TYPE           = 0x00001000,
+    DAY_TIME_DURATION_TYPE   = 0x00002000,
+    DECIMAL_TYPE             = 0x00004000,
+    DOUBLE_TYPE              = 0x00008000,
+    DURATION_TYPE            = 0x00010000,
+    FLOAT_TYPE               = 0x00020000,
+    G_DAY_TYPE               = 0x00040000,
+    G_MONTH_TYPE             = 0x00080000,
+    G_MONTH_DAY_TYPE         = 0x00100000,
+    G_YEAR_TYPE              = 0x00200000,
+    G_YEAR_MONTH_TYPE        = 0x00400000,
+    HEX_BINARY_TYPE          = 0x00800000,
+    NOTATION_TYPE            = 0x01000000,
+    QNAME_TYPE               = 0x02000000,
+    STRING_TYPE              = 0x04000000,
+    TIME_TYPE                = 0x08000000,
+    UNTYPED_ATOMIC_TYPE      = 0x10000000,
+    YEAR_MONTH_DURATION_TYPE = 0x20000000,
 
-  static const StaticType ANY_ATOMIC_TYPE;
-  static const StaticType UNTYPED_ATOMIC;
-  static const StaticType STRING;
-  static const StaticType DECIMAL;
-  static const StaticType DECIMAL_QUESTION;
-  static const StaticType FLOAT;
-  static const StaticType FLOAT_QUESTION;
-  static const StaticType DOUBLE;
-  static const StaticType DOUBLE_QUESTION;
-  static const StaticType QNAME;
-  static const StaticType QNAME_QUESTION;
-  static const StaticType BOOLEAN;
-  static const StaticType BOOLEAN_QUESTION;
-  static const StaticType DAY_TIME_DURATION;
+    FUNCTION_TYPE            = 0x40000000,
 
-  static const StaticType NODE;
-  static const StaticType NODE_QUESTION;
-  static const StaticType NODE_STAR;
-  static const StaticType DOCUMENT;
-  static const StaticType DOCUMENT_QUESTION;
-  static const StaticType DOCUMENT_STAR;
-  static const StaticType ELEMENT;
-  static const StaticType ATTRIBUTE;
-  static const StaticType TEXT;
-  static const StaticType TEXT_QUESTION;
-  static const StaticType TEXT_STAR;
-  static const StaticType PI;
-  static const StaticType PI_STAR;
-  static const StaticType COMMENT;
-  static const StaticType COMMENT_STAR;
-  static const StaticType NAMESPACE;
+    NODE_TYPE                = (DOCUMENT_TYPE | ELEMENT_TYPE | ATTRIBUTE_TYPE | TEXT_TYPE | PI_TYPE | COMMENT_TYPE |
+                                NAMESPACE_TYPE),
 
-  typedef std::vector<const ItemType*, XQillaAllocator<const ItemType*> > ItemTypes;
+    NUMERIC_TYPE             = (DECIMAL_TYPE | FLOAT_TYPE | DOUBLE_TYPE),
+
+    TIMEZONE_TYPE            = (DATE_TYPE | DATE_TIME_TYPE | G_DAY_TYPE | G_MONTH_TYPE | G_MONTH_DAY_TYPE |
+                                G_YEAR_TYPE | G_YEAR_MONTH_TYPE | TIME_TYPE),
+
+    TYPED_ATOMIC_TYPE        = (NUMERIC_TYPE | TIMEZONE_TYPE | ANY_SIMPLE_TYPE | ANY_URI_TYPE | BASE_64_BINARY_TYPE |
+                                BOOLEAN_TYPE | DAY_TIME_DURATION_TYPE | DURATION_TYPE | HEX_BINARY_TYPE |
+                                NOTATION_TYPE | QNAME_TYPE | STRING_TYPE | YEAR_MONTH_DURATION_TYPE),
+
+    ANY_ATOMIC_TYPE          = (TYPED_ATOMIC_TYPE | UNTYPED_ATOMIC_TYPE),
+
+    ITEM_TYPE                = (NODE_TYPE | ANY_ATOMIC_TYPE | FUNCTION_TYPE),
+
+    EMPTY_TYPE               = 0
+  };
 
   static const unsigned int UNLIMITED;
 
   /// Constructor for an empty type
-  StaticType(XERCES_CPP_NAMESPACE_QUALIFIER MemoryManager *mm);
-  /// "Copy" constructor
-  StaticType(const StaticType &o, XERCES_CPP_NAMESPACE_QUALIFIER MemoryManager *mm);
-  // Constructor for single type
-  StaticType(const ItemType *type, XERCES_CPP_NAMESPACE_QUALIFIER MemoryManager *mm);
-  // Constructor for a range of types
-  StaticType(const ItemType *type, unsigned int min, unsigned int max, XERCES_CPP_NAMESPACE_QUALIFIER MemoryManager *mm);
-  // Constructor from a SequenceType
-  StaticType(const SequenceType *type, XERCES_CPP_NAMESPACE_QUALIFIER MemoryManager *mm);
+  StaticType();
+  // Constructor for normal types
+  StaticType(StaticTypeFlags f, unsigned int min = 1, unsigned int max = 1);
+  /// Constructor for a function type
+  StaticType(XPath2MemoryManager *mm, unsigned int numArgs, const StaticType &returnType, unsigned int min = 1, unsigned int max = 1);
+  /// Constructor for a function type
+  StaticType(XPath2MemoryManager *mm, unsigned int minArgs, unsigned int maxArgs, const StaticType &returnType,
+             unsigned int min = 1, unsigned int max = 1);
 
+  StaticType(const StaticType &o);
   StaticType &operator=(const StaticType &o);
-  StaticType &operator=(const ItemType *type);
-  StaticType &operator=(const SequenceType *type);
   ~StaticType();
 
-  void release();
-  void clear();
+  static StaticType create(const XMLCh *uri, const XMLCh *name, const StaticContext *context,
+                                  bool &isExact);
+  static StaticType create(AnyAtomicType::AtomicObjectType primitiveType);
 
   void typeUnion(const StaticType &st);
-  void typeConcat(const StaticType &st);
-  bool typeIntersect(TypeFlags::Enum st);
   void typeIntersect(const StaticType &st);
-  bool typeExcept(TypeFlags::Enum st);
+  void typeExcept(const StaticType &st);
 
-  bool substitute(TypeFlags::Enum from, const StaticType &to);
-  bool substitute(TypeFlags::Enum from, const ItemType *to);
+  void typeConcat(const StaticType &st);
+  void typeNodeIntersect(const StaticType &st);
 
-  void multiply(unsigned int min, unsigned int max);
+  StaticType operator|(const StaticType &st) const;
+  StaticType &operator|=(const StaticType &st);
+
+  StaticType operator&(const StaticType &st) const;
+  StaticType &operator&=(const StaticType &st);
+
+  StaticType &substitute(const StaticType &from, const StaticType &to);
+  StaticType &multiply(unsigned int min, unsigned int max);
   void setCardinality(unsigned int min, unsigned int max);
 
   bool containsType(const StaticType &type) const;
-  bool containsType(TypeFlags::Enum flags) const;
-  bool isType(TypeFlags::Enum type) const;
+  bool containsType(StaticType::StaticTypeFlags flags) const;
+  bool isType(const StaticType &type) const;
 
-  const ItemTypes &getTypes() const { return types_; }
-  TypeFlags::Enum getFlags() const { return flags_; }
+  enum TypeMatchEnum {
+    NEVER = 0,
+    PROBABLY_NOT = 1,
+    MAYBE = 2,
+    ALWAYS = 3
+  };
+
+  struct TypeMatch
+  {
+    TypeMatchEnum type, cardinality;
+  };
+
+  TypeMatch matches(const StaticType &actual) const;
+
   unsigned int getMin() const { return min_; }
   unsigned int getMax() const { return max_; }
+
+  unsigned int getMinArgs() const { return minArgs_; }
+  unsigned int getMaxArgs() const { return maxArgs_; }
+  const StaticType *getReturnType() const { return returnType_; }
 
   void typeToBuf(XERCES_CPP_NAMESPACE_QUALIFIER XMLBuffer &buf) const;
 
 private:
-  StaticType(const StaticType &o); // No copy constructor
+  TypeMatchEnum matchesFunctionType(const StaticType &type) const;
+  TypeMatchEnum matchesType(const StaticType &type) const;
 
-  ItemTypes types_;
-  TypeFlags::Enum flags_;
+  unsigned int flags_;
   unsigned int min_;
   unsigned int max_;
+
+  XPath2MemoryManager *mm_;
+  unsigned int minArgs_;
+  unsigned int maxArgs_;
+  StaticType *returnType_;
 };
+
+XQILLA_API StaticType::StaticTypeFlags operator|(StaticType::StaticTypeFlags a, StaticType::StaticTypeFlags b);
+XQILLA_API StaticType::StaticTypeFlags operator&(StaticType::StaticTypeFlags a, StaticType::StaticTypeFlags b);
 
 #endif

@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,19 +59,18 @@ Optimizer *XQilla::createOptimizer(DynamicContext *context, unsigned int flags)
   Optimizer *optimizer = 0;
 
   if((flags & NO_STATIC_RESOLUTION) == 0) {
-    // optimizer = new PrintASTOptimizer("Initial", context, optimizer);
+//     optimizer = new PrintASTOptimizer("Initial", context, optimizer);
     optimizer = new StaticResolver(context, optimizer);
-    // optimizer = new PrintASTOptimizer("After static resolution", context, optimizer);
+//     optimizer = new PrintASTOptimizer("After static resolution", context, optimizer);
     optimizer = new StaticTyper(context, optimizer);
-    // optimizer = new PrintASTOptimizer("After static typing", context, optimizer);
+//     optimizer = new PrintASTOptimizer("After static typing", context, optimizer);
 
     if((flags & NO_OPTIMIZATION) == 0) {
       optimizer = new PartialEvaluator(context, optimizer);
-      // optimizer = new PrintASTOptimizer("After partial evaluation", context, optimizer);
+//       optimizer = new PrintASTOptimizer("After partial evaluation", context, optimizer);
       optimizer = new StaticTyper(context, optimizer);
-      // optimizer = new PrintASTOptimizer("After static typing (2)", context, optimizer);
-      if(context->getProjection())
-        optimizer = new QueryPathTreeGenerator(context, optimizer);
+//       optimizer = new PrintASTOptimizer("After static typing (2)", context, optimizer);
+      optimizer = new QueryPathTreeGenerator(context, optimizer);
     }
     if((flags & DEBUG_QUERY) != 0) {
       optimizer = new DebugHookDecorator(context, optimizer);
@@ -108,7 +107,8 @@ XQQuery* XQilla::parse(const XMLCh* inputQuery, DynamicContext* context,
     result->setFile(queryFile);
   }
   if((flags & XQilla::NO_DEFAULT_MODULES) == 0) {
-    BuiltInModules::addModules(result);
+    BuiltInModules::core.importModuleInto(result);
+    BuiltInModules::fn.importModuleInto(result);
   }
 
   XQLexer lexer(context->getMemoryManager(), queryFile, inputQuery, context->getLanguage());
@@ -167,7 +167,8 @@ XQQuery* XQilla::parse(const InputSource& querySrc, DynamicContext* context,
   if(querySrc.getSystemId())
     result->setFile(querySrc.getSystemId());
   if((flags & XQilla::NO_DEFAULT_MODULES) == 0) {
-    BuiltInModules::addModules(result);
+    BuiltInModules::core.importModuleInto(result);
+    BuiltInModules::fn.importModuleInto(result);
   }
 
 #ifdef HAVE_FAXPP

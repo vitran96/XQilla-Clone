@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,6 +54,16 @@ ASTNode *FunctionEmpty::staticTypingImpl(StaticContext *context)
 {
   _src.clearExceptType();
   calculateSRCForArguments(context);
+
+  if(context) {
+    const StaticAnalysis &sa = _args[0]->getStaticAnalysis();
+    const StaticType &sType = sa.getStaticType();
+    if((sType.getMin() > 0 || sType.getMax() == 0) && !sa.areDocsOrCollectionsUsed() && !sa.isNoFoldingForced()) {
+      XPath2MemoryManager* mm = context->getMemoryManager();
+      return XQLiteral::create(sType.getMax() == 0, mm, this);
+    }
+  }
+
   return this;
 }
 

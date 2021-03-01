@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,9 +42,7 @@ public:
   ///enum for data types
   typedef enum {
     LITERAL,
-    DECIMAL_LITERAL,
-    FLOAT_LITERAL,
-    DOUBLE_LITERAL,
+    NUMERIC_LITERAL,
     QNAME_LITERAL,
     SEQUENCE,
     FUNCTION,
@@ -55,11 +53,11 @@ public:
     CASTABLE_AS,
     CAST_AS,
     TREAT_AS,
+    OPERATOR,
     CONTEXT_ITEM,
     DOM_CONSTRUCTOR,
     QUANTIFIED,
     TYPESWITCH,
-    SWITCH,
     VALIDATE,
     FUNCTION_CALL,
     USER_FUNCTION,
@@ -101,33 +99,6 @@ public:
     COPY_OF,
     COPY,
     MAP,
-    TUPLE_CONSTRUCTOR,
-    TUPLE_MEMBER,
-    EXPR_SUBSTITUTION,
-
-    // Operators
-    AND,
-    DIVIDE,
-    EQUALS,
-    EXCEPT,
-    GENERAL_COMP,
-    GREATER_THAN,
-    GREATER_THAN_EQUAL,
-    INTEGER_DIVIDE,
-    INTERSECT,
-    LESS_THAN,
-    LESS_THAN_EQUAL,
-    MINUS,
-    MOD,
-    MULTIPLY,
-    NODE_COMPARISON,
-    NOT_EQUALS,
-    ORDER_COMPARISON,
-    OR,
-    PLUS,
-    UNARY_MINUS,
-    UNION,
-
     DEBUG_HOOK
   } whichType;
 

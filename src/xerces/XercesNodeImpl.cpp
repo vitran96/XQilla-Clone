@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -286,7 +286,7 @@ Sequence XercesNodeImpl::dmBaseURI(const DynamicContext* context) const
     xmlBase.setNodeUri(XMLUni::fgXMLURIName);
     xmlBase.setTypeWildcard();
 
-    Item::Ptr item = getAxisResult(Node::ATTRIBUTE, &xmlBase, const_cast<DynamicContext*>(context), 0)->
+    Item::Ptr item = getAxisResult(XQStep::ATTRIBUTE, &xmlBase, const_cast<DynamicContext*>(context), 0)->
       next(const_cast<DynamicContext*>(context));
     if(item.notNull()) {
       const XMLCh *uri = ((Node*)item.get())->dmStringValue(context);
@@ -363,10 +363,10 @@ ATQNameOrDerived::Ptr XercesNodeImpl::dmNodeName(const DynamicContext* context) 
   switch(fNode->getNodeType())
   {
   case DOMNode::ELEMENT_NODE:
-    return context->getItemFactory()->createQName(fNode->getNamespaceURI(), fNode->getPrefix(), ::Axis::getLocalName(fNode), context);
+        return context->getItemFactory()->createQName(fNode->getNamespaceURI(), fNode->getPrefix(), Axis::getLocalName(fNode), context);
 
   case DOMNode::ATTRIBUTE_NODE:        
-    return context->getItemFactory()->createQName(fNode->getNamespaceURI(), fNode->getPrefix(), ::Axis::getLocalName(fNode), context);
+        return context->getItemFactory()->createQName(fNode->getNamespaceURI(), fNode->getPrefix(), Axis::getLocalName(fNode), context);
 
   case DOMNode::PROCESSING_INSTRUCTION_NODE:  
         return context->getItemFactory()->createQName(XMLUni::fgZeroLenString, XMLUni::fgZeroLenString, fNode->getNodeName(), context);
@@ -937,59 +937,59 @@ Result XercesNodeImpl::dmChildren(const DynamicContext *context, const LocationI
   return 0;
 }
 
-Result XercesNodeImpl::getAxisResult(Node::Axis axis, const NodeTest *nodeTest, const DynamicContext *context, const LocationInfo *info) const
+Result XercesNodeImpl::getAxisResult(XQStep::Axis axis, const NodeTest *nodeTest, const DynamicContext *context, const LocationInfo *info) const
 {
   switch(axis) {
-  case Node::ANCESTOR: {
+  case XQStep::ANCESTOR: {
     return new AncestorAxis(info, fNode, this, nodeTest, *this);
   }
-  case Node::ANCESTOR_OR_SELF: {
+  case XQStep::ANCESTOR_OR_SELF: {
     return new AncestorOrSelfAxis(info, fNode, this, nodeTest, *this);
   }
-  case Node::ATTRIBUTE: {
+  case XQStep::ATTRIBUTE: {
     if(fNode->getNodeType() == DOMNode::ELEMENT_NODE) {
       return new AttributeAxis(info, fNode, this, nodeTest, *this);
     }
     break;
   }
-  case Node::CHILD: {
+  case XQStep::CHILD: {
     if(fNode->getNodeType() == DOMNode::ELEMENT_NODE || fNode->getNodeType() == DOMNode::DOCUMENT_NODE) {
       return new ChildAxis(info, fNode, this, nodeTest, *this);
     }
     break;
   }
-  case Node::DESCENDANT: {
+  case XQStep::DESCENDANT: {
     if(fNode->getNodeType() == DOMNode::ELEMENT_NODE || fNode->getNodeType() == DOMNode::DOCUMENT_NODE) {
       return new DescendantAxis(info, fNode, this, nodeTest, *this);
     }
     break;
   }
-  case Node::DESCENDANT_OR_SELF: {
+  case XQStep::DESCENDANT_OR_SELF: {
     return new DescendantOrSelfAxis(info, fNode, this, nodeTest, *this);
     break;
   }
-  case Node::FOLLOWING: {
+  case XQStep::FOLLOWING: {
     return new FollowingAxis(info, fNode, this, nodeTest, *this);
   }
-  case Node::FOLLOWING_SIBLING: {
+  case XQStep::FOLLOWING_SIBLING: {
     return new FollowingSiblingAxis(info, fNode, this, nodeTest, *this);
   }
-  case Node::NAMESPACE: {
+  case XQStep::NAMESPACE: {
     if(fNode->getNodeType() == DOMNode::ELEMENT_NODE) {
       return new NamespaceAxis(info, fNode, this, nodeTest, *this);
     }
     break;
   }
-  case Node::PARENT: {
+  case XQStep::PARENT: {
     return new ParentAxis(info, fNode, this, nodeTest, *this);
   }
-  case Node::PRECEDING: {
+  case XQStep::PRECEDING: {
     return new PrecedingAxis(info, fNode, this, nodeTest, *this);
   }
-  case Node::PRECEDING_SIBLING: {
+  case XQStep::PRECEDING_SIBLING: {
     return new PrecedingSiblingAxis(info, fNode, this, nodeTest, *this);
   }
-  case Node::SELF: {
+  case XQStep::SELF: {
     return nodeTest->filterResult((Item::Ptr)this, info);
   }
   }

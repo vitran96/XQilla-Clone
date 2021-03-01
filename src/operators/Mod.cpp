@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,21 +25,19 @@
 #include <xqilla/items/AnyAtomicType.hpp>
 #include <xqilla/context/DynamicContext.hpp>
 
-#include <xercesc/util/XMLUniDefs.hpp>
-
 /*static*/ const XMLCh Mod::name[]={ XERCES_CPP_NAMESPACE_QUALIFIER chLatin_M, XERCES_CPP_NAMESPACE_QUALIFIER chLatin_o, XERCES_CPP_NAMESPACE_QUALIFIER chLatin_d, XERCES_CPP_NAMESPACE_QUALIFIER chNull };
 
 Mod::Mod(const VectorOfASTNodes &args, XPath2MemoryManager* memMgr)
-  : ArithmeticOperator(MOD, name, args, memMgr)
+  : ArithmeticOperator(name, args, memMgr)
 {
 }
 
-void Mod::calculateStaticType(StaticContext *context)
+void Mod::calculateStaticType()
 {
   const StaticType &arg0 = _args[0]->getStaticAnalysis().getStaticType();
   const StaticType &arg1 = _args[1]->getStaticAnalysis().getStaticType();
 
-  calculateStaticTypeForNumerics(arg0, arg1, context);
+  calculateStaticTypeForNumerics(arg0, arg1);
 }
 
 Item::Ptr Mod::execute(const AnyAtomicType::Ptr &atom1, const AnyAtomicType::Ptr &atom2, DynamicContext *context) const

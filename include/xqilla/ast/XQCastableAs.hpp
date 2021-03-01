@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ class XQILLA_API XQCastableAs : public ASTNodeImpl
 {
 public:
   XQCastableAs(ASTNode* expr, SequenceType* exprType, XPath2MemoryManager* memMgr);
+  XQCastableAs(ASTNode* expr, SequenceType* exprType, bool isPrimitive, AnyAtomicType::AtomicObjectType typeIndex, XPath2MemoryManager* memMgr);
 
   virtual ASTNode* staticResolution(StaticContext *context);
   virtual ASTNode *staticTypingImpl(StaticContext *context);
@@ -38,12 +39,16 @@ public:
 
   ASTNode *getExpression() const;
   SequenceType *getSequenceType() const;
+  bool getIsPrimitive() const { return _isPrimitive; }
+  AnyAtomicType::AtomicObjectType getTypeIndex() const { return _typeIndex; }  
 
   void setExpression(ASTNode *item);
 
 protected:
   ASTNode* _expr;
   SequenceType* _exprType;
+  bool _isPrimitive;
+  AnyAtomicType::AtomicObjectType _typeIndex;
 };
 
 #endif

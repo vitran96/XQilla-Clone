@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,8 @@ OrderByTuple::OrderByTuple(TupleNode *parent, ASTNode *expr, int modifiers, Coll
   : TupleNode(ORDER_BY, parent, mm),
     expr_(expr),
     modifiers_((Modifiers)modifiers),
-    collation_(collation)
+    collation_(collation),
+    usedSrc_(mm)
 {
 }
 
@@ -93,25 +94,19 @@ TupleNode *OrderByTuple::staticTypingImpl(StaticContext *context)
     return tmp->staticTypingImpl(context);
   }
 
-  const StaticType &pType = parent_->getStaticAnalysis().getStaticType();
+  min_ = parent_->getMin();
+  max_ = parent_->getMax();
 
-  assert(pType.getTypes().size() == 1);
-  const ItemType *pItemType = pType.getTypes()[0];
-  assert(pItemType->getItemTestType() == ItemType::TEST_TUPLE);
+  return this;
+}
 
-  src_.clear();
-  src_.add(expr_->getStaticAnalysis());
+TupleNode *OrderByTuple::staticTypingTeardown(StaticContext *context, StaticAnalysis &usedSrc)
+{
+  usedSrc_.clear();
+  usedSrc_.add(usedSrc);
 
-  TupleMembers *pMembers = const_cast<TupleMembers*>(pItemType->getTupleMembers());
-  if(pMembers) {
-    TupleMembers::iterator i = pMembers->begin();
-    for(; i != pMembers->end(); ++i) {
-      src_.removeVariable(i.getValue()->getURI(), i.getValue()->getName());
-    }
-  }
-
-  src_.getStaticType() = pType;
-  src_.add(parent_->getStaticAnalysis());
+  usedSrc.add(expr_->getStaticAnalysis());
+  parent_ = parent_->staticTypingTeardown(context, usedSrc);
 
   return this;
 }
@@ -119,15 +114,13 @@ TupleNode *OrderByTuple::staticTypingImpl(StaticContext *context)
 class OrderByTupleResult : public TupleResult
 {
 public:
-  OrderByTupleResult(const OrderByTuple *ast, const TupleResult::Ptr &parent, DynamicContext *context)
+  OrderByTupleResult(const OrderByTuple *ast, const TupleResult::Ptr &parent)
     : TupleResult(ast),
       ast_(ast),
       parent_(parent),
       toDo_(true),
       tuples_(),
-      tupleIt_(tuples_.begin()),
-      context_(context),
-      varStore_(0)
+      tupleIt_(tuples_.begin())
   {
   }
 
@@ -141,16 +134,12 @@ public:
 
   virtual Result getVar(const XMLCh *namespaceURI, const XMLCh *name) const
   {
-    Result result(0);
-    if((*tupleIt_)->tuple->get(namespaceURI, name, context_, result))
-      return result;
-    return varStore_->getVar(namespaceURI, name);
+    return (*tupleIt_)->varStore.getVar(namespaceURI, name);
   }
 
   virtual void getInScopeVariables(std::vector<std::pair<const XMLCh*, const XMLCh*> > &variables) const
   {
-    (*tupleIt_)->tuple->getInScopeVariables(variables);
-    varStore_->getInScopeVariables(variables);
+    (*tupleIt_)->varStore.getInScopeVariables(variables);
   }
 
   virtual bool next(DynamicContext *context)
@@ -158,18 +147,19 @@ public:
     if(toDo_) {
       toDo_ = false;
 
+      XPath2MemoryManager *mm = context->getMemoryManager();
       const ASTNode *expr = ast_->getExpression();
+      const StaticAnalysis &usedSrc = ast_->getUsedSRC();
 
       while(parent_->next(context)) {
         AutoVariableStoreReset reset(context, parent_);
         tuples_.push_back(new OrderPair((AnyAtomicType*)expr->createResult(context)->
-                                        next(context).get(), parent_, context));
+                                        next(context).get(), usedSrc, parent_, mm));
       }
 
       stable_sort(tuples_.begin(), tuples_.end(),
                   OrderComparison(ast_->getModifiers(), ast_->getCollation(), context, this));
       tupleIt_ = tuples_.begin();
-      varStore_ = context->getVariableStore();
     } else {
       delete *tupleIt_;
       *tupleIt_ = 0;
@@ -177,16 +167,6 @@ public:
     }
 
     return tupleIt_ != tuples_.end();
-  }
-
-  virtual Tuple::Ptr getTuple(DynamicContext *context) const
-  {
-    return (*tupleIt_)->tuple;
-  }
-
-  virtual void createTuple(DynamicContext *context, size_t capacity, TupleImpl::Ptr &result) const
-  {
-    result = new TupleImpl((*tupleIt_)->tuple);
   }
 
 private:
@@ -201,15 +181,16 @@ private:
       return si.isNull() || (si->isNumericValue() && ((Numeric*)si.get())->isNaN());
     }
 
-    OrderPair(const AnyAtomicType::Ptr &si, const TupleResult *parent, DynamicContext *context)
-      : sortItem(isEmptyOrNaN(si) ? (AnyAtomicType::Ptr)0 : si),
-        tuple(0)
+    OrderPair(const AnyAtomicType::Ptr &si, const StaticAnalysis &usedSrc, const VariableStore *vars,
+              XPath2MemoryManager *mm)
+		: sortItem(isEmptyOrNaN(si) ? (AnyAtomicType::Ptr)0 : si),
+        varStore(mm)
     {
-      parent->createTuple(context, 0, tuple);
+      varStore.cacheVariableStore(usedSrc, vars);
     }
 
     AnyAtomicType::Ptr sortItem;
-    TupleImpl::Ptr tuple;
+    VarStoreImpl varStore;
   };
 
   class OrderComparison
@@ -259,13 +240,10 @@ private:
 
   vector<OrderPair*> tuples_;
   vector<OrderPair*>::iterator tupleIt_;
-
-  DynamicContext *context_;
-  const VariableStore *varStore_;
 };
 
 TupleResult::Ptr OrderByTuple::createResult(DynamicContext* context) const
 {
-  return new OrderByTupleResult(this, parent_->createResult(context), context);
+  return new OrderByTupleResult(this, parent_->createResult(context));
 }
 

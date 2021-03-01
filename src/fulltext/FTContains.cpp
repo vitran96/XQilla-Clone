@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ ASTNode *FTContains::staticTypingImpl(StaticContext *context)
 {
   _src.clear();
 
-  _src.getStaticType() = &ItemType::BOOLEAN;
+  _src.getStaticType() = StaticType::BOOLEAN_TYPE;
 
   _src.add(argument_->getStaticAnalysis());
 
@@ -80,8 +80,8 @@ BoolResult FTContains::boolResult(DynamicContext* context) const
   Item::Ptr item;
   AllMatches *matches = 0;
   while((item = argNodes->next(context)).notNull()) {
-    if(item->getType() != Item::NODE)
-      XQThrow(XPath2TypeMatchException, X("FTContains::FTContainsResult::createResult"),
+    if(!item->isNode())
+      XQThrow(XPath2TypeMatchException, X("FTContains::createResult"),
               X("The argument to ftcontains contains non nodes [err:XPTY0004]"));
 
     FTContext ftcontext(&tokenizer, new DefaultTokenStore((Node*)item.get(), &tokenizer, context), context);

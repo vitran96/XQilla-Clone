@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,18 @@ XERCES_CPP_NAMESPACE_USE;
 XQCastableAs::XQCastableAs(ASTNode* expr, SequenceType* exprType, XPath2MemoryManager* memMgr)
   : ASTNodeImpl(CASTABLE_AS, memMgr),
     _expr(expr),
-    _exprType(exprType)
+    _exprType(exprType),
+    _isPrimitive(false),
+    _typeIndex((AnyAtomicType::AtomicObjectType)-1)
+{
+}
+
+XQCastableAs::XQCastableAs(ASTNode* expr, SequenceType* exprType, bool isPrimitive, AnyAtomicType::AtomicObjectType typeIndex, XPath2MemoryManager* memMgr)
+  : ASTNodeImpl(CASTABLE_AS, memMgr),
+    _expr(expr),
+    _exprType(exprType),
+    _isPrimitive(isPrimitive),
+    _typeIndex(typeIndex)
 {
 }
 
@@ -54,43 +65,46 @@ ASTNode* XQCastableAs::staticResolution(StaticContext *context)
 
   _exprType->staticResolution(context);
 
-  const ItemType* itemType = _exprType->getItemType();
-  if(itemType->getTypeName() == 0 ||
-     (XPath2Utils::equals(itemType->getTypeURI(), SchemaSymbols::fgURI_SCHEMAFORSCHEMA) &&
-      (XPath2Utils::equals(itemType->getTypeName(), XMLUni::fgNotationString) ||
-       XPath2Utils::equals(itemType->getTypeName(), AnyAtomicType::fgDT_ANYATOMICTYPE))))
+  const SequenceType::ItemType* itemType = _exprType->getItemType();
+  if(XPath2Utils::equals(itemType->getTypeURI(), SchemaSymbols::fgURI_SCHEMAFORSCHEMA) &&
+     (XPath2Utils::equals(itemType->getType()->getName(), XMLUni::fgNotationString) ||
+      XPath2Utils::equals(itemType->getType()->getName(), AnyAtomicType::fgDT_ANYATOMICTYPE)))
     XQThrow(TypeErrorException,X("XQCastableAs::staticResolution"),
             X("The target type of a castable expression must be an atomic type that is in the in-scope schema types "
               "and is not xs:NOTATION or xdt:anyAtomicType [err:XPST0080]"));
 
-  if(_exprType->getItemTestType() != ItemType::TEST_ATOMIC_TYPE)
+  if(_exprType->getItemTestType() != SequenceType::ItemType::TEST_ATOMIC_TYPE)
     XQThrow(TypeErrorException,X("XQCastableAs::staticResolution"),X("Cannot cast to a non atomic type"));
+
+  _typeIndex = context->getItemFactory()->
+    getPrimitiveTypeIndex(_exprType->getTypeURI(),
+                          _exprType->getConstrainingType()->getName(), _isPrimitive);
 
   // If this is a cast to xs:QName or xs:NOTATION and the argument is a string literal
   // evaluate immediately, since they aren't allowed otherwise
-  if((itemType->getPrimitiveType() == AnyAtomicType::QNAME || itemType->getPrimitiveType() == AnyAtomicType::NOTATION) &&
+  if((_typeIndex == AnyAtomicType::QNAME || _typeIndex == AnyAtomicType::NOTATION) &&
      _expr->getType() == LITERAL &&
-     ((XQLiteral*)_expr)->getItemType()->getPrimitiveType() == AnyAtomicType::STRING) {
+     ((XQLiteral*)_expr)->getPrimitiveType() == AnyAtomicType::STRING) {
 
     AutoDelete<DynamicContext> dContext(context->createDynamicContext());
     dContext->setMemoryManager(mm);
 
     bool result = false;
     try {
-      if(itemType->isPrimitive()) {
+      if(_isPrimitive) {
         ((AnyAtomicType*)_expr->createResult(dContext)->next(dContext).get())->
-          castAsNoCheck(itemType->getPrimitiveType(), 0, 0, dContext);
+          castAsNoCheck(_typeIndex, 0, 0, dContext);
       }
       else {
         ((AnyAtomicType*)_expr->createResult(dContext)->next(dContext).get())->
-          castAsNoCheck(itemType->getPrimitiveType(), _exprType->getItemType()->getTypeURI(),
-                        _exprType->getItemType()->getTypeName(), dContext);
+          castAsNoCheck(_typeIndex, _exprType->getTypeURI(),
+                        _exprType->getConstrainingType()->getName(), dContext);
       }
       result = true;
     }
     catch(XQException &e) {}
 
-    return XQLiteral::create(result, mm, this)->staticResolution(context);
+    return XQLiteral::create(dContext->getItemFactory()->createBoolean(result, dContext), dContext, mm, this)->staticResolution(context);
   }
 
   _expr = new (mm) XQAtomize(_expr, mm);
@@ -108,7 +122,7 @@ ASTNode *XQCastableAs::staticTypingImpl(StaticContext *context)
 {
   _src.clear();
 
-  _src.getStaticType() = &ItemType::BOOLEAN;
+  _src.getStaticType() = StaticType::BOOLEAN_TYPE;
   _src.add(_expr->getStaticAnalysis());
 
   return this;
@@ -151,13 +165,13 @@ BoolResult XQCastableAs::boolResult(DynamicContext* context) const
     else {
       //    4. If the result of atomization is a single atomic value, the result of the cast expression depends on the input type and the target type.
       //       The normative definition of these rules is given in [XQuery 1.0 and XPath 2.0 Functions and Operators].
-      if(getSequenceType()->getItemType()->isPrimitive()) {
-        result = ((const AnyAtomicType::Ptr)first)->castable(getSequenceType()->getItemType()->getPrimitiveType(), 0, 0, context);
+      if(getIsPrimitive()) {
+        result = ((const AnyAtomicType::Ptr)first)->castable(getTypeIndex(), 0, 0, context);
       }
       else {
-        result = ((const AnyAtomicType::Ptr)first)->castable(getSequenceType()->getItemType()->getPrimitiveType(),
-                                                             getSequenceType()->getItemType()->getTypeURI(),
-                                                             getSequenceType()->getItemType()->getTypeName(),
+        result = ((const AnyAtomicType::Ptr)first)->castable(getTypeIndex(),
+                                                             getSequenceType()->getTypeURI(),
+                                                             getSequenceType()->getConstrainingType()->getName(),
                                                              context);
       }
     }

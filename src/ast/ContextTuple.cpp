@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@
 
 #include <xqilla/ast/ContextTuple.hpp>
 #include <xqilla/context/DynamicContext.hpp>
-#include <xqilla/runtime/Result.hpp>
 
 TupleNode *ContextTuple::staticResolution(StaticContext *context)
 {
@@ -28,8 +27,13 @@ TupleNode *ContextTuple::staticResolution(StaticContext *context)
 
 TupleNode *ContextTuple::staticTypingImpl(StaticContext *context)
 {
-  src_.clear();
-  src_.getStaticType() = StaticType::TUPLE;
+  min_ = 1;
+  max_ = 1;
+  return this;
+}
+
+TupleNode *ContextTuple::staticTypingTeardown(StaticContext *context, StaticAnalysis &usedSrc)
+{
   return this;
 }
 
@@ -58,11 +62,6 @@ public:
 
     varStore_ = context->getVariableStore();
     return true;
-  }
-
-  virtual void createTuple(DynamicContext *context, size_t capacity, TupleImpl::Ptr &result) const
-  {
-    result = new TupleImpl(capacity, 0, context);
   }
 
 private:

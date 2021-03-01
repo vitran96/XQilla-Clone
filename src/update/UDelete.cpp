@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,9 +39,8 @@ ASTNode *UDelete::staticResolution(StaticContext *context)
 {
   XPath2MemoryManager *mm = context->getMemoryManager();
 
-  ItemType *itemType = new (mm) ItemType(ItemType::TEST_NODE);
-  itemType->setLocationInfo(this);
-  SequenceType *seqType = new (mm) SequenceType(itemType, SequenceType::STAR);
+  SequenceType *seqType = new (mm) SequenceType(new (mm) SequenceType::ItemType(SequenceType::ItemType::TEST_NODE),
+                                                SequenceType::STAR);
   seqType->setLocationInfo(this);
 
   expr_ = new (mm) XQTreatAs(expr_, seqType, mm, err_XUTY0007);

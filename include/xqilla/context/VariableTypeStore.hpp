@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,22 +26,8 @@
 
 class SequenceType;
 class XPath2MemoryManager;
-class StaticType;
+class StaticAnalysis;
 class XQGlobalVariable;
-class ArgumentSpec;
-
-class XQILLA_API VariableType
-{
-public:
-  VariableType() : properties(0), type(0), global(0) {}
-  VariableType(unsigned p, const StaticType *t, XQGlobalVariable *g)
-    : properties(p), type(t), global(g) {}
-  VariableType(const ArgumentSpec *aspec);
-
-  unsigned properties;
-  const StaticType *type;
-  XQGlobalVariable *global;
-};
 
 /** This is the wrapper class for the variable store, which implements the 
     lookup and scoping of simple variables. */
@@ -62,17 +48,24 @@ public:
       implement scoping. */
   virtual void removeScope() = 0;
 
-  /** Declares a variable in the global scope. */
+  /** Declares and/or sets a variable in the global scope. */
   virtual void declareGlobalVar(const XMLCh* namespaceURI, const XMLCh* name,
-                                const VariableType &vtype) = 0;
+                                const StaticAnalysis &src, XQGlobalVariable *global) = 0;
 
-  /** Declare a var in the top level scope */
+  /** Gets a variable from the global scope */
+  virtual const StaticAnalysis* getGlobalVar(const XMLCh* namespaceURI, const XMLCh* name,
+                                             XQGlobalVariable **global = 0) const = 0;
+
+  /** Declare a var in the top level scope (A full set of
+      these namespaceURI/name pair methods should be made) */
   virtual void declareVar(const XMLCh* namespaceURI, const XMLCh* name,
-                          const VariableType &vtype) = 0;
+                          const StaticAnalysis &src) = 0;
 
   /** Looks up the value of a variable in the current scope, using ident as an
-      qname. */
-  virtual const VariableType *getVar(const XMLCh* namespaceURI, const XMLCh* name) const = 0;
+      qname. Returns a boolean (true if successful), and the SequenceType value
+      of the variable*/
+  virtual const StaticAnalysis *getVar(const XMLCh* namespaceURI, const XMLCh* name,
+                                       XQGlobalVariable **global = 0) const = 0;
 };
 
 #endif

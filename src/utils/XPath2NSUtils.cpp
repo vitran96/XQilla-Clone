@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,19 +33,25 @@ XERCES_CPP_NAMESPACE_USE;
 
 const XMLCh* XPath2NSUtils::getLocalName(const XMLCh* name)
 {
-  if(name)
-    for(const XMLCh *ptr = name; *ptr; ++ptr)
-      if(*ptr == ':') return ptr + 1;
+  unsigned int len=XPath2Utils::uintStrlen(name);
 
- return name;
+  for(unsigned int i = 0; i < len; i++) {
+    if(name[i] == chColon) {
+      return name+i+1;
+    }
+  }
+  return name;
 }
 
 const XMLCh* XPath2NSUtils::getPrefix(const XMLCh* name, XPath2MemoryManager* memMgr)
 {
-  if(name)
-    for(const XMLCh *ptr = name; *ptr; ++ptr)
-      if(*ptr == ':') return XPath2Utils::subString(name, 0, ptr - name, memMgr);
-
+  unsigned int len=XPath2Utils::uintStrlen(name);
+  
+  for(unsigned int i = 0; i < len; i++) {
+    if(name[i] == chColon) {
+      return XPath2Utils::subString(name, 0, i, memMgr);
+    }
+  }
   return XMLUni::fgZeroLenString;
 }
 
@@ -57,34 +63,6 @@ const XMLCh* XPath2NSUtils::qualifyName(const XMLCh* prefix, const XMLCh* name, 
   } else {
     return name;
   }
-}
-
-void XPath2NSUtils::makeURIName(const XMLCh *uri, const XMLCh *name, XMLBuffer &buf)
-{
-  buf.set(name);
-  buf.append(':');
-  buf.append(uri);
-}
-
-const XMLCh *XPath2NSUtils::makeURIName(const XMLCh *uri, const XMLCh *name, XPath2MemoryManager *mm)
-{
-  XMLBuffer buf;
-  makeURIName(uri, name, buf);
-  return mm->getPooledString(buf.getRawBuffer());
-}
-
-void XPath2NSUtils::decomposeURIName(const XMLCh *uriname, XPath2MemoryManager *mm, const XMLCh *&uri, const XMLCh *&name)
-{
-  if(uriname)
-    for(const XMLCh *ptr = uriname; *ptr; ++ptr)
-      if(*ptr == ':') {
-        name = XPath2Utils::subString(uriname, 0, ptr - uriname, mm);
-        uri = ptr + 1;
-        return;
-      }
-
-  uri = 0;
-  name = 0;
 }
 
 DOMNode *XPath2NSUtils::getParent(const DOMNode *node)

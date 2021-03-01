@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,10 +36,10 @@ public:
 
   StaticTyper()
     : ASTVisitor(), context_(0), globalsUsed_(0), globalsOrder_(0),
-    trail_(0) {}
+    trail_(0), tupleSetup_(false) {}
   StaticTyper(StaticContext *context, Optimizer *parent = 0)
     : ASTVisitor(parent), context_(context), globalsUsed_(0), globalsOrder_(0),
-    trail_(0) {}
+    trail_(0), tupleSetup_(false) {}
 
   GlobalVariables *&getGlobalsUsed() { return globalsUsed_; }
   GlobalVariables *&getGlobalsOrder() { return globalsOrder_; }
@@ -74,6 +74,7 @@ protected:
   virtual TupleNode *optimizeForTuple(ForTuple *item);
   virtual TupleNode *optimizeLetTuple(LetTuple *item);
   virtual TupleNode *optimizeWhereTuple(WhereTuple *item);
+  virtual TupleNode *optimizeCountTuple(CountTuple *item);
   virtual TupleNode *optimizeOrderByTuple(OrderByTuple *item);
 
   void optimizeCase(const StaticAnalysis &var_src, XQTypeswitch::Case *item);
@@ -82,6 +83,7 @@ protected:
   GlobalVariables *globalsUsed_;
   GlobalVariables *globalsOrder_;
   PrologItem *trail_;
+  bool tupleSetup_;
 };
 
 #endif

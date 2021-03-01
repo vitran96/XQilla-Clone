@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,21 +22,11 @@
 
 #include <xqilla/utils/DelayedModule.hpp>
 
-class StaticContext;
-class XQQuery;
-class XQillaNSResolver;
-
 class XQILLA_API BuiltInModules
 {
 public:
   static const DelayedModule &core;
   static const DelayedModule &fn;
-  static const DelayedModule &rw;
-  static const DelayedModule &xqilla;
-
-  static void addNamespaces(StaticContext *context);
-  static void addNamespaces(XQillaNSResolver *resolver);
-  static void addModules(XQQuery *query);
 };
 
 #endif

@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,11 +27,9 @@
 #include <xqilla/exceptions/StaticErrorException.hpp>
 #include <xqilla/runtime/ClosureResult.hpp>
 
-using namespace std;
-
 static const unsigned int CONSTANT_FOLD_LIMIT = 4;
 
-ASTNode *XQSequence::constantFold(Result &result, DynamicContext *context, XPath2MemoryManager* memMgr,
+XQSequence *XQSequence::constantFold(Result &result, DynamicContext *context, XPath2MemoryManager* memMgr,
                                      const LocationInfo *location)
 {
   XQSequence *seq = new (memMgr) XQSequence(memMgr);
@@ -46,6 +44,8 @@ ASTNode *XQSequence::constantFold(Result &result, DynamicContext *context, XPath
     seq->addItem(XQLiteral::create(item, context, memMgr, location));
   }
 
+  // Don't specify a context for staticTyping
+  seq->staticTypingImpl(0);
   return seq;
 }
 
@@ -117,8 +117,9 @@ ASTNode *XQSequence::staticTypingImpl(StaticContext *context)
     _src.add((*i)->getStaticAnalysis());
   }
 
-  if(nestedSeq) {
-    vector<ASTNode*> newArgs;
+  if(context && nestedSeq) {
+    XPath2MemoryManager *mm = context->getMemoryManager();
+    VectorOfASTNodes newArgs = VectorOfASTNodes(XQillaAllocator<ASTNode*>(mm));
     for(i = _astNodes.begin(); i != _astNodes.end(); ++i) {
       if((*i)->getType() == SEQUENCE) {
         XQSequence *arg = (XQSequence*)*i;
@@ -130,12 +131,11 @@ ASTNode *XQSequence::staticTypingImpl(StaticContext *context)
         newArgs.push_back(*i);
       }
     }
-    _astNodes.clear();
-    std::copy(newArgs.begin(), newArgs.end(), back_inserter(_astNodes));
+    _astNodes = newArgs;
   }
 
   // Dissolve ourselves if we have only one child
-  if(_astNodes.size() == 1) {
+  if(context && _astNodes.size() == 1) {
     return _astNodes.front();
   }
   return this;

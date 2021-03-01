@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
 #include "AttributeAxis.hpp"
 #include <xqilla/axis/NodeTest.hpp>
 
-#include <xercesc/util/XMLUni.hpp>
+#include <xercesc/util/XMLUniDefs.hpp>
 
 #if defined(XERCES_HAS_CPP_NAMESPACE)
 XERCES_CPP_NAMESPACE_USE
@@ -61,11 +61,16 @@ const DOMNode *AttributeAxis::nextNode(DynamicContext *context)
         if(*name++!=*xmlns++)
           break;
       }
-      if(*xmlns==0 && (*name==0 || *name==':'))
+      if(*xmlns==0 && (*name==0 || *name==chColon))
         result = 0;
     }
   }
 
   return result;
+}
+
+std::string AttributeAxis::asString(DynamicContext *context, int indent) const
+{
+  return "AttributeAxis";
 }
 

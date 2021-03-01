@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,10 +28,17 @@
 
 class XQILLA_API ATFloatOrDerivedImpl : public ATFloatOrDerived 
 {
-public:
-  ATFloatOrDerivedImpl(const XMLCh* typeURI, const XMLCh* typeName, const XMLCh* value, const StaticContext* context);
-  ATFloatOrDerivedImpl(const XMLCh* typeURI, const XMLCh* typeName, float value);
 
+public:
+  /* constructor */
+  ATFloatOrDerivedImpl(const XMLCh* typeURI, const XMLCh* typeName, const XMLCh* value, const StaticContext* context);
+
+  /* constructor */
+  ATFloatOrDerivedImpl(const XMLCh* typeURI, const XMLCh* typeName, const MAPM value, const StaticContext* context);
+
+  /** destructor -- do nothing*/
+  virtual ~ATFloatOrDerivedImpl() { };
+  
   virtual void *getInterface(const XMLCh *name) const;
 
   /* Get the name of the primitive type (basic type) of this type
@@ -51,10 +58,6 @@ public:
   virtual Numeric::Ptr promoteTypeIfApplicable(AnyAtomicType::AtomicObjectType typeIndex,
                                                const DynamicContext* context) const;
   
-  virtual bool equals(const AnyAtomicType::Ptr &target, const DynamicContext* context) const;
-  virtual bool lessThan(const Numeric::Ptr &other, const DynamicContext* context) const;
-  virtual bool greaterThan(const Numeric::Ptr &other, const DynamicContext* context) const;
-
   /** Returns a Numeric object which is the sum of this and other */
   virtual Numeric::Ptr add(const Numeric::Ptr &other, const DynamicContext* context) const;
 
@@ -85,16 +88,16 @@ public:
  
   /** Returns the Additive inverse of this Numeric */
   virtual Numeric::Ptr invert(const DynamicContext* context) const;
-
+  
   /** Returns the absolute value of this Numeric */
   virtual Numeric::Ptr abs(const DynamicContext* context) const;
 
   /** Returns the square root of this Numeric */
   virtual Numeric::Ptr sqrt(const DynamicContext* context) const;
-  
+ 
   /** Returns the sinus of this Numeric */
   virtual Numeric::Ptr sin(const DynamicContext* context) const;
-  
+
   /** Returns the cosinus of this Numeric */
   virtual Numeric::Ptr cos(const DynamicContext* context) const;
 
@@ -132,7 +135,9 @@ public:
 
   /* Is this xs:float infinite? */
   virtual bool isInfinite() const;
-  virtual bool isInteger() const;
+
+  /* Get the primitive index associated with this type */
+  virtual AnyAtomicType::AtomicObjectType getPrimitiveTypeIndex() const;
 
   /* Get the primitive index associated with this type */
   static AnyAtomicType::AtomicObjectType getTypeIndex(); 
@@ -140,31 +145,47 @@ public:
   /* Get the primitive type name */
   static const XMLCh* getPrimitiveName();
 
-  virtual MAPM asMAPM() const;
-  virtual State getState() const;
+  virtual const MAPM &asMAPM() const { return _float; }
 
-  virtual double asDouble() const { return (double)value_; }
-  virtual float asFloat() const { return value_; }
-  virtual int asInt() const { return (int)value_; }
+  virtual State getState() const { return _state; }
 
-  static bool isNegative(float v);
-  static State getState(float v);
-  static const XMLCh* asString(float v, const DynamicContext *context);
+  /* The significant digits */
+  static int g_nSignificantDigits;
 
-  static float parseFloat(const XMLCh* const value);
+  static MAPM parseFloat(const XMLCh* const value, State &state);
 
 private:
+
   /* set the value of this decimal */
   void setFloat(const XMLCh* const value);
 
+  /* returns a new infinity ATFloatOrDerived*/
+  ATFloatOrDerived::Ptr infinity(const DynamicContext* context) const;
+
+  /* returns a new negative infinity ATFloatOrDerived*/
+  ATFloatOrDerived::Ptr negInfinity(const DynamicContext* context) const;
+
+  /* returns a NaN ATFloatOrDerived*/
+  ATFloatOrDerived::Ptr notANumber(const DynamicContext* context) const;
+
+  /* returns a -0 ATFloatOrDerived*/
+  ATFloatOrDerived::Ptr negZero(const DynamicContext* context) const;
+  
+  /*returns a ATFloatOrDerived of value value*/
+  ATFloatOrDerived::Ptr newFloat(MAPM value, const DynamicContext* context) const;
+
   /*The value of this float*/
-  float value_;
+  MAPM _float;
+
+  /* is it NaN, INF, NegINF, or just a float (NUM) */
+  State _state;
 
   /* the name of this type */
-  const XMLCh* typeName_;
+  const XMLCh* _typeName;
 
   /* the uri of this type */
-  const XMLCh* typeURI_; 
+  const XMLCh* _typeURI;
+ 
 };
 
-#endif
+#endif // _ATFLOATORDERIVEDIMPL_HPP

@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,8 +85,8 @@ ASTNode *XQVariable::staticTypingImpl(StaticContext *context)
 
   _src.clear();
 
-  const VariableType *vtype = context->getVariableTypeStore()->getVar(_uri, _name);
-  if(vtype == NULL) {
+  const StaticAnalysis *var_src = context->getVariableTypeStore()->getVar(_uri, _name, &_global);
+  if(var_src == NULL || (var_src->getProperties() & StaticAnalysis::UNDEFINEDVAR)!=0) {
     XMLBuffer errMsg;
     errMsg.append(X("A variable called {"));
     errMsg.append(_uri);
@@ -95,10 +95,9 @@ ASTNode *XQVariable::staticTypingImpl(StaticContext *context)
     errMsg.append(X(" does not exist [err:XPST0008]"));
     XQThrow(StaticErrorException, X("XQVariable::staticResolution"), errMsg.getRawBuffer());
   }
-  _src.setProperties(vtype->properties & ~(StaticAnalysis::SUBTREE|StaticAnalysis::SAMEDOC));
-  _src.getStaticType() = *vtype->type;
+  _src.setProperties(var_src->getProperties() & ~(StaticAnalysis::SUBTREE|StaticAnalysis::SAMEDOC));
+  _src.getStaticType() = var_src->getStaticType();
   _src.variableUsed(_uri, _name);
-  _global = vtype->global;
 
   return this;
 }

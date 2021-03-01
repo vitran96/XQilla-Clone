@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,26 +20,13 @@
 #include "../../config/xqilla_config.h"
 #include <assert.h>
 #include "VarTypeStoreImpl.hpp"
+#include <xqilla/context/impl/VarHashEntryImpl.hpp>
 #include <xqilla/utils/XPath2NSUtils.hpp>
 #include <xqilla/utils/XStr.hpp>
-#include <xqilla/functions/FunctionSignature.hpp>
 #include <xercesc/framework/XMLBuffer.hpp>
 
-VariableType::VariableType(const ArgumentSpec *aspec)
-  : properties(0),
-    type(&aspec->getStaticType()),
-    global(0)
-{
-  if(type->getMin() == 1 && type->getMax() == 1) {
-    properties = StaticAnalysis::DOCORDER | StaticAnalysis::GROUPED | StaticAnalysis::PEER |
-      StaticAnalysis::SUBTREE | StaticAnalysis::SAMEDOC | StaticAnalysis::ONENODE |
-      StaticAnalysis::SELF;
-  }
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
 VarTypeStoreImpl::VarTypeStoreImpl(XPath2MemoryManager* memMgr)
+  : _store(memMgr)
 {
 }
 
@@ -50,45 +37,61 @@ VarTypeStoreImpl::~VarTypeStoreImpl()
 
 void VarTypeStoreImpl::clear()
 {
-  global_ = VarMap();
-  scopes_.clear();
+  _store.clear();
 }
 
 void VarTypeStoreImpl::addLocalScope()
 {
-  scopes_.push_back(global_);
+  _store.addScope(Scope<VarType>::LOCAL_SCOPE);
 }
 
 void VarTypeStoreImpl::addLogicalBlockScope()
 {
-  if(scopes_.empty()) scopes_.push_back(global_);
-  else scopes_.push_back(scopes_.back());
+  _store.addScope(Scope<VarType>::LOGICAL_BLOCK_SCOPE);
 }
 
 void VarTypeStoreImpl::removeScope()
 {
-  scopes_.pop_back();
+  _store.removeScope();
 }
 
-void VarTypeStoreImpl::declareGlobalVar(const XMLCh* namespaceURI, const XMLCh* name,
-                                        const VariableType &vtype)
+void VarTypeStoreImpl::declareGlobalVar(const XMLCh* namespaceURI,
+                                        const XMLCh* name,
+                                        const StaticAnalysis &src,
+                                        XQGlobalVariable *global)
 {
-  VarEntry entry = { namespaceURI, name };
-  global_.put(entry, vtype);
+  _store.setGlobalVar(namespaceURI, name, VarType(&src, global));
 }
 
-void VarTypeStoreImpl::declareVar(const XMLCh* namespaceURI, const XMLCh* name,
-                                  const VariableType &vtype)
+void VarTypeStoreImpl::declareVar(const XMLCh* namespaceURI,
+                                  const XMLCh* name,
+                                  const StaticAnalysis &src)
 {
-  VarEntry entry = { namespaceURI, name };
-  if(scopes_.empty()) global_.put(entry, vtype);
-  else scopes_.back().put(entry, vtype);
+  _store.declareVar(namespaceURI, name, VarType(&src, 0));
 }
 
-const VariableType *VarTypeStoreImpl::getVar(const XMLCh* namespaceURI, const XMLCh* name) const
+const StaticAnalysis *VarTypeStoreImpl::getVar(const XMLCh* namespaceURI,
+                                               const XMLCh* name,
+                                               XQGlobalVariable **global) const
 {
-  VarEntry entry = { namespaceURI, name };
-  if(scopes_.empty()) return global_.get(entry);
-  return scopes_.back().get(entry);
+  VarHashEntry<VarType>* result = _store.getVar(namespaceURI, name);
+  if(result) {
+    if(global) *global = result->getValue().global;
+    return result->getValue().type;
+  }
+  if(global) *global = 0;
+  return 0;
 }
 
+const StaticAnalysis* VarTypeStoreImpl::getGlobalVar(const XMLCh* namespaceURI,
+                                                     const XMLCh* name,
+                                                     XQGlobalVariable **global) const
+{
+  VarHashEntry<VarType>* result = _store.getGlobalVar(namespaceURI, name);
+  if(result) {
+    if(global) *global = result->getValue().global;
+    return result->getValue().type;
+  }
+  if(global) *global = 0;
+  return 0;
+}

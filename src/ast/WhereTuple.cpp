@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ TupleNode *WhereTuple::staticResolution(StaticContext *context)
 
   parent_ = parent_->staticResolution(context);
 
-  if(expr_->getType() != ASTNode::AND) {
+  if(expr_->getType() != ASTNode::OPERATOR || ((XQOperator*)expr_)->getOperatorName() != And::name) {
     expr_ = new (mm) XQEffectiveBooleanValue(expr_, mm);
     expr_->setLocationInfo(this);
   }
@@ -86,7 +86,7 @@ TupleNode *WhereTuple::staticTypingImpl(StaticContext *context)
   }
 
   // Split if expr_ is the And operator
-  if(context && expr_->getType() == ASTNode::AND) {
+  if(context && expr_->getType() == ASTNode::OPERATOR && ((XQOperator*)expr_)->getOperatorName() == And::name) {
     XPath2MemoryManager *mm = context->getMemoryManager();
 
     And *andOp = (And*)expr_;
@@ -113,26 +113,16 @@ TupleNode *WhereTuple::staticTypingImpl(StaticContext *context)
     return tmp->staticTypingImpl(context);
   }
 
-  const StaticType &pType = parent_->getStaticAnalysis().getStaticType();
+  min_ = 0;
+  max_ = parent_->getMax();
 
-  assert(pType.getTypes().size() == 1);
-  const ItemType *pItemType = pType.getTypes()[0];
-  assert(pItemType->getItemTestType() == ItemType::TEST_TUPLE);
+  return this;
+}
 
-  src_.clear();
-  src_.add(expr_->getStaticAnalysis());
-
-  TupleMembers *pMembers = const_cast<TupleMembers*>(pItemType->getTupleMembers());
-  if(pMembers) {
-    TupleMembers::iterator i = pMembers->begin();
-    for(; i != pMembers->end(); ++i) {
-      src_.removeVariable(i.getValue()->getURI(), i.getValue()->getName());
-    }
-  }
-
-  src_.getStaticType() = pType;
-  src_.getStaticType().setCardinality(0, pType.getMax());
-  src_.add(parent_->getStaticAnalysis());
+TupleNode *WhereTuple::staticTypingTeardown(StaticContext *context, StaticAnalysis &usedSrc)
+{
+  usedSrc.add(expr_->getStaticAnalysis());
+  parent_ = parent_->staticTypingTeardown(context, usedSrc);
 
   return this;
 }
@@ -168,11 +158,6 @@ public:
     }
 
     return false;
-  }
-
-  virtual void createTuple(DynamicContext *context, size_t capacity, TupleImpl::Ptr &result) const
-  {
-    parent_->createTuple(context, capacity, result);
   }
 
 private:

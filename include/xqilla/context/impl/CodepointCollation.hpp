@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,18 +21,17 @@
 #define CODEPOINTCOLLATION_HPP
 
 #include <xqilla/framework/XQillaExport.hpp>
-#include <xqilla/context/Collation.hpp>
+#include <xqilla/context/impl/CollationImpl.hpp>
 
 class XPath2MemoryManager;
 
-class XQILLA_API CodepointCollation : public Collation {
+class XQILLA_API CodepointCollation : public CollationHelper {
 public:
 	CodepointCollation();
 
   static const XMLCh* getCodepointCollationName();
 	virtual const XMLCh* getCollationName() const;
 	virtual int compare(const XMLCh* string1, const XMLCh* string2) const;
-  virtual size_t hash(const XMLCh* const string) const;
 };
 
 #endif

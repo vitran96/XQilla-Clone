@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,20 +55,31 @@ FunctionContains::FunctionContains(const VectorOfASTNodes &args, XPath2MemoryMan
 
 BoolResult FunctionContains::boolResult(DynamicContext* context) const
 {
-  Sequence str1 = getParamNumber(1,context)->toSequence(context);
-  Sequence str2 = getParamNumber(2,context)->toSequence(context);
+    Sequence str1 = getParamNumber(1,context)->toSequence(context);
+    Sequence str2 = getParamNumber(2,context)->toSequence(context);
 
-  Collation* collation;
-  if(getNumArgs()>2) collation = context->getCollation(getParamNumber(3,context)->
-    next(context)->asString(context), this);
-  else collation = context->getDefaultCollation(this);
+    Collation* collation = NULL;
+    if(getNumArgs()>2) {
+        Sequence collArg = getParamNumber(3,context)->toSequence(context);
+        const XMLCh* collName = collArg.first()->asString(context);
+        try {
+            context->getItemFactory()->createAnyURI(collName, context);
+        } catch(XPath2ErrorException &e) {
+            XQThrow(FunctionException, X("FunctionContains::createSequence"), X("Invalid collationURI"));  
+        }
+        collation=context->getCollation(collName, this);
+        if(collation==NULL)
+            XQThrow(FunctionException,X("FunctionContains::createSequence"),X("Collation object is not available"));
+    }
+    else
+        collation=context->getCollation(CodepointCollation::getCodepointCollationName(), this);
 
-  const XMLCh* container = XMLUni::fgZeroLenString;
-  if(!str1.isEmpty())
-    container=str1.first()->asString(context);
-  const XMLCh* pattern = XMLUni::fgZeroLenString;
-  if(!str2.isEmpty())
-    pattern=str2.first()->asString(context);
+    const XMLCh* container = XMLUni::fgZeroLenString;
+    if(!str1.isEmpty())
+        container=str1.first()->asString(context);
+    const XMLCh* pattern = XMLUni::fgZeroLenString;
+    if(!str2.isEmpty())
+        pattern=str2.first()->asString(context);
 
     if(XMLString::stringLen(pattern)==0) return true;
     else if(XMLString::stringLen(container)==0) return false;

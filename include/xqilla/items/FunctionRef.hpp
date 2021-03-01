@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,9 @@ class XQILLA_API FunctionRef : public Item
 public:
   typedef RefCountPointer<const FunctionRef> Ptr;
 
-  virtual Type getType() const { return FUNCTION; }
+  virtual bool isNode() const { return false; }
+  virtual bool isAtomicValue() const { return false; }
+  virtual bool isFunction() const { return true; }
 
   virtual const XMLCh *getTypeURI() const { return 0; }
   virtual const XMLCh *getTypeName() const { return 0; }

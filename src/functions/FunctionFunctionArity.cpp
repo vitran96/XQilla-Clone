@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@
 #include <xqilla/exceptions/XPath2TypeMatchException.hpp>
 #include <xqilla/items/FunctionRef.hpp>
 #include <xqilla/ast/XQLiteral.hpp>
-#include <xqilla/functions/FunctionSignature.hpp>
 
 XERCES_CPP_NAMESPACE_USE;
 using namespace std;
@@ -49,30 +48,20 @@ ASTNode *FunctionFunctionArity::staticTypingImpl(StaticContext *context)
   calculateSRCForArguments(context);
 
   if(context) {
-    int arity = -1;
     const StaticAnalysis &sa = _args[0]->getStaticAnalysis();
-    if((sa.getStaticType().getFlags() & TypeFlags::FUNCTION) == 0) {
-      const StaticType::ItemTypes &types = sa.getStaticType().getTypes();
-      StaticType::ItemTypes::const_iterator i = types.begin();
-      for(; i != types.end(); ++i) {
-        if((*i)->getItemTestType() == ItemType::TEST_FUNCTION) {
-          if((*i)->getFunctionSignature() &&
-             (arity == -1 || arity == (int)(*i)->getFunctionSignature()->numArgs())) {
-            arity = (*i)->getFunctionSignature()->numArgs();
-          } else {
-            arity = -1;
-            break;
-          }
-        }
+    const StaticType &sType = sa.getStaticType();
+    if(sType.getReturnType() && sType.getMinArgs() == sType.getMaxArgs() && !sa.areDocsOrCollectionsUsed() && !sa.isNoFoldingForced()) {
+      XPath2MemoryManager* mm = context->getMemoryManager();
+
+      try {
+        AutoDelete<DynamicContext> dContext(context->createDynamicContext());
+        dContext->setMemoryManager(mm);
+        return XQLiteral::create(mm->createInteger(sType.getMinArgs()), dContext, mm, this);
+      }
+      catch(XQException &ex) {
+        // Constant folding failed
       }
     }
-
-    if(arity != -1 && !sa.areDocsOrCollectionsUsed() && !sa.isNoFoldingForced()) {
-      XPath2MemoryManager* mm = context->getMemoryManager();
-      ASTNode *result = new (mm) XQDecimalLiteral((ItemType*)&ItemType::INTEGER, MAPM(arity), mm);
-      result->setLocationInfo(this);
-      return result;
-    }    
   }
 
   return this;

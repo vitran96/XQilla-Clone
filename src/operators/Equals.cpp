@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,13 +33,13 @@
 /*static*/ const XMLCh Equals::name[]={ XERCES_CPP_NAMESPACE_QUALIFIER chLatin_E, XERCES_CPP_NAMESPACE_QUALIFIER chLatin_Q, XERCES_CPP_NAMESPACE_QUALIFIER chNull };
 
 Equals::Equals(const VectorOfASTNodes &args, XPath2MemoryManager* memMgr)
-  : ComparisonOperator(EQUALS, name, args, memMgr)
+  : ComparisonOperator(name, args, memMgr)
 {
 }
 
 /*static*/ bool Equals::equals(const Item::Ptr &arg1, const Item::Ptr &arg2, Collation* collation, DynamicContext* context, const LocationInfo *info)
 {
-  assert(arg1->getType() == Item::ATOMIC && arg2->getType() == Item::ATOMIC);
+  assert(arg1->isAtomicValue() && arg2->isAtomicValue());
   return equals((const AnyAtomicType::Ptr)arg1, (const AnyAtomicType::Ptr)arg2, collation, context, info);
 }
 

@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,8 @@
 
 #include <xqilla/framework/XQillaExport.hpp>
 #include <xqilla/ast/StaticType.hpp>
-#include <xqilla/utils/HashMap.hpp>
+
+#include <vector>
 
 class XPath2MemoryManager;
 
@@ -34,24 +35,19 @@ class XPath2MemoryManager;
 class XQILLA_API StaticAnalysis
 {
 public:
-  struct XQILLA_API VarEntry
-  {
-    const XMLCh *uri, *name;
+  static const int HASH_SIZE = 13;
 
-    bool operator==(const VarEntry &o) const
-    {
-      return XPath2Utils::equals(name, o.name) && XPath2Utils::equals(uri, o.uri) ;
-    }
-    inline size_t hash() const
-    {
-      return DefaultHashFunctor<const XMLCh*>()(name);
-    }
+  class XQILLA_API VarEntry
+  {
+  public:
+    VarEntry() : uri(0), name(0), hash(0), prev(0) {}
+    void set(const XMLCh *u, const XMLCh *n);
+    void set(const XMLCh *u, const XMLCh *n, size_t h);
+
+    const XMLCh *uri, *name;
+    size_t hash;
+    VarEntry *prev;
   };
-  typedef HashMap<VarEntry,int,
-    DefaultHashFunctor<VarEntry>,
-    DefaultEqualsFunctor<VarEntry>,
-    13,true> VarMap;
-  typedef VarMap::iterator VarIterator;
 
   StaticAnalysis(XPath2MemoryManager* memMgr);
   StaticAnalysis(const StaticAnalysis &o, XPath2MemoryManager* memMgr);
@@ -62,29 +58,6 @@ public:
   /// Clears all the information in this StaticAnalysis
   void clear();
   void clearExceptType();
-
-  enum Flags {
-    CONTEXT_ITEM          = 1 << 0,
-    CONTEXT_POSITION      = 1 << 1,
-    CONTEXT_SIZE          = 1 << 2,
-    CURRENT_TIME          = 1 << 3,
-    TIMEZONE              = 1 << 4,
-    AVAILABLE_DOCUMENTS   = 1 << 5,
-    AVAILABLE_COLLECTIONS = 1 << 6,
-    FORCE_NO_FOLDING      = 1 << 7,
-    CREATIVE              = 1 << 8,
-    UPDATING              = 1 << 9,
-    VACUOUS               = 1 << 10,
-
-    CONTEXT_FLAGS = (CONTEXT_ITEM | CONTEXT_POSITION | CONTEXT_SIZE),
-    DOCS_OR_COLLECTIONS = (AVAILABLE_DOCUMENTS | AVAILABLE_COLLECTIONS),
-    USED_EXCEPT_CONTEXT = (CURRENT_TIME | TIMEZONE | DOCS_OR_COLLECTIONS | FORCE_NO_FOLDING | CREATIVE),
-    USED = (USED_EXCEPT_CONTEXT | CONTEXT_FLAGS)
-  };
-
-  unsigned getFlags() const { return _flags; }
-  void addFlags(unsigned flags) { _flags |= flags; }
-  void removeFlags(unsigned flags) { _flags &= ~flags; }
 
   /** Overrides all the other flags, and never allows this sub-expression
       to be constant folded. */
@@ -111,7 +84,7 @@ public:
   bool removeVariable(const XMLCh *namespaceURI, const XMLCh *name);
   bool isVariableUsed(const XMLCh *namespaceURI, const XMLCh *name) const;
   bool isVariableUsed() const;
-  void variablesUsed(VarIterator &begin, VarIterator &end) const;
+  VarEntry **variablesUsed() const;
 
   /** Sets the members of this StaticAnalysis from the given StaticAnalysis */
   void add(const StaticAnalysis &o);
@@ -141,7 +114,8 @@ public:
     GROUPED      = 0x008, ///< Results are grouped by the document they come from
     SAMEDOC      = 0x010, ///< Results are from the same document as the context node
     ONENODE      = 0x020, ///< Only ever returns one node
-    SELF         = 0x040  ///< Only ever returns the context node
+    SELF         = 0x040, ///< Only ever returns the context node
+    UNDEFINEDVAR = 0x080  ///< This is a variable that has been undefined
   };
 
   unsigned int getProperties() const;
@@ -156,12 +130,23 @@ private:
   StaticAnalysis(const StaticAnalysis &o);
   StaticAnalysis &operator=(const StaticAnalysis &o);
 
-  unsigned _flags;
-  unsigned _properties;
+  bool _contextItem;
+  bool _contextPosition;
+  bool _contextSize;
+  bool _currentTime;
+  bool _implicitTimezone;
+  bool _availableDocuments;
+  bool _availableCollections;
+  bool _forceNoFolding;
+  bool _creative;
+  bool _updating;
+  bool _possiblyUpdating;
+
+  unsigned int _properties;
   StaticType _staticType;
 
-  VarMap _dynamicVariables;
-
+  VarEntry *_dynamicVariables[HASH_SIZE];
+  VarEntry *_recycle;
   XPath2MemoryManager *_memMgr;
 };
 

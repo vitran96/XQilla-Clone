@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,11 +48,6 @@ void ASTReleaser::release(XQUserFunction *item)
 XQGlobalVariable *ASTReleaser::optimizeGlobalVar(XQGlobalVariable *item)
 {
   return ASTVisitor::optimizeGlobalVar(item);
-}
-
-XQRewriteRule *ASTReleaser::optimizeRewriteRule(XQRewriteRule *item)
-{
-  return ASTVisitor::optimizeRewriteRule(item);
 }
 
 XQUserFunction *ASTReleaser::optimizeFunctionDef(XQUserFunction *item)
@@ -125,12 +120,9 @@ ASTNode *ASTReleaser::optimize ## methodname (classname *item) \
 
 RELEASE_XQ(Literal)
 RELEASE_XQ(QNameLiteral)
-RELEASE_XQ(DecimalLiteral)
-RELEASE_XQ(FloatLiteral)
-RELEASE_XQ(DoubleLiteral)
+RELEASE_XQ(NumericLiteral)
 RELEASE_XQ(Step)
 RELEASE_XQ(Variable)
-RELEASE_XQ(ExprSubstitution)
 RELEASE_XQ(If)
 RELEASE_XQ(CastableAs)
 RELEASE_XQ(CastAs)
@@ -138,8 +130,6 @@ RELEASE_XQ(TreatAs)
 RELEASE_XQ(FunctionCoercion)
 RELEASE_XQ(ContextItem)
 RELEASE_XQ(Return)
-RELEASE_XQ(TupleConstructor)
-RELEASE_XQ(TupleMember)
 RELEASE_XQ(Quantified)
 RELEASE_XQ(Validate)
 RELEASE_XQ(OrderingChange)
@@ -175,6 +165,8 @@ RELEASE(FTContains)
 ASTNode *ASTReleaser::optimizeInlineFunction(XQInlineFunction *item)
 {
   ASTVisitor::optimizeInlineFunction(item);
+  if(item->getSignature())
+    item->getSignature()->release();
   RELEASE_IMPL();
 }
 
@@ -250,30 +242,6 @@ ASTNode *ASTReleaser::optimizeTypeswitch(XQTypeswitch *item)
   clauses->~vector<XQTypeswitch::Case*, XQillaAllocator<XQTypeswitch::Case*> >();
 #endif
   item->getMemoryManager()->deallocate(clauses);
-
-  RELEASE_IMPL();
-}
-
-ASTNode *ASTReleaser::optimizeSwitch(XQSwitch *item)
-{
-  ASTVisitor::optimizeSwitch(item);
-
-  // Release the clauses and vector
-#if defined(_MSC_VER) || defined(__xlC__)
-  typedef XQSwitch::Cases ClauseVector;
-  ClauseVector &clauses = item->getCases();
-#else
-  std::vector<XQSwitch::Case*,XQillaAllocator<XQSwitch::Case*> > &clauses = item->getCases();
-#endif
-  for(XQSwitch::Cases::iterator i = clauses.begin(); i != clauses.end(); ++i) {
-    (*i)->getValues().~VectorOfASTNodes();
-    item->getMemoryManager()->deallocate(*i);
-  }
-#if defined(_MSC_VER) || defined(__xlC__)
-  clauses.~ClauseVector();
-#else
-  clauses.~vector<XQSwitch::Case*, XQillaAllocator<XQSwitch::Case*> >();
-#endif
 
   RELEASE_IMPL();
 }
@@ -409,7 +377,7 @@ ASTNode *ASTReleaser::optimizeUTransform(UTransform *item)
   VectorOfCopyBinding *bindings = const_cast<VectorOfCopyBinding*>(item->getBindings());
   if(bindings != 0) {
     for(VectorOfCopyBinding::iterator i = bindings->begin(); i != bindings->end(); ++i) {
-      (*i)->type_.release();
+      (*i)->src_.release();
       item->getMemoryManager()->deallocate(*i);
     }
     bindings->~VectorOfCopyBinding();

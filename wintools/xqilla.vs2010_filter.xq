@@ -1,7 +1,6 @@
 declare variable $projectFile external;
 declare variable $outputPath external;
 declare variable $msbversion := "4.0";
-declare variable $vsversion := "VC10.0";
 declare variable $sourcePath := doc($projectFile)/projects/variable[@name="sourcePath"];
 
 declare function local:indent($n) 
@@ -19,20 +18,24 @@ declare function local:getFilteredProjects()
   doc($projectFile)/projects/project[@name="xqilla"]
 };
 
+declare function local:getVsversion()
+{
+  (: Only be suitable when version >= 10.0 :)
+  distinct-values(doc($projectFile)//visualstudioversion[fn:number(.) >= 10.0])
+};
+
 declare function local:getPlatforms($version) 
 {
-  if ($version eq "7.10") then ("Win32")
-  else ("Win32", "x64", "IA64")
+  if ($version eq "14.0") then ("Win32", "x64", "ARM")
+  else ("Win32", "x64")
 };
 
 declare function local:getOutputName($project, $vsversion)
 {
-  let $vsname := if($vsversion = "VC7.10") then "VC7.1" 
-	         else if($vsversion = "VC8.00") then "VC8"
-		 else "VC10"
-  let $postfix := if($vsversion = "VC10.0") then ".vcxproj.filters" 
-		  else ".vcproj.filters"
-  return concat($outputPath, "/", $vsname, "/", $project/@name, $postfix)
+  let $vsname := if($vsversion = "10.0") then "VC10"
+      		 else if($vsversion = "11.0") then "VC11"
+		 else "VC14"
+  return concat($outputPath, "/", $vsname, "/", $project/@name, ".vcxproj.filters")
 };
 
 declare function local:genFilters($project){
@@ -78,7 +81,9 @@ declare function local:generateSrcFiles($project)
 
 declare function local:generateRCFiles($project)
 {
-  for $file in $project/files//file return
+  for $file in $project/files//file
+  let $vsversion := local:getVsversion()
+      return
        if (ends-with($file/@name,".rc")) then
 	    (local:indent(2),<ItemGroup xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 	       {local:indent(4)}<ResourceCompile Include="{local:windowsPath(concat($sourcePath, $file/@name))}">
@@ -105,7 +110,7 @@ declare function local:genFiles($project){
 	 local:generateRCFiles($project) 
 };
 
-
+for $vsversion in local:getVsversion()
 for $project in local:getFilteredProjects() 
 return 
 put(

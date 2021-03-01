@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ XERCES_CPP_NAMESPACE_USE;
 /*static*/ const XMLCh GeneralComp::name[]={ 'G', 'e', 'n', 'e', 'r', 'a', 'l', 'C', 'o', 'm', 'p', 'a', 'r', 'i', 's', 'o', 'n', 0 };
 
 GeneralComp::GeneralComp(ComparisonOperation operation, const VectorOfASTNodes &args, XPath2MemoryManager* memMgr)
-  : XQOperator(GENERAL_COMP, name, args, memMgr),
+  : XQOperator(name, args, memMgr),
     operation_(operation),
     collation_(0),
     xpath1compat_(false)
@@ -52,7 +52,7 @@ GeneralComp::GeneralComp(ComparisonOperation operation, const VectorOfASTNodes &
 }
 
 GeneralComp::GeneralComp(ComparisonOperation operation, const VectorOfASTNodes &args, Collation *collation, bool xpath1Compat, XPath2MemoryManager* memMgr)
-  : XQOperator(GENERAL_COMP, name, args, memMgr),
+  : XQOperator(name, args, memMgr),
     operation_(operation),
     collation_(collation),
     xpath1compat_(xpath1Compat)
@@ -156,7 +156,7 @@ ASTNode *GeneralComp::staticTypingImpl(StaticContext *context)
       _src.implicitTimezoneUsed(true);
   }
 
-  _src.getStaticType() = StaticType::BOOLEAN;
+  _src.getStaticType() = StaticType::BOOLEAN_TYPE;
 
   return this;
 }

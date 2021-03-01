@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,18 @@ XERCES_CPP_NAMESPACE_USE;
 XQCastAs::XQCastAs(ASTNode* expr, SequenceType* exprType, XPath2MemoryManager* memMgr)
   : ASTNodeImpl(CAST_AS, memMgr),
     _expr(expr),
-    _exprType(exprType)
+    _exprType(exprType),
+    _isPrimitive(false),
+    _typeIndex((AnyAtomicType::AtomicObjectType)-1)
+{
+}
+
+XQCastAs::XQCastAs(ASTNode* expr, SequenceType* exprType, bool isPrimitive, AnyAtomicType::AtomicObjectType typeIndex, XPath2MemoryManager* memMgr)
+  : ASTNodeImpl(CAST_AS, memMgr),
+    _expr(expr),
+    _exprType(exprType),
+    _isPrimitive(isPrimitive),
+    _typeIndex(typeIndex)
 {
 }
 
@@ -52,36 +63,39 @@ ASTNode* XQCastAs::staticResolution(StaticContext *context)
 
   _exprType->staticResolution(context);
 
-  const ItemType *itemType = _exprType->getItemType();
+  const SequenceType::ItemType *itemType = _exprType->getItemType();
   if(itemType != NULL) {
-    if(itemType->getTypeName() == 0 ||
-       (XPath2Utils::equals(itemType->getTypeURI(), SchemaSymbols::fgURI_SCHEMAFORSCHEMA) &&
-        (XPath2Utils::equals(itemType->getTypeName(), XMLUni::fgNotationString) ||
-         XPath2Utils::equals(itemType->getTypeName(), AnyAtomicType::fgDT_ANYATOMICTYPE))))
+    if(XPath2Utils::equals(itemType->getTypeURI(), SchemaSymbols::fgURI_SCHEMAFORSCHEMA) &&
+       (XPath2Utils::equals(itemType->getType()->getName(), XMLUni::fgNotationString) ||
+        XPath2Utils::equals(itemType->getType()->getName(), AnyAtomicType::fgDT_ANYATOMICTYPE)))
       XQThrow(TypeErrorException,X("XQCastAs::staticResolution"),
               X("The target type of a cast expression must be an atomic type that is in the in-scope schema types and is not xs:NOTATION or xdt:anyAtomicType [err:XPST0080]"));
   }
 
-  if(_exprType->getItemTestType() != ItemType::TEST_ATOMIC_TYPE)
+  if(_exprType->getItemTestType() != SequenceType::ItemType::TEST_ATOMIC_TYPE)
     XQThrow(TypeErrorException,X("XQCastAs::staticResolution"),X("Cannot cast to a non atomic type"));
+
+  _typeIndex = context->getItemFactory()->
+    getPrimitiveTypeIndex(_exprType->getTypeURI(),
+                          _exprType->getConstrainingType()->getName(), _isPrimitive);
 
   // If this is a cast to xs:QName or xs:NOTATION and the argument is a string literal
   // evaluate immediately, since they aren't allowed otherwise
-  if((itemType->getPrimitiveType() == AnyAtomicType::QNAME || itemType->getPrimitiveType() == AnyAtomicType::NOTATION) &&
+  if((_typeIndex == AnyAtomicType::QNAME || _typeIndex == AnyAtomicType::NOTATION) &&
      _expr->getType() == LITERAL &&
-     ((XQLiteral*)_expr)->getItemType()->getPrimitiveType() == AnyAtomicType::STRING) {
+     ((XQLiteral*)_expr)->getPrimitiveType() == AnyAtomicType::STRING) {
 
     AutoDelete<DynamicContext> dContext(context->createDynamicContext());
     dContext->setMemoryManager(mm);
 
     AnyAtomicType::Ptr item = (AnyAtomicType*)_expr->createResult(dContext)->next(dContext).get();
     try {
-      if(itemType->isPrimitive()) {
-        item = item->castAsNoCheck(itemType->getPrimitiveType(), 0, 0, dContext);
+      if(_isPrimitive) {
+        item = item->castAsNoCheck(_typeIndex, 0, 0, dContext);
       }
       else {
-        item = item->castAsNoCheck(itemType->getPrimitiveType(), itemType->getTypeURI(),
-                                   itemType->getTypeName(), dContext);
+        item = item->castAsNoCheck(_typeIndex, _exprType->getTypeURI(),
+                                   _exprType->getConstrainingType()->getName(), dContext);
       }
     }
     catch(XQException &e) {
@@ -104,9 +118,9 @@ ASTNode *XQCastAs::staticTypingImpl(StaticContext *context)
 {
   _src.clear();
 
-  const ItemType *itemType = _exprType->getItemType();
+  const SequenceType::ItemType *itemType = _exprType->getItemType();
   if(itemType != NULL) {
-    _src.getStaticType() = itemType;
+    _src.getStaticType() = StaticType::create(_typeIndex);
     if(_exprType->getOccurrenceIndicator() == SequenceType::QUESTION_MARK) {
       _src.getStaticType().multiply(0, 1);
     }
@@ -114,17 +128,17 @@ ASTNode *XQCastAs::staticTypingImpl(StaticContext *context)
 
   _src.add(_expr->getStaticAnalysis());
 
-  if(itemType->getPrimitiveType() == AnyAtomicType::QNAME &&
-     !_expr->getStaticAnalysis().getStaticType().containsType(TypeFlags::QNAME) &&
+  if(_typeIndex == AnyAtomicType::QNAME &&
+     !_expr->getStaticAnalysis().getStaticType().containsType(StaticType::QNAME_TYPE) &&
      (_exprType->getOccurrenceIndicator() == SequenceType::EXACTLY_ONE ||
-      _expr->getStaticAnalysis().getStaticType().containsType(TypeFlags::ITEM))) {
+      _expr->getStaticAnalysis().getStaticType().containsType(StaticType::ITEM_TYPE))) {
     XQThrow(TypeErrorException,X("XQCastAs::staticTyping"),
             X("Only a subtype of xs:QName can be cast to a subtype of xs:QName [err:XPTY0004]"));
   }
-  if(itemType->getPrimitiveType() == AnyAtomicType::NOTATION &&
-     !_expr->getStaticAnalysis().getStaticType().containsType(TypeFlags::NOTATION) &&
+  if(_typeIndex == AnyAtomicType::NOTATION &&
+     !_expr->getStaticAnalysis().getStaticType().containsType(StaticType::NOTATION_TYPE) &&
      (_exprType->getOccurrenceIndicator() == SequenceType::EXACTLY_ONE ||
-      _expr->getStaticAnalysis().getStaticType().containsType(TypeFlags::ITEM))) {
+      _expr->getStaticAnalysis().getStaticType().containsType(StaticType::ITEM_TYPE))) {
     XQThrow(TypeErrorException,X("XQCastAs::staticTyping"),
             X("Only a subtype of xs:NOTATION can be cast to a subtype of xs:NOTATION [err:XPTY0004]"));
   }
@@ -147,12 +161,12 @@ void XQCastAs::setExpression(ASTNode *item) {
 AnyAtomicType::Ptr XQCastAs::cast(const AnyAtomicType::Ptr &in, DynamicContext *context) const
 {
   try {
-    if(_exprType->getItemType()->isPrimitive()) {
-      return in->castAs(_exprType->getItemType()->getPrimitiveType(), 0, 0, context);
+    if(_isPrimitive) {
+      return in->castAs(_typeIndex, 0, 0, context);
     }
     else {
-      return in->castAs(_exprType->getItemType()->getPrimitiveType(), _exprType->getItemType()->getTypeURI(),
-                        _exprType->getItemType()->getTypeName(), context);
+      return in->castAs(_typeIndex, _exprType->getTypeURI(),
+                        _exprType->getConstrainingType()->getName(), context);
     }
   }
   catch(XQException &e) {
@@ -165,14 +179,14 @@ AnyAtomicType::Ptr XQCastAs::cast(const AnyAtomicType::Ptr &in, DynamicContext *
 AnyAtomicType::Ptr XQCastAs::cast(const XMLCh *value, DynamicContext *context) const
 {
   try {
-    if(_exprType->getItemType()->isPrimitive()) {
+    if(_isPrimitive) {
       return context->getItemFactory()->
-        createDerivedFromAtomicType(_exprType->getItemType()->getPrimitiveType(), value, context);
+        createDerivedFromAtomicType(_typeIndex, value, context);
     }
     else {
       return context->getItemFactory()->
-        createDerivedFromAtomicType(_exprType->getItemType()->getPrimitiveType(), _exprType->getItemType()->getTypeURI(),
-                                    _exprType->getItemType()->getTypeName(), value, context);
+        createDerivedFromAtomicType(_typeIndex, _exprType->getTypeURI(),
+                                    _exprType->getConstrainingType()->getName(), value, context);
     }
   }
   catch(XQException &e) {

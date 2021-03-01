@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,11 +81,6 @@ TupleNode *ASTCopier::copy(const TupleNode *item, DynamicContext *context)
 XQGlobalVariable *ASTCopier::optimizeGlobalVar(XQGlobalVariable *item)
 {
   return ASTVisitor::optimizeGlobalVar(item);
-}
-
-XQRewriteRule *ASTCopier::optimizeRewriteRule(XQRewriteRule *item)
-{
-  return ASTVisitor::optimizeRewriteRule(item);
 }
 
 class UpdateInstance : public ASTVisitor
@@ -263,32 +258,27 @@ ASTNode *ASTCopier::optimize ## methodname (classname *item) \
 // TBD copy SequenceType objects - jpcs
 // TBD copy NodeTest objects - jpcs
 
-COPY_XQ2(Literal, ItemType, Value)
-COPY_XQ4(QNameLiteral, ItemType, URI, Prefix, Localname)
-COPY_XQ2(DecimalLiteral, ItemType, Value)
-COPY_XQ2(FloatLiteral, ItemType, Value)
-COPY_XQ2(DoubleLiteral, ItemType, Value)
+COPY_XQ4(Literal, TypeURI, TypeName, Value, PrimitiveType)
+COPY_XQ5(QNameLiteral, TypeURI, TypeName, URI, Prefix, Localname)
+COPY_XQ4(NumericLiteral, TypeURI, TypeName, Value, PrimitiveType)
 COPY_XQ1(Sequence, Children)
 COPY_XQ2(Step, Axis, NodeTest)
 COPY_XQ4(Variable, Prefix, URI, Name, Global)
-COPY_XQ3(ExprSubstitution, QName, URI, Name)
 COPY_XQ3(If, Test, WhenTrue, WhenFalse)
-COPY_XQ2(CastableAs, Expression, SequenceType)
-COPY_XQ2(CastAs, Expression, SequenceType)
-COPY_XQ5(TreatAs, Expression, SequenceType, ErrorCode, DoTypeCheck, DoCardinalityCheck)
-COPY_XQ3(FunctionCoercion, Expression, SequenceType, FuncConvert)
+COPY_XQ4(CastableAs, Expression, SequenceType, IsPrimitive, TypeIndex)
+COPY_XQ4(CastAs, Expression, SequenceType, IsPrimitive, TypeIndex)
+COPY_XQ7(TreatAs, Expression, SequenceType, ErrorCode, DoTypeCheck, DoCardinalityCheck, TreatType, IsExact)
+COPY_XQ4(FunctionCoercion, Expression, SequenceType, FuncConvert, TreatType)
 COPY_XQ0(ContextItem)
 COPY_XQ2(Return, Parent, Expression)
-COPY_XQ1(TupleConstructor, Parent)
-COPY_XQ3(TupleMember, QName, URI, Name)
 COPY_XQ3(Quantified, QuantifierType, Parent, Expression)
 COPY_XQ2(Validate, Expression, Mode)
 COPY_XQ2(OrderingChange, OrderingValue, Expr)
 COPY_XQ2(Atomize, Expression, DoPSVI)
 COPY_XQ1(EffectiveBooleanValue, Expression)
-COPY_XQ2(PromoteUntyped, Expression, ItemType)
-COPY_XQ2(PromoteNumeric, Expression, ItemType)
-COPY_XQ2(PromoteAnyURI, Expression, ItemType)
+COPY_XQ5(PromoteUntyped, Expression, TypeURI, TypeName, IsPrimitive, TypeIndex)
+COPY_XQ4(PromoteNumeric, Expression, TypeURI, TypeName, TypeIndex)
+COPY_XQ3(PromoteAnyURI, Expression, TypeURI, TypeName)
 COPY_XQ2(DocumentOrder, Expression, Unordered)
 COPY_XQ3(Predicate, Expression, Predicate, Reverse)
 COPY_XQ1(NameExpression, Expression)
@@ -319,8 +309,9 @@ COPY_FULL3(UserFunction, XQUserFunctionInstance, FunctionDefinition, Arguments, 
 ASTNode *ASTCopier::optimizeInlineFunction(XQInlineFunction *item)
 {
   XQInlineFunction *result = new (mm_) XQInlineFunction(item->getUserFunction(), item->getPrefix(),
-                                                        item->getURI(), item->getName(),
-                                                        item->getItemType(), item->getInstance(), mm_);
+                                                        item->getURI(), item->getName(), item->getNumArgs(),
+                                                        new (mm_) FunctionSignature(item->getSignature(), mm_),
+                                                        item->getInstance(), mm_);
   ASTVisitor::optimizeInlineFunction(result);
 
   if(result->getUserFunction()) {
@@ -402,7 +393,7 @@ ASTNode *ASTCopier::optimizeOperator(XQOperator *item)
 static XQTypeswitch::Case *copyCase(const XQTypeswitch::Case *in, XPath2MemoryManager *mm)
 {
   XQTypeswitch::Case *result = new (mm) XQTypeswitch::Case(in->getQName(), in->getURI(), in->getName(), in->getSequenceType(),
-                                                           in->getExpression());
+                                                           in->getTreatType(), in->getIsExact(), in->getExpression());
   result->setLocationInfo(in);
   return result;
 }
@@ -418,27 +409,6 @@ ASTNode *ASTCopier::optimizeTypeswitch(XQTypeswitch *item)
   XQTypeswitch *result = new (mm_) XQTypeswitch(item->getExpression(), newCases, copyCase(item->getDefaultCase(), mm_), mm_);
 
   ASTVisitor::optimizeTypeswitch(result);
-  COPY_IMPL();
-}
-
-ASTNode *ASTCopier::optimizeSwitch(XQSwitch *item)
-{
-  XQSwitch *result = new (mm_) XQSwitch(item->getExpression(), mm_);
-
-  XQSwitch::Cases &clauses = item->getCases();
-  for(XQSwitch::Cases::iterator i = clauses.begin(); i != clauses.end(); ++i) {
-    XQSwitch::Case *newCase = new (mm_) XQSwitch::Case(mm_);
-    for(VectorOfASTNodes::iterator v = (*i)->getValues().begin(); v != (*i)->getValues().end(); ++v) {
-      newCase->getValues().push_back(*v);
-    }
-    newCase->setExpression((*i)->getExpression());
-    newCase->setLocationInfo(*i);
-    result->getCases().push_back(newCase);
-  }
-
-  result->setDefault(item->getDefault());
-
-  ASTVisitor::optimizeSwitch(result);
   COPY_IMPL();
 }
 
@@ -558,7 +528,7 @@ ASTNode *ASTCopier::optimizeMap(XQMap *item)
 {
   XQMap *result = new (mm_) XQMap(item->getArg1(), item->getArg2(), item->getURI(), item->getName(), mm_);
   ASTVisitor::optimizeMap(result);
-  result->getVarType() = item->getVarType();
+  const_cast<StaticAnalysis&>(result->getVarSRC()).copy(item->getVarSRC());
   COPY_IMPL();
 }
 
@@ -611,25 +581,33 @@ TupleNode *ASTCopier::optimizeContextTuple(ContextTuple *item)
   ContextTuple *result = new (mm_) ContextTuple(mm_);
   ASTVisitor::optimizeContextTuple(result);
   result->setLocationInfo(item);
-  const_cast<StaticAnalysis&>(result->getStaticAnalysis()).copy(item->getStaticAnalysis());
+  result->setMin(item->getMin());
+  result->setMax(item->getMax());
   return result;
 }
 
 TupleNode *ASTCopier::optimizeForTuple(ForTuple *item)
 {
-  ForTuple *result = new (mm_) ForTuple(item->getParent(), item->getVar(), item->getPos(), item->getExpression(), mm_);
+  ForTuple *result = new (mm_) ForTuple(item->getParent(), item->getVarURI(), item->getVarName(),
+                                        item->getPosURI(), item->getPosName(), item->getExpression(), mm_);
   ASTVisitor::optimizeForTuple(result);
   result->setLocationInfo(item);
-  const_cast<StaticAnalysis&>(result->getStaticAnalysis()).copy(item->getStaticAnalysis());
+  const_cast<StaticAnalysis&>(result->getVarSRC()).copy(item->getVarSRC());
+  const_cast<StaticAnalysis&>(result->getPosSRC()).copy(item->getPosSRC());
+  result->setMin(item->getMin());
+  result->setMax(item->getMax());
   return result;
 }
 
 TupleNode *ASTCopier::optimizeLetTuple(LetTuple *item)
 {
-  LetTuple *result = new (mm_) LetTuple(item->getParent(), item->getVar(), item->getExpression(), mm_);
+  LetTuple *result = new (mm_) LetTuple(item->getParent(), item->getVarURI(), item->getVarName(),
+                                        item->getExpression(), mm_);
   ASTVisitor::optimizeLetTuple(result);
   result->setLocationInfo(item);
-  const_cast<StaticAnalysis&>(result->getStaticAnalysis()).copy(item->getStaticAnalysis());
+  const_cast<StaticAnalysis&>(result->getVarSRC()).copy(item->getVarSRC());
+  result->setMin(item->getMin());
+  result->setMax(item->getMax());
   return result;
 }
 
@@ -638,16 +616,18 @@ TupleNode *ASTCopier::optimizeWhereTuple(WhereTuple *item)
   WhereTuple *result = new (mm_) WhereTuple(item->getParent(), item->getExpression(), mm_);
   ASTVisitor::optimizeWhereTuple(result);
   result->setLocationInfo(item);
-  const_cast<StaticAnalysis&>(result->getStaticAnalysis()).copy(item->getStaticAnalysis());
+  result->setMin(item->getMin());
+  result->setMax(item->getMax());
   return result;
 }
 
 TupleNode *ASTCopier::optimizeCountTuple(CountTuple *item)
 {
-  CountTuple *result = new (mm_) CountTuple(item->getParent(), item->getVar(), mm_);
+  CountTuple *result = new (mm_) CountTuple(item->getParent(), item->getVarURI(), item->getVarName(), mm_);
   ASTVisitor::optimizeCountTuple(result);
   result->setLocationInfo(item);
-  const_cast<StaticAnalysis&>(result->getStaticAnalysis()).copy(item->getStaticAnalysis());
+  result->setMin(item->getMin());
+  result->setMax(item->getMax());
   return result;
 }
 
@@ -657,7 +637,9 @@ TupleNode *ASTCopier::optimizeOrderByTuple(OrderByTuple *item)
                                         item->getCollation(), mm_);
   ASTVisitor::optimizeOrderByTuple(result);
   result->setLocationInfo(item);
-  const_cast<StaticAnalysis&>(result->getStaticAnalysis()).copy(item->getStaticAnalysis()); 
+  const_cast<StaticAnalysis&>(result->getUsedSRC()).copy(item->getUsedSRC());
+  result->setMin(item->getMin());
+  result->setMax(item->getMax());
   return result;
 }
 
@@ -666,7 +648,8 @@ TupleNode *ASTCopier::optimizeTupleDebugHook(TupleDebugHook *item)
   TupleDebugHook *result = new (mm_) TupleDebugHook(item->getParent(), mm_);
   ASTVisitor::optimizeTupleDebugHook(result);
   result->setLocationInfo(item);
-  const_cast<StaticAnalysis&>(result->getStaticAnalysis()).copy(item->getStaticAnalysis()); 
+  result->setMin(item->getMin());
+  result->setMax(item->getMax());
   return result;
 }
 

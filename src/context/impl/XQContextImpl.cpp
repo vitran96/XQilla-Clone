@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,10 +34,6 @@
 #include <xqilla/ast/XQSequence.hpp>
 #include <xqilla/ast/XQVariable.hpp>
 #include <xqilla/ast/XQCastAs.hpp>
-#include <xqilla/ast/XQTypeAlias.hpp>
-#include <xqilla/ast/LetTuple.hpp>
-#include <xqilla/ast/ContextTuple.hpp>
-#include <xqilla/ast/XQTupleConstructor.hpp>
 #include <xqilla/utils/XPath2NSUtils.hpp>
 #include <xqilla/utils/XPath2Utils.hpp>
 #include <xqilla/utils/ContextUtils.hpp>
@@ -64,12 +60,11 @@ XQContextImpl::XQContextImpl(XQillaConfiguration *conf, XQilla::Language languag
     _language(language),
     _createdWith(memMgr),
     _internalMM(memMgr),
-    _contextItemType(&ItemType::ITEM, 0, 1, &_internalMM),
+    _contextItemType(StaticType::ITEM_TYPE, 0, 1),
     _varTypeStore(0),
     _templateNameMap(29, false, &_internalMM),
     _templates(XQillaAllocator<XQUserFunction*>(&_internalMM)),
     _functionTable(0),
-    _aliases(17, true, &_internalMM),
     _collations(XQillaAllocator<Collation*>(&_internalMM)),
     _constructionMode(CONSTRUCTION_MODE_PRESERVE),
     _bPreserveBoundarySpace(false),
@@ -122,7 +117,7 @@ XQContextImpl::XQContextImpl(XQillaConfiguration *conf, XQilla::Language languag
   }
 
   // insert the default collation
-  addCollation(&g_codepointCollation);
+  addCollation(_internalMM.createCollation(&g_codepointCollation));
   setDefaultCollation(g_codepointCollation.getCollationName());
 
   _flworOrderingMode = FLWOR_ORDER_EMPTY_LEAST; // implementation-defined
@@ -268,13 +263,14 @@ DynamicContext *XQContextImpl::createDebugQueryContext(const Item::Ptr &contextI
   XPath2MemoryManager *rmm = result->getMemoryManager();
 
   // For simplicity we'll make them all have type item()*
-  VariableType vtype(0, &StaticType::ITEM_STAR, 0);
+  StaticAnalysis *src = new (rmm) StaticAnalysis(rmm);
+  src->getStaticType() = StaticType(StaticType::ITEM_TYPE, 0, StaticType::UNLIMITED);
 
   std::vector<std::pair<const XMLCh *, const XMLCh*> > inScopeVars;
   variables->getInScopeVariables(inScopeVars);
   std::vector<std::pair<const XMLCh *, const XMLCh*> >::iterator i = inScopeVars.begin();
   for(; i != inScopeVars.end(); ++i) {
-    store->declareGlobalVar(i->first, i->second, vtype);
+    store->declareGlobalVar(i->first, i->second, *src, 0);
   }
 
   // Set up all the in-scope namespaces
@@ -520,7 +516,7 @@ void XQContextImpl::setContextItem(const Item::Ptr &item)
 void XQContextImpl::addTemplate(XQUserFunction *tp)
 {
   if(tp->getName() != 0) {
-    if(_templateNameMap.containsKey((void*)tp->getURIName())) {
+    if(_templateNameMap.containsKey((void*)tp->getURINameHash())) {
       // [ERR XTSE0660] It is a static error if a stylesheet contains more than one template with
       // the same name and the same import precedence, unless it also contains a template with the
       // same name and higher import precedence.
@@ -532,7 +528,7 @@ void XQContextImpl::addTemplate(XQUserFunction *tp)
       buf.append(X(" [err:XTSE0660]."));
       XQThrow3(StaticErrorException,X("XQContextImpl::addNamedTemplate"), buf.getRawBuffer(), tp);
     }
-    _templateNameMap.put((void*)tp->getURIName(), tp);
+    _templateNameMap.put((void*)tp->getURINameHash(), tp);
   }
   _templates.push_back(tp);
 }
@@ -561,20 +557,6 @@ void XQContextImpl::removeCustomFunction(FuncFactory *func)
 {
   if(_functionTable != NULL)
     _functionTable->removeFunction(func);
-}
-
-void XQContextImpl::addTypeAlias(XQTypeAlias *alias)
-{
-  _aliases.put(alias->getURINameHash(), alias);
-}
-
-const XQTypeAlias *XQContextImpl::getTypeAlias(const XMLCh *uri, const XMLCh *name) const
-{
-  XMLBuffer buf;
-  XPath2NSUtils::makeURIName(uri, name, buf);
-
-  TypeAliasMap::iterator i = const_cast<TypeAliasMap&>(_aliases).find(buf.getRawBuffer());
-  return i == const_cast<TypeAliasMap&>(_aliases).end() ? 0 : i.getValue();
 }
 
 void XQContextImpl::setContextSize(size_t size)
@@ -677,25 +659,28 @@ void XQContextImpl::setDefaultCollation(const XMLCh* URI)
 
 Collation* XQContextImpl::getCollation(const XMLCh* URI, const LocationInfo *location) const
 {
-  std::vector<Collation*, XQillaAllocator<Collation*> >::const_iterator it = _collations.begin();
-  for(; it!=_collations.end(); ++it)
+  if(!XMLUri::isValidURI(false, URI))
+  {
+    const XMLCh* baseURI=getBaseURI();
+    if(baseURI && *baseURI)
+    {
+      try
+      {
+        XMLUri base(baseURI, getMemoryManager());
+        XMLUri full(&base, URI, getMemoryManager());
+        URI = getMemoryManager()->getPooledString(full.getUriText());
+      }
+      catch(XMLException &e)
+      {
+        //if can't build, assume it's because there was an invalid base URI, so use the original URI
+      }
+    }
+  }
+  for(std::vector<Collation*, XQillaAllocator<Collation*> >::const_iterator it= _collations.begin(); it!=_collations.end(); ++it)
     if(XPath2Utils::equals((*it)->getCollationName(), URI))
       return (*it);
-
-  const XMLCh* baseURI=getBaseURI();
-  if(baseURI && *baseURI) {
-    try {
-      XMLUri base(baseURI, getMemoryManager());
-      XMLUri full(&base, URI, getMemoryManager());
-      URI = getMemoryManager()->getPooledString(full.getUriText());
-
-      for(it = _collations.begin(); it!=_collations.end(); ++it)
-        if(XPath2Utils::equals((*it)->getCollationName(), URI))
-          return (*it);
-    } catch(XMLException &e) {}
-  }
-
   const XMLCh* msg = XPath2Utils::concatStrings(X("The requested collation ('"), URI, X("') is not defined [err:FOCH0002]"), getMemoryManager());
+
   XQThrow3(ContextException, X("XQContextImpl::getCollation"), msg, location);
   return NULL;
 }
@@ -703,23 +688,6 @@ Collation* XQContextImpl::getCollation(const XMLCh* URI, const LocationInfo *loc
 Collation* XQContextImpl::getDefaultCollation(const LocationInfo *location) const
 {
   return getCollation(_defaultCollation, location);
-}
-
-static inline ASTNode *createCastFunction(ASTNode *expr, ItemType *itemType, const DynamicContext *context, const LocationInfo *location)
-{
-  if((XPath2Utils::equals(itemType->getTypeName(), XMLUni::fgNotationString) ||
-      XPath2Utils::equals(itemType->getTypeName(), AnyAtomicType::fgDT_ANYATOMICTYPE)) &&
-     XPath2Utils::equals(itemType->getTypeURI(), SchemaSymbols::fgURI_SCHEMAFORSCHEMA))
-    return 0;
-
-  XPath2MemoryManager *mm = context->getMemoryManager();
-
-  SequenceType *seqType = new (mm) SequenceType(itemType, SequenceType::QUESTION_MARK);
-  seqType->setLocationInfo(location);
-
-  ASTNode *functionImpl = new (mm) XQCastAs(expr, seqType, mm);
-  functionImpl->setLocationInfo(location);
-  return functionImpl;
 }
 
 ASTNode *XQContextImpl::lookUpFunction(const XMLCh *uri, const XMLCh* name, const VectorOfASTNodes &v, const LocationInfo *location) const
@@ -730,59 +698,30 @@ ASTNode *XQContextImpl::lookUpFunction(const XMLCh *uri, const XMLCh* name, cons
     return functionImpl;
   }
 
-  XPath2MemoryManager *mm = getMemoryManager();
-
-  // Maybe it's a type alias
-  const XQTypeAlias *alias = getTypeAlias(uri, name);
-  if(alias) {
-    assert(alias->isResolved());
-
-    switch(alias->getType()->getItemTestType()) {
-    case ItemType::TEST_ATOMIC_TYPE:
-      functionImpl = createCastFunction(v[0], alias->getType(), this, location);
-      if(functionImpl) return functionImpl;
-      break;
-    case ItemType::TEST_TUPLE: {
-      // Tuple constructor function
-      TupleMembers *members = const_cast<TupleMembers*>(alias->getType()->getTupleMembers());
-      if(members->size() != v.size()) break;
-
-      TupleNode *tuple = new (mm) ContextTuple(mm);
-      tuple->setLocationInfo(location);
-      
-      TupleMembers::iterator it = members->begin();
-      for(; it != members->end(); ++it) {
-        ASTNode *arg = v[it.getValue()->getIndex()];
-        arg = it.getValue()->getType()->convertFunctionArg(arg, this, /*numericFunction*/false, location);
-        tuple = new (mm) LetTuple(tuple, it.getValue()->getURI(), it.getValue()->getName(), arg, mm);
-        tuple->setLocationInfo(location);
-      }
-
-      ASTNode *result = new (mm) XQTupleConstructor(tuple, mm);
-      result->setLocationInfo(location);
-      return result;
-    }
-    default: break;
-    }
-  }
+  if(v.size() != 1) return 0;
 
   // maybe it's not a function, but a datatype
-  if(v.size() == 1) {
-    try {
-      bool isPrimitive;
-      AnyAtomicType::AtomicObjectType primitiveType = _itemFactory->getPrimitiveTypeIndex(uri, name, isPrimitive);
-
-      ItemType *itemType = new (mm) ItemType(primitiveType, isPrimitive, uri, name, _docCache);
-      itemType->setLocationInfo(location);
-
-      return createCastFunction(v[0], itemType, this, location);
-    }
-    catch(TypeNotFoundException&) {
-      // ignore this exception: it means the type has not been found
-    }
+  try {
+    bool isPrimitive;
+    _itemFactory->getPrimitiveTypeIndex(uri, name, isPrimitive);
+  }
+  catch(TypeNotFoundException&) {
+    // ignore this exception: it means the type has not been found
+    return 0;
   }
 
-  return 0;
+  if((XPath2Utils::equals(name, XMLUni::fgNotationString) || XPath2Utils::equals(name, AnyAtomicType::fgDT_ANYATOMICTYPE)) &&
+     XPath2Utils::equals(uri, SchemaSymbols::fgURI_SCHEMAFORSCHEMA))
+    return 0;
+
+  XPath2MemoryManager *mm = getMemoryManager();
+
+  SequenceType *seqType = new (mm) SequenceType(uri, name, SequenceType::QUESTION_MARK, mm);
+  seqType->setLocationInfo(location);
+
+  functionImpl = new (mm) XQCastAs(v[0], seqType, mm);
+  functionImpl->setLocationInfo(location);
+  return functionImpl;
 }
 
 void XQContextImpl::addExternalFunction(const ExternalFunction *func)

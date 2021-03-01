@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,10 +21,10 @@
 #define _FLOOKUP_HPP
 
 #include <xqilla/framework/XQillaExport.hpp>
-#include <xqilla/utils/HashMap.hpp>
 
 #include <vector>
 #include <xercesc/util/XercesDefs.hpp>
+#include <xercesc/util/RefHash2KeysTableOf.hpp>
 #include <xqilla/ast/ASTNode.hpp>
 
 class FuncFactory;
@@ -39,9 +39,9 @@ public:
   ~FunctionLookup();
 
   ///adds a function to the custom function table
-  void insertFunction(const FuncFactory *func);
+  void insertFunction(FuncFactory *func);
   /// Remove a function
-  void removeFunction(const FuncFactory *func);
+  void removeFunction(FuncFactory *func);
   ///returns the approriate Function object
   ASTNode* lookUpFunction(const XMLCh* URI, const XMLCh* fname,
                           const VectorOfASTNodes &args,
@@ -58,14 +58,12 @@ public:
   void insertUpdateFunctions(XPath2MemoryManager *memMgr);
 
 private:
-  typedef HashMap<const XMLCh*, const FuncFactory*> FuncMap;
-  typedef HashMap<const XMLCh*, const ExternalFunction*> ExFuncMap;
-  FuncMap _funcTable;
-  ExFuncMap _exFuncTable;
+  XERCES_CPP_NAMESPACE_QUALIFIER RefHash2KeysTableOf< FuncFactory > _funcTable;
+  XERCES_CPP_NAMESPACE_QUALIFIER RefHash2KeysTableOf< const ExternalFunction > _exFuncTable;
 
 public:
   // static (global table interfaces)
-  static void insertGlobalFunction(const FuncFactory *func);
+  static void insertGlobalFunction(FuncFactory *func);
   static void insertGlobalExternalFunction(const ExternalFunction *func);
   // next two look in global table first, then the contextTable
   static ASTNode* lookUpGlobalFunction(const XMLCh* URI, const XMLCh* fname,

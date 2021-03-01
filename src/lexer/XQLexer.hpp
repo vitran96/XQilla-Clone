@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2010,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,7 +91,6 @@ typedef struct yyltype
 #include <xqilla/functions/XQUserFunction.hpp>
 #include <xqilla/functions/FunctionSignature.hpp>
 #include <xqilla/ast/XQTypeswitch.hpp>
-#include <xqilla/ast/XQSwitch.hpp>
 #include <xqilla/ast/XQPredicate.hpp>
 #include <xqilla/fulltext/FTSelection.hpp>
 #include <xqilla/fulltext/FTWords.hpp>
@@ -101,11 +100,6 @@ typedef struct yyltype
 
 class LetTuple;
 class XQGlobalVariable;
-class XQTypeAlias;
-class Annotation;
-class RewritePattern;
-class RewriteCase;
-class XQRewriteRule;
 
 typedef union {
   XMLCh* str;
@@ -115,18 +109,16 @@ typedef union {
   ArgumentSpec* argSpec;
   ArgumentSpecs* argSpecs;
   FunctionSignature *signature;
-  TupleMembers *tupleMembers;
-  Annotation *annotation;
   XQUserFunction::Mode* mode;
   XQUserFunction::ModeList* modeList;
   XQGlobalVariable *globalVar;
-  XQTypeAlias *alias;
   NodeTest *nodeTest;
-  Node::Axis axis;
+  XQStep::Axis axis;
   QualifiedName *qName;
   SequenceType* sequenceType;
   SequenceType::OccurrenceIndicator occurrence;
-  ItemType* itemType;
+  SequenceType::ItemType* itemType;
+  VectorOfSequenceTypes *sequenceTypes;
   VectorOfASTNodes* itemList;
   VectorOfPredicates* predicates;
   TupleNode *tupleNode;
@@ -137,7 +129,6 @@ typedef union {
   TemplateArguments *templateArgs;
   XQTypeswitch::Case *caseClause;
   XQTypeswitch::Cases *caseClauses;
-  XQSwitch::Case *switchCase;
   OrderByTuple::Modifiers orderByModifier;
   VectorOfStrings* stringList;
   FTSelection *ftselection;
@@ -148,9 +139,6 @@ typedef union {
   FTOption::FTUnit ftunit;
   bool boolean;
   int integer;
-  RewritePattern *rwpattern;
-  RewriteCase *rwcase;
-  XQRewriteRule *rwrule;
 } yystype;
 #define YYSTYPE yystype
 #define YYSTYPE_IS_DECLARED 1
@@ -167,7 +155,7 @@ public:
 
   virtual int yylex(YYSTYPE* pYYLVAL, YYLTYPE* pYYLOC) = 0;
 
-  virtual int error(const char* message)
+  int error(const char* message)
   {
     Error(message, m_lineno, m_columnno);
     return 0;
@@ -193,17 +181,11 @@ public:
   bool isUpdate() const { return (m_language & XQilla::UPDATE) != 0; }
   bool isVersion3() const { return (m_language & XQilla::VERSION3) != 0; }
   bool isExtensions() const { return (m_language & XQilla::EXTENSIONS) != 0; }
-  bool isCarrot() const { return (m_language & XQilla::CARROT) != 0; }
 
   void setVersion3(bool value)
   {
     m_language = (XQilla::Language)((m_language & ~(XQilla::VERSION3)) |
                                     (value ? XQilla::VERSION3 : 0));
-  }
-  void setEnableExtensions(bool value)
-  {
-    m_language = (XQilla::Language)((m_language & ~(XQilla::EXTENSIONS)) |
-                                    (value ? XQilla::EXTENSIONS : 0));
   }
 
   void setGenerateErrorException(bool bEnable) { m_bGenerateErrorException=bEnable; }
@@ -276,11 +258,6 @@ protected:
   virtual void LexerError(const char* msg);
   virtual void yy_pop_state();
 
-  virtual int error(const char* message)
-  {
-    return Lexer::error(yyloc, message);
-  }
-
   void userAction(YY_CHAR* text, int length);
   void undoUserAction();
 
@@ -321,14 +298,9 @@ public:
       _context((DynamicContext*)query->getStaticContext()),
       _query(query),
       _function(0),
-      _signature(0),
-      _rwrule(0),
-      _rwpattern(0),
-      _seqType(0),
       _moduleName(0),
       _flags(32),
-      _namespaceDecls(13),
-      _rewriteRule(false)
+      _namespaceDecls(13)
   {
   }
 
@@ -337,14 +309,9 @@ public:
       _context(0),
       _query(0),
       _function(0),
-      _signature(0),
-      _rwrule(0),
-      _rwpattern(0),
-      _seqType(0),
       _moduleName(0),
       _flags(32),
-      _namespaceDecls(13),
-      _rewriteRule(false)
+      _namespaceDecls(13)
   {
   }
 
@@ -353,13 +320,9 @@ public:
   XQQuery* _query;
   XQUserFunction *_function;
   FunctionSignature *_signature;
-  XQRewriteRule *_rwrule;
-  RewritePattern *_rwpattern;
-  SequenceType *_seqType;
   const XMLCh *_moduleName;
   XERCES_CPP_NAMESPACE_QUALIFIER BitSet _flags;
   XERCES_CPP_NAMESPACE_QUALIFIER RefHashTableOf<XMLCh> _namespaceDecls;
-  bool _rewriteRule;
 };
 
 namespace XQParser {

@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,6 @@
 #include <xqilla/framework/XPath2MemoryManager.hpp>
 #include <xqilla/runtime/Result.hpp>
 #include <xqilla/update/PendingUpdateList.hpp>
-
-#include <xercesc/framework/XMLBuffer.hpp>
 
 XERCES_CPP_NAMESPACE_USE;
 

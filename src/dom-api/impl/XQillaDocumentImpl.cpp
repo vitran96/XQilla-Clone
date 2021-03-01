@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,7 +93,12 @@ XQillaDocumentImpl::createExpression(const XMLCh* expression,
   // Use placement new, because XQillaExpressionImpl inherits from XercesConfiguration,
   // which inherits from XMemory - which screws up our operator new overload
   void *mem = _createdWith->allocate(sizeof(XQillaExpressionImpl));
-  new (mem) XQillaExpressionImpl(expression, _createdWith, resolver, _xmlGrammarPool);
+  try {
+    new (mem) XQillaExpressionImpl(expression, _createdWith, resolver, _xmlGrammarPool);
+  } catch(...) {
+    _createdWith->deallocate(mem);
+    throw;
+  }
   return (XQillaExpressionImpl*)mem;
 }
 

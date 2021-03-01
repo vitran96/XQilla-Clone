@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,51 +27,35 @@
 #include <xercesc/sax/InputSource.hpp>
 #include <xqilla/runtime/ResultImpl.hpp>
 #include <xqilla/context/StaticContext.hpp>
-#include <xqilla/utils/HashMap.hpp>
+
+#include <xercesc/util/RefHashTableOf.hpp>
 
 class DynamicContext;
 class XQUserFunction;
 class XQGlobalVariable;
-class XQTypeAlias;
-class XQRewriteRule;
 class XQQuery;
 class DelayedModule;
 class DelayedFuncFactory;
 class StaticTyper;
-class XQUserFunctionInstance;
 
 typedef std::vector<XQGlobalVariable*, XQillaAllocator<XQGlobalVariable*> > GlobalVariables;
-typedef std::vector<XQTypeAlias*, XQillaAllocator<XQTypeAlias*> > TypeAliases;
-typedef std::vector<XQRewriteRule*, XQillaAllocator<XQRewriteRule*> > RewriteRules;
 typedef std::vector<XQQuery*, XQillaAllocator<XQQuery*> > ImportedModules;
 typedef std::vector<DelayedFuncFactory*, XQillaAllocator<DelayedFuncFactory*> > DelayedFunctions;
 
-typedef HashMap<const XQUserFunction*, XQQuery*> FuncIndex;
-typedef HashMap<const XQGlobalVariable*, XQQuery*> VarIndex;
-typedef HashMap<const XMLCh *, XQQuery*> ModuleMap;
+typedef XERCES_CPP_NAMESPACE_QUALIFIER RefHashTableOf<XQQuery> ModuleMap;
 
 class XQILLA_API ModuleCache : public XERCES_CPP_NAMESPACE_QUALIFIER XMemory
 {
 public:
   ModuleCache(XERCES_CPP_NAMESPACE_QUALIFIER MemoryManager *mm);
-  ~ModuleCache();
 
   void put(XQQuery *module);
   XQQuery *getByURI(const XMLCh *uri) const;
   XQQuery *getByNamespace(const XMLCh *ns) const;
 
-  XQQuery *findModuleForFunction(const XQUserFunction *item) const;
-  XQQuery *findModuleForVariable(const XQGlobalVariable *item) const;
-
   ModuleMap byURI_;
   ModuleMap byNamespace_;
   ImportedModules ordered_;
-  mutable FuncIndex funcIndex_;
-  mutable VarIndex varIndex_;
-
-private:
-  ModuleCache(const ModuleCache&);
-  ModuleCache &operator=(const ModuleCache&);
 };
 
 /**
@@ -274,12 +258,6 @@ public:
   /// Returns a vector of all XQGlobalVariable objects from the query
   const GlobalVariables &getVariables() const { return m_userDefVars; }
 
-  void addTypeAlias(XQTypeAlias *alias);
-  const TypeAliases &getTypeAliases() const { return m_aliases; }
-
-  void addRewriteRule(XQRewriteRule *rule);
-  const RewriteRules &getRewriteRules() const { return m_rwrules; }
-
   /// Returns a vector of all XQGlobalVariable objects from the query
   const ImportedModules &getImportedModules() const { return m_importedModules; }
 
@@ -317,6 +295,9 @@ public:
   void importModule(const XMLCh* szUri, VectorOfStrings* locations, const LocationInfo *location);
   void importModule(XQQuery *module);
 
+  XQQuery *findModuleForVariable(const XMLCh *uri, const XMLCh *name);
+  XQQuery *findModuleForFunction(const XMLCh *uri, const XMLCh *name, int numArgs);
+
   //@}
 
 private:
@@ -348,8 +329,6 @@ private:
   UserFunctions m_userDefFns;
   DelayedFunctions m_delayedFunctions;
   GlobalVariables m_userDefVars;
-  TypeAliases m_aliases;
-  RewriteRules m_rwrules;
   ImportedModules m_importedModules;
 
   ModuleCache *m_moduleCache;

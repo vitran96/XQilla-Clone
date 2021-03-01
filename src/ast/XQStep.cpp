@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@
 #include <xqilla/ast/XQDocumentOrder.hpp>
 #include <xqilla/ast/XQContextItem.hpp>
 
-XQStep::XQStep(Node::Axis axis, NodeTest* nodeTest, XPath2MemoryManager* memMgr)
+XQStep::XQStep(Axis axis, NodeTest* nodeTest, XPath2MemoryManager* memMgr)
   : ASTNodeImpl(STEP, memMgr),
     nodeTest_(nodeTest),
     axis_(axis)
@@ -43,28 +43,28 @@ XQStep::~XQStep()
 {
 }
 
-unsigned int XQStep::getAxisProperties(Node::Axis axis)
+unsigned int XQStep::getAxisProperties(Axis axis)
 {
   unsigned int properties = 0;
   // properties depend on the axis of the step
   switch (axis) {
-  case Node::SELF:
+  case SELF:
     properties |= StaticAnalysis::ONENODE | StaticAnalysis::SELF;
     // Fall through
-  case Node::CHILD:
-  case Node::ATTRIBUTE:
-  case Node::NAMESPACE:
+  case CHILD:
+  case ATTRIBUTE:
+  case NAMESPACE:
     properties |= StaticAnalysis::SUBTREE | StaticAnalysis::PEER;
     break;
-  case Node::DESCENDANT:
-  case Node::DESCENDANT_OR_SELF:
+  case DESCENDANT:
+  case DESCENDANT_OR_SELF:
     properties |= StaticAnalysis::SUBTREE;
     break;
-  case Node::FOLLOWING_SIBLING:
-  case Node::PRECEDING_SIBLING:
+  case FOLLOWING_SIBLING:
+  case PRECEDING_SIBLING:
     properties |= StaticAnalysis::PEER;
     break;
-  case Node::PARENT:
+  case PARENT:
     properties |= StaticAnalysis::PEER | StaticAnalysis::ONENODE;
     break;
   default:
@@ -72,7 +72,7 @@ unsigned int XQStep::getAxisProperties(Node::Axis axis)
   }
   properties |= StaticAnalysis::GROUPED | StaticAnalysis::SAMEDOC;
 
-  if(isForwardAxis(axis) || axis == Node::PARENT) {
+  if(isForwardAxis(axis) || axis == PARENT) {
     properties |= StaticAnalysis::DOCORDER;
   }
 
@@ -89,7 +89,7 @@ ASTNode *XQStep::staticTypingImpl(StaticContext *context)
 {
   _src.clear();
 
-  if(context && !context->getContextItemType().containsType(TypeFlags::ITEM)) {
+  if(context && !context->getContextItemType().containsType(StaticType::ITEM_TYPE)) {
     XQThrow(DynamicErrorException,X("XQStep::staticTyping"),
             X("It is an error for the context item to be undefined when using it [err:XPDY0002]"));
   }
@@ -102,36 +102,31 @@ ASTNode *XQStep::staticTypingImpl(StaticContext *context)
   _src.getStaticType().multiply(0, StaticType::UNLIMITED);
 
   switch(axis_) {
-  case Node::SELF:
-    if(context) {
-      _src.getStaticType().typeIntersect(context->getContextItemType());
-      _src.getStaticType().setCardinality(context->getContextItemType().getMin(), context->getContextItemType().getMax());
-    }
-    else {
-      _src.getStaticType().setCardinality(0, 1);
-    }
+  case SELF:
+    if(context)
+      _src.getStaticType().typeNodeIntersect(context->getContextItemType());
     break;
-  case Node::ATTRIBUTE:
-    _src.getStaticType().typeIntersect(TypeFlags::ATTRIBUTE);
+  case ATTRIBUTE:
+    _src.getStaticType().typeNodeIntersect(StaticType(StaticType::ATTRIBUTE_TYPE, 0, StaticType::UNLIMITED));
     break;
-  case Node::NAMESPACE:
-    _src.getStaticType().typeIntersect(TypeFlags::NAMESPACE);
+  case NAMESPACE:
+    _src.getStaticType().typeNodeIntersect(StaticType(StaticType::NAMESPACE_TYPE, 0, StaticType::UNLIMITED));
     break;
-  case Node::CHILD:
-  case Node::DESCENDANT:
-  case Node::FOLLOWING:
-  case Node::FOLLOWING_SIBLING:
-  case Node::PRECEDING:
-  case Node::PRECEDING_SIBLING:
-    _src.getStaticType().typeIntersect(TypeFlags::ELEMENT | TypeFlags::TEXT | TypeFlags::PI |
-                                       TypeFlags::COMMENT);
+  case CHILD:
+  case DESCENDANT:
+  case FOLLOWING:
+  case FOLLOWING_SIBLING:
+  case PRECEDING:
+  case PRECEDING_SIBLING:
+    _src.getStaticType().typeNodeIntersect(StaticType(StaticType::ELEMENT_TYPE | StaticType::TEXT_TYPE | StaticType::PI_TYPE |
+                                            StaticType::COMMENT_TYPE, 0, StaticType::UNLIMITED));
     break;
-  case Node::ANCESTOR:
-  case Node::PARENT:
-    _src.getStaticType().typeIntersect(TypeFlags::DOCUMENT | TypeFlags::ELEMENT);
+  case ANCESTOR:
+  case PARENT:
+    _src.getStaticType().typeNodeIntersect(StaticType(StaticType::DOCUMENT_TYPE | StaticType::ELEMENT_TYPE, 0, StaticType::UNLIMITED));
     break;
-  case Node::DESCENDANT_OR_SELF:
-  case Node::ANCESTOR_OR_SELF:
+  case DESCENDANT_OR_SELF:
+  case ANCESTOR_OR_SELF:
     // Could be any type
     break;
   }
@@ -139,24 +134,24 @@ ASTNode *XQStep::staticTypingImpl(StaticContext *context)
   return this;
 }
 
-bool XQStep::isForwardAxis(Node::Axis axis)
+bool XQStep::isForwardAxis(Axis axis)
 {
   switch(axis) {
-  case Node::ANCESTOR:
-  case Node::ANCESTOR_OR_SELF:
-  case Node::PARENT:
-  case Node::PRECEDING:
-  case Node::PRECEDING_SIBLING:
+  case ANCESTOR:
+  case ANCESTOR_OR_SELF:
+  case PARENT:
+  case PRECEDING:
+  case PRECEDING_SIBLING:
     return false;
 
-  case Node::ATTRIBUTE:
-  case Node::CHILD:
-  case Node::DESCENDANT:
-  case Node::DESCENDANT_OR_SELF:
-  case Node::FOLLOWING:
-  case Node::FOLLOWING_SIBLING:
-  case Node::NAMESPACE:
-  case Node::SELF:
+  case ATTRIBUTE:
+  case CHILD:
+  case DESCENDANT:
+  case DESCENDANT_OR_SELF:
+  case FOLLOWING:
+  case FOLLOWING_SIBLING:
+  case NAMESPACE:
+  case SELF:
     return true;
   }
   return false;
@@ -170,11 +165,11 @@ void XQStep::setNodeTest(NodeTest *nt) {
   nodeTest_ = nt;
 }
 
-Node::Axis XQStep::getAxis() const {
+XQStep::Axis XQStep::getAxis() const {
   return axis_;
 }
 
-void XQStep::setAxis(Node::Axis a) {
+void XQStep::setAxis(XQStep::Axis a) {
   axis_ = a;
 }
 
@@ -200,7 +195,7 @@ public:
       if(item.isNull()) {
         return 0;
       }
-      if(item->getType() != Item::NODE) {
+      if(!item->isNode()) {
         XQThrow(TypeErrorException,X("StepResult::next"), X("An attempt was made to perform an axis step when the Context Item was not a node [err:XPTY0020]"));
       }
 

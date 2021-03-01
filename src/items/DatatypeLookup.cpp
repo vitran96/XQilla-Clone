@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@
 #include "DatatypeFactoryTemplate.hpp"
 #include <xqilla/exceptions/TypeNotFoundException.hpp>
 #include "impl/ATAnyURIOrDerivedImpl.hpp"
+#include "impl/ATAnySimpleTypeImpl.hpp"
 #include "impl/ATBase64BinaryOrDerivedImpl.hpp"
 #include <xqilla/items/impl/ATBooleanOrDerivedImpl.hpp>
 #include <xqilla/items/impl/ATDateOrDerivedImpl.hpp>
@@ -63,6 +64,10 @@ DatatypeLookup::DatatypeLookup(const DocumentCache* dc, MemoryManager* memMgr) :
     fDocumentCache(dc),
     fMemMgr(memMgr)
 {
+  // create a xs:anySimpleType
+  anySimpleType_ = new (fMemMgr) DatatypeFactoryTemplate<ATAnySimpleTypeImpl>(fDocumentCache);
+  insertDatatype(anySimpleType_);
+  
   // create a xs:anyURI
   anyURI_ = new (fMemMgr) DatatypeFactoryTemplate<ATAnyURIOrDerivedImpl>(fDocumentCache);
   insertDatatype(anyURI_);
@@ -154,6 +159,7 @@ DatatypeLookup::DatatypeLookup(const DocumentCache* dc, MemoryManager* memMgr) :
 
 DatatypeLookup::~DatatypeLookup()
 {
+	fMemMgr->deallocate(anySimpleType_);
 	fMemMgr->deallocate(anyURI_);
 	fMemMgr->deallocate(base64Binary_);
 	fMemMgr->deallocate(boolean_);
@@ -180,12 +186,13 @@ DatatypeLookup::~DatatypeLookup()
 
 void DatatypeLookup::insertDatatype(DatatypeFactory *datatype)
 {
-  fDatatypeTable.put(datatype->getPrimitiveTypeName(),datatype);
+  fDatatypeTable.put((void*)datatype->getPrimitiveTypeName(),datatype);
 }
 
 const DatatypeFactory* DatatypeLookup::lookupDatatype(AnyAtomicType::AtomicObjectType typeIndex) const
 {
   switch(typeIndex) {
+  case AnyAtomicType::ANY_SIMPLE_TYPE: return anySimpleType_;
   case AnyAtomicType::ANY_URI: return anyURI_;
   case AnyAtomicType::BASE_64_BINARY: return base64Binary_;
   case AnyAtomicType::BOOLEAN: return boolean_;
@@ -216,13 +223,13 @@ const DatatypeFactory* DatatypeLookup::lookupDatatype(AnyAtomicType::AtomicObjec
 
 const DatatypeFactory* DatatypeLookup::lookupDatatype(const XMLCh* typeURI, const XMLCh* typeName, bool &isPrimitive) const
 {
-  const DatatypeFactory * const *pFactory=fDatatypeTable.get(typeName);
+  const DatatypeFactory* pFactory=fDatatypeTable.get((void*)typeName);
   
   // in case we're lucky and we were given a primitive type
   if (pFactory) {
     if(XPath2Utils::equals(typeURI, SchemaSymbols::fgURI_SCHEMAFORSCHEMA)) {
       isPrimitive = true;
-      return *pFactory;
+      return pFactory;
     }
   }
   isPrimitive = false;
@@ -239,16 +246,16 @@ const DatatypeFactory* DatatypeLookup::lookupDatatype(const XMLCh* typeURI, cons
   }
 
   if(validator) {
-    pFactory = fDatatypeTable.get(validator->getTypeLocalName());
+    pFactory = fDatatypeTable.get((void*)validator->getTypeLocalName());
 
     if(pFactory) {
-      if((*pFactory)->getPrimitiveTypeIndex() == AnyAtomicType::DURATION && previousValidator != 0) {
+      if(pFactory->getPrimitiveTypeIndex() == AnyAtomicType::DURATION && previousValidator != 0) {
         // Find a more specific type for duration, if possible
-        const DatatypeFactory * const *tmp = fDatatypeTable.get(previousValidator->getTypeLocalName());
+        const DatatypeFactory *tmp = fDatatypeTable.get((void*)previousValidator->getTypeLocalName());
         if(tmp) pFactory = tmp;
       }
 
-      return *pFactory;
+      return pFactory;
     }
   }
 
@@ -260,6 +267,11 @@ const DatatypeFactory* DatatypeLookup::lookupDatatype(const XMLCh* typeURI, cons
   buf.append(X(" not found [err:XPST0051]"));
   XQThrow2(TypeNotFoundException, X("DatatypeLookup::lookupDatatype"), buf.getRawBuffer());
 
+}
+
+DatatypeFactory *DatatypeLookup::getAnySimpleTypeFactory() const
+{
+  return anySimpleType_;
 }
 
 DatatypeFactory *DatatypeLookup::getAnyURIFactory() const

@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,14 @@
  * limitations under the License.
  */
 
+/*
+  Compare function
+*/
+
 #ifndef _FUNCTIONCOMPARE_HPP
 #define _FUNCTIONCOMPARE_HPP
+
+#include <xqilla/framework/XQillaExport.hpp>
 
 #include <xqilla/ast/XQFunction.hpp>
 
@@ -31,7 +37,7 @@ public:
 
   FunctionCompare(const VectorOfASTNodes &args, XPath2MemoryManager* memMgr);
   
-  virtual Result createResult(DynamicContext* context, int flags) const;
+  Sequence createSequence(DynamicContext* context, int flags=0) const;
 };
 
-#endif
+#endif // _FUNCTIONCOMPARE_HPP

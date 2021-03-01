@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,27 +43,14 @@ ASTNode *XQReturn::staticResolution(StaticContext *context)
 
 ASTNode *XQReturn::staticTypingImpl(StaticContext *context)
 {
-  const StaticType &pType = parent_->getStaticAnalysis().getStaticType();
-  const StaticType &sType = expr_->getStaticAnalysis().getStaticType();
-
-  assert(pType.getTypes().size() == 1);
-  const ItemType *pItemType = pType.getTypes()[0];
-  assert(pItemType->getItemTestType() == ItemType::TEST_TUPLE);
-
   _src.clear();
+
   _src.add(expr_->getStaticAnalysis());
 
-  TupleMembers *pMembers = const_cast<TupleMembers*>(pItemType->getTupleMembers());
-  if(pMembers) {
-    TupleMembers::iterator i = pMembers->begin();
-    for(; i != pMembers->end(); ++i) {
-      _src.removeVariable(i.getValue()->getURI(), i.getValue()->getName());
-    }
-  }
+  _src.getStaticType() = expr_->getStaticAnalysis().getStaticType();
+  _src.getStaticType().multiply(parent_->getMin(), parent_->getMax());
 
-  _src.getStaticType() = sType;
-  _src.getStaticType().multiply(pType.getMin(), pType.getMax());
-  _src.add(parent_->getStaticAnalysis());
+  parent_ = parent_->staticTypingTeardown(context, _src);
 
   return this;
 }
@@ -98,6 +85,8 @@ public:
 
     return item;
   }
+
+  virtual std::string asString(DynamicContext *context, int indent) const { return ""; }
 
 private:
   const XQReturn *ast_;

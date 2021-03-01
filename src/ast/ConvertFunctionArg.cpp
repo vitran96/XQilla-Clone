@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,10 +33,24 @@
 XERCES_CPP_NAMESPACE_USE
 #endif
 
-XQPromoteUntyped::XQPromoteUntyped(ASTNode* expr, const ItemType *type, XPath2MemoryManager* memMgr)
+XQPromoteUntyped::XQPromoteUntyped(ASTNode* expr, const XMLCh *uri, const XMLCh *name, XPath2MemoryManager* memMgr)
   : ASTNodeImpl(PROMOTE_UNTYPED, memMgr),
     expr_(expr),
-    type_(type)
+    uri_(uri),
+    name_(name),
+    isPrimitive_(false),
+    typeIndex_((AnyAtomicType::AtomicObjectType)-1)
+{
+}
+
+XQPromoteUntyped::XQPromoteUntyped(ASTNode* expr, const XMLCh *uri, const XMLCh *name, bool isPrimitive,
+                                   AnyAtomicType::AtomicObjectType typeIndex, XPath2MemoryManager* memMgr)
+  : ASTNodeImpl(PROMOTE_UNTYPED, memMgr),
+    expr_(expr),
+    uri_(uri),
+    name_(name),
+    isPrimitive_(isPrimitive),
+    typeIndex_(typeIndex)
 {
 }
 
@@ -45,10 +59,12 @@ ASTNode* XQPromoteUntyped::staticResolution(StaticContext *context)
   expr_ = expr_->staticResolution(context);
 
   // crioux thinks this should also add: unless the target type is anyAtomicType!
-  if(type_->getTypeName() == 0) {
+  if(XPath2Utils::equals(name_, AnyAtomicType::fgDT_ANYATOMICTYPE) && 
+     XPath2Utils::equals(uri_, SchemaSymbols::fgURI_SCHEMAFORSCHEMA)) {
     return substitute(expr_);
   }
 
+  typeIndex_ = context->getItemFactory()->getPrimitiveTypeIndex(uri_, name_, isPrimitive_);
   return this;
 }
 
@@ -59,11 +75,11 @@ ASTNode *XQPromoteUntyped::staticTypingImpl(StaticContext *context)
   _src.getStaticType() = expr_->getStaticAnalysis().getStaticType();
   _src.add(expr_->getStaticAnalysis());
 
-  if(!_src.getStaticType().containsType(TypeFlags::UNTYPED_ATOMIC)) {
+  if(!_src.getStaticType().containsType(StaticType::UNTYPED_ATOMIC_TYPE)) {
     return substitute(expr_);
   }
 
-  _src.getStaticType().substitute(TypeFlags::UNTYPED_ATOMIC, type_);
+  _src.getStaticType().substitute(StaticType::UNTYPED_ATOMIC_TYPE, StaticType::create(typeIndex_));
 
   return this;
 }
@@ -76,10 +92,10 @@ Result XQPromoteUntyped::createResult(DynamicContext* context, int flags) const
 PromoteUntypedResult::PromoteUntypedResult(const XQPromoteUntyped *di, const Result &parent)
   : ResultImpl(di),
     parent_(parent),
-    isPrimitive_(di->getItemType()->isPrimitive()),
-    typeIndex_(di->getItemType()->getPrimitiveType()),
-    uri_(di->getItemType()->getTypeURI()),
-    name_(di->getItemType()->getTypeName())
+    isPrimitive_(di->getIsPrimitive()),
+    typeIndex_(di->getTypeIndex()),
+    uri_(di->getTypeURI()),
+    name_(di->getTypeName())
 {
 }
 
@@ -99,7 +115,7 @@ Item::Ptr PromoteUntypedResult::next(DynamicContext *context)
 {
   Item::Ptr item = parent_->next(context);
   if(item.notNull()) {
-    assert(item->getType() == Item::ATOMIC);
+    assert(item->isAtomicValue());
     const AnyAtomicType *atomic = (const AnyAtomicType *)item.get();
 
     // 2. Each item in the atomic sequence that is of type xdt:untypedAtomic is cast to the expected atomic
@@ -130,10 +146,22 @@ Item::Ptr PromoteUntypedResult::next(DynamicContext *context)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-XQPromoteNumeric::XQPromoteNumeric(ASTNode* expr, const ItemType *type, XPath2MemoryManager* memMgr)
+XQPromoteNumeric::XQPromoteNumeric(ASTNode* expr, const XMLCh *uri, const XMLCh *name, XPath2MemoryManager* memMgr)
   : ASTNodeImpl(PROMOTE_NUMERIC, memMgr),
     expr_(expr),
-    type_(type)
+    uri_(uri),
+    name_(name),
+    typeIndex_((AnyAtomicType::AtomicObjectType)-1)
+{
+}
+
+XQPromoteNumeric::XQPromoteNumeric(ASTNode* expr, const XMLCh *uri, const XMLCh *name,
+                                   AnyAtomicType::AtomicObjectType typeIndex, XPath2MemoryManager* memMgr)
+  : ASTNodeImpl(PROMOTE_NUMERIC, memMgr),
+    expr_(expr),
+    uri_(uri),
+    name_(name),
+    typeIndex_(typeIndex)
 {
 }
 
@@ -141,12 +169,14 @@ ASTNode* XQPromoteNumeric::staticResolution(StaticContext *context)
 {
   expr_ = expr_->staticResolution(context);
 
-  if(!((XPath2Utils::equals(type_->getTypeName(), SchemaSymbols::fgDT_DOUBLE) ||
-        XPath2Utils::equals(type_->getTypeName(), SchemaSymbols::fgDT_FLOAT)) &&
-       XPath2Utils::equals(type_->getTypeURI(), SchemaSymbols::fgURI_SCHEMAFORSCHEMA))) {
+  if(!((XPath2Utils::equals(name_, SchemaSymbols::fgDT_DOUBLE) ||
+        XPath2Utils::equals(name_, SchemaSymbols::fgDT_FLOAT)) &&
+       XPath2Utils::equals(uri_, SchemaSymbols::fgURI_SCHEMAFORSCHEMA))) {
     return substitute(expr_);
   }
 
+  bool isPrimitive;
+  typeIndex_ = context->getItemFactory()->getPrimitiveTypeIndex(uri_, name_, isPrimitive);
   return this;
 }
 
@@ -157,15 +187,15 @@ ASTNode *XQPromoteNumeric::staticTypingImpl(StaticContext *context)
   _src.getStaticType() = expr_->getStaticAnalysis().getStaticType();
   _src.add(expr_->getStaticAnalysis());
 
-  if(type_->getPrimitiveType() == AnyAtomicType::DOUBLE) {
-    if(!_src.getStaticType().containsType(TypeFlags::DECIMAL | TypeFlags::FLOAT))
+  if(typeIndex_ == AnyAtomicType::DOUBLE) {
+    if(!_src.getStaticType().containsType(StaticType::DECIMAL_TYPE | StaticType::FLOAT_TYPE))
       return substitute(expr_);
-    _src.getStaticType().substitute(TypeFlags::DECIMAL | TypeFlags::FLOAT, StaticType::DOUBLE);
+    _src.getStaticType().substitute(StaticType::DECIMAL_TYPE | StaticType::FLOAT_TYPE, StaticType::DOUBLE_TYPE);
   }
-  else if(type_->getPrimitiveType() == AnyAtomicType::FLOAT) {
-    if(!_src.getStaticType().containsType(TypeFlags::DECIMAL))
+  else if(typeIndex_ == AnyAtomicType::FLOAT) {
+    if(!_src.getStaticType().containsType(StaticType::DECIMAL_TYPE))
       return substitute(expr_);
-    _src.getStaticType().substitute(TypeFlags::DECIMAL | TypeFlags::FLOAT, StaticType::FLOAT);
+    _src.getStaticType().substitute(StaticType::DECIMAL_TYPE, StaticType::FLOAT_TYPE);
   }
   else {
     return substitute(expr_);
@@ -176,14 +206,14 @@ ASTNode *XQPromoteNumeric::staticTypingImpl(StaticContext *context)
 
 Result XQPromoteNumeric::createResult(DynamicContext* context, int flags) const
 {
-  return new PromoteNumericResult(this, expr_->createResult(context, flags), type_->getPrimitiveType());
+  return new PromoteNumericResult(this, expr_->createResult(context, flags), typeIndex_);
 }
 
 Item::Ptr PromoteNumericResult::next(DynamicContext *context)
 {
   Item::Ptr item = parent_->next(context);
   if(item.notNull()) {
-    assert(item->getType() == Item::ATOMIC);
+    assert(item->isAtomicValue());
     const AnyAtomicType *atomic = (const AnyAtomicType *)item.get();
 
     // 3. For each numeric item in the atomic sequence that can be promoted to the expected atomic type using
@@ -213,10 +243,11 @@ Item::Ptr PromoteNumericResult::next(DynamicContext *context)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-XQPromoteAnyURI::XQPromoteAnyURI(ASTNode* expr, const ItemType *type, XPath2MemoryManager* memMgr)
+XQPromoteAnyURI::XQPromoteAnyURI(ASTNode* expr, const XMLCh *uri, const XMLCh *name, XPath2MemoryManager* memMgr)
   : ASTNodeImpl(PROMOTE_ANY_URI, memMgr),
     expr_(expr),
-    type_(type)
+    uri_(uri),
+    name_(name)
 {
 }
 
@@ -224,8 +255,8 @@ ASTNode* XQPromoteAnyURI::staticResolution(StaticContext *context)
 {
   expr_ = expr_->staticResolution(context);
 
-  if(!XPath2Utils::equals(type_->getTypeName(), SchemaSymbols::fgDT_STRING) ||
-     !XPath2Utils::equals(type_->getTypeURI(), SchemaSymbols::fgURI_SCHEMAFORSCHEMA)) {
+  if(!XPath2Utils::equals(name_, SchemaSymbols::fgDT_STRING) ||
+     !XPath2Utils::equals(uri_, SchemaSymbols::fgURI_SCHEMAFORSCHEMA)) {
     return substitute(expr_);
   }
 
@@ -239,11 +270,11 @@ ASTNode *XQPromoteAnyURI::staticTypingImpl(StaticContext *context)
   _src.getStaticType() = expr_->getStaticAnalysis().getStaticType();
   _src.add(expr_->getStaticAnalysis());
 
-  if(!_src.getStaticType().containsType(TypeFlags::ANY_URI)) {
+  if(!_src.getStaticType().containsType(StaticType::ANY_URI_TYPE)) {
     return substitute(expr_);
   }
 
-  _src.getStaticType().substitute(TypeFlags::ANY_URI, StaticType::STRING);
+  _src.getStaticType().substitute(StaticType::ANY_URI_TYPE, StaticType::STRING_TYPE);
 
   return this;
 }
@@ -257,7 +288,7 @@ Item::Ptr PromoteAnyURIResult::next(DynamicContext *context)
 {
   Item::Ptr item = parent_->next(context);
   if(item.notNull()) {
-    assert(item->getType() == Item::ATOMIC);
+    assert(item->isAtomicValue());
     const AnyAtomicType *atomic = (const AnyAtomicType *)item.get();
 
     // 4. For each item of type xs:anyURI in the atomic sequence that can be promoted to the expected atomic

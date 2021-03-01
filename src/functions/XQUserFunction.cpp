@@ -214,7 +214,7 @@ void XQUserFunction::resolveName(StaticContext *context)
   }
 
   if(name_ != 0) {
-    setURIName(uri_, name_, mm);
+    setURINameHash(uri_, name_);
   }
 }
 
@@ -300,14 +300,15 @@ void XQUserFunction::staticResolutionStage1(StaticContext *context)
       body_ = signature_->returnType->convertFunctionArg(body_, context, /*numericfunction*/false, signature_->returnType);
     }
 
-    src_.getStaticType() = signature_->returnType;
+    bool isPrimitive;
+    signature_->returnType->getStaticType(src_.getStaticType(), context, isPrimitive, signature_->returnType);
   }
   else {
     // Default type is item()*
-    src_.getStaticType() = StaticType::ITEM_STAR;
+    src_.getStaticType() = StaticType(StaticType::ITEM_TYPE, 0, StaticType::UNLIMITED);
   }
 
-  if(signature_->isUpdating()) {
+  if(signature_->updating == FunctionSignature::OP_TRUE) {
     src_.updating(true);
   }
 
@@ -318,7 +319,7 @@ void XQUserFunction::staticResolutionStage1(StaticContext *context)
     // Set the pattern's initial static type to NODE_TYPE
     VectorOfASTNodes::iterator patIt = pattern_->begin();
     for(; patIt != pattern_->end(); ++patIt) {
-      const_cast<StaticAnalysis&>((*patIt)->getStaticAnalysis()).getStaticType() = StaticType::NODE_STAR;
+      const_cast<StaticAnalysis&>((*patIt)->getStaticAnalysis()).getStaticType() = StaticType(StaticType::NODE_TYPE, 0, StaticType::UNLIMITED);
     }
   }
 
@@ -376,8 +377,8 @@ public:
 private:
   virtual ASTNode *optimizeUserFunction(XQUserFunctionInstance *item)
   {
-    XQQuery *module = context_->getModule()->getModuleCache()->
-      findModuleForFunction(item->getFunctionDefinition());
+    XQQuery *module = context_->getModule()->
+      findModuleForFunction(item->getFunctionURI(), item->getFunctionName(), item->getArguments().size());
     if(module == context_->getModule()) {
       // See if we can work out a better return type for the user defined function.
       // This call will just return if it's already been static typed
@@ -502,7 +503,7 @@ void XQUserFunction::staticTyping(StaticContext *context, StaticTyper *styper)
   // Nothing more to do for external functions
   if(body_ == NULL) return;
 
-  if(signature_->isUpdating() && signature_->returnType != NULL) {
+  if(signature_->updating == FunctionSignature::OP_TRUE && signature_->returnType != NULL) {
     XQThrow(StaticErrorException, X("XQUserFunction::staticTyping"),
             X("It is a static error for an updating function to declare a return type [err:XUST0028]"));
   }
@@ -512,7 +513,7 @@ void XQUserFunction::staticTyping(StaticContext *context, StaticTyper *styper)
   if(context) staticTypeFunctionCalls(body_, context, styper);
 
   bool ciTypeSet = false;
-  StaticType ciType(BasicMemoryManager::get());
+  StaticType ciType = StaticType();
   if(pattern_ != NULL) {
     VectorOfASTNodes::iterator patIt = pattern_->begin();
     for(; patIt != pattern_->end(); ++patIt) {
@@ -521,7 +522,7 @@ void XQUserFunction::staticTyping(StaticContext *context, StaticTyper *styper)
         ciTypeSet = true;
         ciType = (*patIt)->getStaticAnalysis().getStaticType();
       }
-      else ciType.typeUnion((*patIt)->getStaticAnalysis().getStaticType());
+      else ciType |= (*patIt)->getStaticAnalysis().getStaticType();
     }
     if(ciTypeSet) {
       ciType.setCardinality(1, 1);
@@ -530,7 +531,7 @@ void XQUserFunction::staticTyping(StaticContext *context, StaticTyper *styper)
   if(isTemplate_ && name_ != 0) {
     // Named template
     ciTypeSet = true;
-    ciType = StaticType::ITEM;
+    ciType = StaticType::ITEM_TYPE;
   }
 
   // define the new variables in a new scope and assign them the proper values
@@ -544,8 +545,7 @@ void XQUserFunction::staticTyping(StaticContext *context, StaticTyper *styper)
     if(signature_->argSpecs) {
       ArgumentSpecs::iterator it;
       for(it = signature_->argSpecs->begin(); it != signature_->argSpecs->end (); ++it) {
-        varStore->declareVar((*it)->getURI(), (*it)->getName(),
-                             VariableType((*it)->getProperties(), &(*it)->getStaticType(), 0));
+        varStore->declareVar((*it)->getURI(), (*it)->getName(), (*it)->getStaticAnalysis());
       }
     }
   }
@@ -559,7 +559,7 @@ void XQUserFunction::staticTyping(StaticContext *context, StaticTyper *styper)
   if(context)
     context->getVariableTypeStore()->removeScope();
 
-  if(signature_->isUpdating()) {
+  if(signature_->updating == FunctionSignature::OP_TRUE) {
     if(!body_->getStaticAnalysis().isUpdating() && !body_->getStaticAnalysis().isPossiblyUpdating())
       XQThrow(StaticErrorException, X("XQUserFunction::staticTyping"),
               X("It is a static error for the body expression of a user defined updating function "
@@ -594,7 +594,7 @@ void XQUserFunction::staticTyping(StaticContext *context, StaticTyper *styper)
   // Run staticTyping on the template instances
   if(templateInstance_ != 0 && context) {
     StaticAnalysis templateVarSrc(context->getMemoryManager());
-    templateVarSrc.getStaticType() = StaticType::ITEM;
+    templateVarSrc.getStaticType() = StaticType::ITEM_TYPE;
 
     VariableTypeStore *varStore = context->getVariableTypeStore();
     varStore->addLogicalBlockScope();
@@ -602,8 +602,7 @@ void XQUserFunction::staticTyping(StaticContext *context, StaticTyper *styper)
     if(signature_->argSpecs != 0) {
       ArgumentSpecs::const_iterator argIt;
       for(argIt = signature_->argSpecs->begin(); argIt != signature_->argSpecs->end(); ++argIt) {
-        varStore->declareVar((*argIt)->getURI(), (*argIt)->getName(),
-                             VariableType(0, &StaticType::ITEM, 0));
+        varStore->declareVar((*argIt)->getURI(), (*argIt)->getName(), templateVarSrc);
       }
     }
 
@@ -679,7 +678,7 @@ ASTNode *XQUserFunctionInstance::staticTypingImpl(StaticContext *context)
   } else {
     // Force the type check to happen, by declaring our type as item()*
     _src.clear();
-    _src.getStaticType() = StaticType::ITEM_STAR;
+    _src.getStaticType() = StaticType(StaticType::ITEM_TYPE, 0, StaticType::UNLIMITED);
     _src.forceNoFolding(true);
   }
 

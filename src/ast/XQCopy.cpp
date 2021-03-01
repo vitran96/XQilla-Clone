@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,7 +84,7 @@ ASTNode *XQCopy::staticTypingImpl(StaticContext *context)
     _src.add(children_[i]->getStaticAnalysis());
   }
 
-  if(!_src.getStaticType().containsType(TypeFlags::NODE)) {
+  if(!_src.getStaticType().containsType(StaticType::NODE_TYPE)) {
     return expr_;
   }
 
@@ -95,9 +95,8 @@ Result XQCopy::createResult(DynamicContext* context, int flags) const
 {
   Item::Ptr toBeCopied = getExpression()->createResult(context)->next(context);
 
-  if(!toBeCopied->getType() == Item::NODE) {
+  if(!toBeCopied->isNode())
     return toBeCopied;
-  }
 
   AutoDelete<SequenceBuilder> builder(context->createSequenceBuilder());
   EventGenerator::generateAndTailCall(generateEventsImpl(toBeCopied, builder.get(), context, true, true),
@@ -116,7 +115,7 @@ EventGenerator::Ptr XQCopy::generateEvents(EventHandler *events, DynamicContext 
 EventGenerator::Ptr XQCopy::generateEventsImpl(const Item::Ptr &toBeCopied, EventHandler *events, DynamicContext *context,
                                                bool preserveNS, bool preserveType) const
 {
-  if(!toBeCopied->getType() == Item::NODE) {
+  if(!toBeCopied->isNode()) {
     toBeCopied->generateEvents(events, context, preserveNS, preserveType);
     return 0;
   }

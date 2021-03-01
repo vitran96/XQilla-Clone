@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@
 #include <xqilla/ast/LocationInfo.hpp>
 #include <xqilla/context/VariableStore.hpp>
 #include <xqilla/framework/ReferenceCounted.hpp>
-#include <xqilla/items/impl/TupleImpl.hpp>
 
 class DynamicContext;
 
@@ -35,15 +34,6 @@ public:
   virtual ~TupleResult() {}
 
   virtual bool next(DynamicContext *context) = 0;
-
-  virtual Tuple::Ptr getTuple(DynamicContext *context) const
-  {
-    TupleImpl::Ptr result;
-    createTuple(context, 0, result);
-    return result;
-  }
-
-  virtual void createTuple(DynamicContext *context, size_t capacity, TupleImpl::Ptr &result) const = 0;
 
 protected:
   TupleResult(const LocationInfo *location)

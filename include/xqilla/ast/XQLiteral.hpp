@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,8 @@
 class XQILLA_API XQLiteral : public ASTNodeImpl
 {
 public:
-  XQLiteral(ItemType *type, const XMLCh* value,
-            XPath2MemoryManager* memMgr);
+  XQLiteral(const XMLCh* typeURI, const XMLCh* typeName, const XMLCh* value,
+            AnyAtomicType::AtomicObjectType primitiveType, XPath2MemoryManager* memMgr);
 
   virtual bool isDateOrTimeAndHasNoTimezone(StaticContext* context) const;
 
@@ -38,7 +38,9 @@ public:
   virtual EventGenerator::Ptr generateEvents(EventHandler *events, DynamicContext *context,
                                              bool preserveNS, bool preserveType) const;
 
-  ItemType *getItemType() const { return type_; }
+  AnyAtomicType::AtomicObjectType getPrimitiveType() const { return primitiveType_; }
+  const XMLCh *getTypeURI() const { return typeURI_; }
+  const XMLCh *getTypeName() const { return typeName_; }
   const XMLCh *getValue() const { return value_; }
 
   static ASTNode *create(const Item::Ptr &item, DynamicContext *context, XPath2MemoryManager* memMgr,
@@ -46,14 +48,16 @@ public:
   static ASTNode *create(bool value, XPath2MemoryManager* memMgr, const LocationInfo *location);
 
 private:
-  ItemType *type_;
+  const XMLCh *typeURI_;
+  const XMLCh *typeName_;
+  AnyAtomicType::AtomicObjectType primitiveType_;
   const XMLCh *value_;
 };
 
 class XQILLA_API XQQNameLiteral : public ASTNodeImpl
 {
 public:
-  XQQNameLiteral(ItemType *type, const XMLCh* uri,
+  XQQNameLiteral(const XMLCh* typeURI, const XMLCh* typeName, const XMLCh* uri,
                  const XMLCh* prefix, const XMLCh* localname, XPath2MemoryManager* memMgr);
 
   virtual bool isDateOrTimeAndHasNoTimezone(StaticContext* context) const;
@@ -64,21 +68,23 @@ public:
   virtual EventGenerator::Ptr generateEvents(EventHandler *events, DynamicContext *context,
                                              bool preserveNS, bool preserveType) const;
 
-  ItemType *getItemType() const { return type_; }
+  const XMLCh *getTypeURI() const { return typeURI_; }
+  const XMLCh *getTypeName() const { return typeName_; }
   const XMLCh *getURI() const { return uri_; }
   const XMLCh *getLocalname() const { return localname_; }
   const XMLCh *getPrefix() const { return prefix_; }
 
 private:
-  ItemType *type_;
+  const XMLCh *typeURI_;
+  const XMLCh *typeName_;
   const XMLCh *uri_, *prefix_, *localname_;
 };
 
-class XQILLA_API XQDecimalLiteral : public ASTNodeImpl
+class XQILLA_API XQNumericLiteral : public ASTNodeImpl
 {
 public:
-  XQDecimalLiteral(ItemType *type, const MAPM& value,
-                   XPath2MemoryManager* memMgr);
+  XQNumericLiteral(const XMLCh* typeURI, const XMLCh* typeName, const MAPM& value,
+                   AnyAtomicType::AtomicObjectType primitiveType, XPath2MemoryManager* memMgr);
 
   virtual bool isDateOrTimeAndHasNoTimezone(StaticContext* context) const;
 
@@ -88,55 +94,17 @@ public:
   virtual EventGenerator::Ptr generateEvents(EventHandler *events, DynamicContext *context,
                                              bool preserveNS, bool preserveType) const;
 
-  ItemType *getItemType() const { return type_; }
+  AnyAtomicType::AtomicObjectType getPrimitiveType() const { return primitiveType_; }
+  const XMLCh *getTypeURI() const { return typeURI_; }
+  const XMLCh *getTypeName() const { return typeName_; }
   MAPM getValue() const;
   const M_APM_struct &getRawValue() const { return value_; }
 
 private:
-  ItemType *type_;
+  const XMLCh *typeURI_;
+  const XMLCh *typeName_;
+  AnyAtomicType::AtomicObjectType primitiveType_;
   M_APM_struct value_;
-};
-
-class XQILLA_API XQFloatLiteral : public ASTNodeImpl
-{
-public:
-  XQFloatLiteral(ItemType *type, float value, XPath2MemoryManager* memMgr);
-
-  virtual bool isDateOrTimeAndHasNoTimezone(StaticContext* context) const;
-
-  virtual ASTNode *staticResolution(StaticContext *context);
-  virtual ASTNode *staticTypingImpl(StaticContext *context);
-  virtual Result createResult(DynamicContext* context, int flags=0) const;
-  virtual EventGenerator::Ptr generateEvents(EventHandler *events, DynamicContext *context,
-                                             bool preserveNS, bool preserveType) const;
-
-  ItemType *getItemType() const { return type_; }
-  float getValue() const { return value_; }
-
-private:
-  ItemType *type_;
-  float value_;
-};
-
-class XQILLA_API XQDoubleLiteral : public ASTNodeImpl
-{
-public:
-  XQDoubleLiteral(ItemType *type, double value, XPath2MemoryManager* memMgr);
-
-  virtual bool isDateOrTimeAndHasNoTimezone(StaticContext* context) const;
-
-  virtual ASTNode *staticResolution(StaticContext *context);
-  virtual ASTNode *staticTypingImpl(StaticContext *context);
-  virtual Result createResult(DynamicContext* context, int flags=0) const;
-  virtual EventGenerator::Ptr generateEvents(EventHandler *events, DynamicContext *context,
-                                             bool preserveNS, bool preserveType) const;
-
-  ItemType *getItemType() const { return type_; }
-  double getValue() const { return value_; }
-
-private:
-  ItemType *type_;
-  double value_;
 };
 
 #endif

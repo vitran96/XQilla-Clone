@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,9 +27,6 @@
 #include <xqilla/items/ATUntypedAtomic.hpp>
 #include <xqilla/utils/XPath2Utils.hpp>
 #include <xqilla/exceptions/StaticErrorException.hpp>
-#include <xqilla/functions/BuiltInModules.hpp>
-#include <xqilla/dom-api/impl/XQillaNSResolverImpl.hpp>
-#include <xqilla/context/ContextHelpers.hpp>
 
 #include "../lexer/XQLexer.hpp"
 
@@ -119,18 +116,12 @@ void XQFunction::parseSignature(StaticContext *context)
     XQParserArgs args(&lexer);
     XQParser::yyparse(&args);
     signature_ = args._signature;
-
-    {
-      XQillaNSResolverImpl newNSScope(context->getMemoryManager(), context->getNSResolver());
-      BuiltInModules::addNamespaces(&newNSScope);
-      AutoNsScopeReset jan(context,&newNSScope);
-      signature_->staticResolution(context);
-    }
+    signature_->staticResolution(context);
 
     if(signature_->argSpecs) {
       // If the signature has too many arguments, remove some
       while(signature_->argSpecs->size() > _args.size()) {
-        signature_->argSpecs->back()->release();
+        signature_->argSpecs->back()->release(mm);
         signature_->argSpecs->pop_back();
       }
 
@@ -172,7 +163,7 @@ void XQFunction::resolveArguments(StaticContext *context, bool numericFunction)
   }
 }
 
-void XQFunction::calculateSRCForArguments(StaticContext *context)
+void XQFunction::calculateSRCForArguments(StaticContext *context, bool checkTimezone)
 {
   for(VectorOfASTNodes::iterator i = _args.begin(); i != _args.end(); ++i) {
     _src.add((*i)->getStaticAnalysis());
@@ -182,15 +173,19 @@ void XQFunction::calculateSRCForArguments(StaticContext *context)
               X("It is a static error for an argument to a function "
                 "to be an updating expression [err:XUST0001]"));
     }
+
+    if(checkTimezone && (*i)->isDateOrTimeAndHasNoTimezone(context))
+      _src.implicitTimezoneUsed(true);
   }
 
   if(context) {
     if(signature_ && signature_->returnType) {
-      _src.getStaticType() = signature_->returnType;
+      bool isPrimitive;
+      signature_->returnType->getStaticType(_src.getStaticType(), context, isPrimitive, this);
     }
     else {
       // Default type is item()*
-      _src.getStaticType() = StaticType::ITEM_STAR;
+      _src.getStaticType() = StaticType(StaticType::ITEM_TYPE, 0, StaticType::UNLIMITED);
     }
   }
 }

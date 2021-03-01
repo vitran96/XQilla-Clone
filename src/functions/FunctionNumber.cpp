@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,7 +93,7 @@ Numeric::Ptr FunctionNumber::number(const Item::Ptr &item, DynamicContext *conte
   if(item.isNull()) {
     // Do nothing
   }
-  else if(item->getType() == Item::NODE) {
+  else if(item->isNode()) {
     // Atomize first
     Result atomized = ((Node*)item.get())->dmTypedValue(context);
     tmp = atomized->next(context);
@@ -103,7 +103,7 @@ Numeric::Ptr FunctionNumber::number(const Item::Ptr &item, DynamicContext *conte
                X("Sequence does not match type xs:anyAtomicType? - found more than one item [err:XPTY0004]"), location);
     }
   }
-  else if(item->getType() != Item::ATOMIC) {
+  else if(item->isFunction()) {
     XMLBuffer buf;
     buf.set(X("Sequence does not match type (xs:anyAtomicType | node())*"));
     buf.append(X(" - found item of type "));

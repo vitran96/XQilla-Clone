@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,13 +27,13 @@ class FuncFactoryTemplate : public FuncFactory
 {
 public:
 
-  FuncFactoryTemplate(XPath2MemoryManager *memMgr)
+  FuncFactoryTemplate(XERCES_CPP_NAMESPACE_QUALIFIER MemoryManager *memMgr)
     : FuncFactory(TYPE::XMLChFunctionURI, TYPE::name, TYPE::minArgs, TYPE::maxArgs, memMgr)
   {
   }
 
   FuncFactoryTemplate(const XMLCh *uri, const XMLCh *name, size_t minArgs, size_t maxArgs,
-                      XPath2MemoryManager *mm)
+                      XERCES_CPP_NAMESPACE_QUALIFIER MemoryManager *mm)
     : FuncFactory(uri, name, minArgs, maxArgs, mm)
   {
   }

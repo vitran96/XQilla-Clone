@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,10 +81,10 @@ const XMLCh *FunctionString::string(const Item::Ptr &item, DynamicContext *conte
   if(item.isNull()) {
     // Do nothing
   }
-  else if(item->getType() == Item::NODE) {
+  else if(item->isNode()) {
     return ((Node*)item.get())->dmStringValue(context);
   }
-  else if(item->getType() == Item::ATOMIC) {
+  else if(item->isAtomicValue()) {
     return ((AnyAtomicType*)item.get())->asString(context);
   }
   return XMLUni::fgZeroLenString;

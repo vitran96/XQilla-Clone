@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,9 @@ FTSelection *FTWords::staticResolution(StaticContext *context)
 {
   XPath2MemoryManager *mm = context->getMemoryManager();
 
-  SequenceType *seqType = new (mm) SequenceType((ItemType*)&ItemType::STRING, SequenceType::STAR);
+  SequenceType *seqType = new (mm) SequenceType(SchemaSymbols::fgURI_SCHEMAFORSCHEMA,
+                                                SchemaSymbols::fgDT_STRING,
+                                                SequenceType::STAR, mm);
   seqType->setLocationInfo(this);
 
   expr_ = new (mm) XQAtomize(expr_, mm);

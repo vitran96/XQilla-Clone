@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,49 +28,41 @@
 #include <xqilla/items/Numeric.hpp>
 #include <xqilla/exceptions/XPath2ErrorException.hpp>
 #include <xqilla/context/DynamicContext.hpp>
-#include <xqilla/framework/BasicMemoryManager.hpp>
-
-#include <xercesc/util/XMLUniDefs.hpp>
 
 XERCES_CPP_NAMESPACE_USE;
 
 const XMLCh Minus::name[]={ chLatin_M, chLatin_i, chLatin_n, chLatin_u, chLatin_s, chNull };
 
 Minus::Minus(const VectorOfASTNodes &args, XPath2MemoryManager* memMgr)
-  : ArithmeticOperator(MINUS, name, args, memMgr)
+  : ArithmeticOperator(name, args, memMgr)
 {
 }
 
-void Minus::calculateStaticType(StaticContext *context)
+void Minus::calculateStaticType()
 {
   const StaticType &arg0 = _args[0]->getStaticAnalysis().getStaticType();
   const StaticType &arg1 = _args[1]->getStaticAnalysis().getStaticType();
 
-  calculateStaticTypeForNumerics(arg0, arg1, context);
+  calculateStaticTypeForNumerics(arg0, arg1);
 
   // Subtracting a duration from a date, dateTime, time, or duration
-  if(arg1.containsType(TypeFlags::DAY_TIME_DURATION)) {
-    StaticType tmp(BasicMemoryManager::get()); tmp = arg0;
-    tmp.typeIntersect(TypeFlags::DATE|TypeFlags::DATE_TIME|TypeFlags::TIME|
-                      TypeFlags::DAY_TIME_DURATION);
-    _src.getStaticType().typeUnion(tmp);
+  if(arg1.containsType(StaticType::DAY_TIME_DURATION_TYPE)) {
+    _src.getStaticType() |= arg0 & (StaticType::DATE_TYPE|StaticType::DATE_TIME_TYPE|StaticType::TIME_TYPE|
+                                    StaticType::DAY_TIME_DURATION_TYPE);
   }
-  if(arg1.containsType(TypeFlags::YEAR_MONTH_DURATION)) {
-    StaticType tmp(BasicMemoryManager::get()); tmp = arg0;
-    tmp.typeIntersect(TypeFlags::DATE|TypeFlags::DATE_TIME|
-                      TypeFlags::YEAR_MONTH_DURATION);
-    _src.getStaticType().typeUnion(tmp);
+  if(arg1.containsType(StaticType::YEAR_MONTH_DURATION_TYPE)) {
+    _src.getStaticType() |= arg0 & (StaticType::DATE_TYPE|StaticType::DATE_TIME_TYPE|StaticType::YEAR_MONTH_DURATION_TYPE);
   }
 
   // Subtracting date, dateTime and time
-  if(arg0.containsType(TypeFlags::DATE) && arg1.containsType(TypeFlags::DATE)) {
-    _src.getStaticType().typeUnion(StaticType::DAY_TIME_DURATION);
+  if(arg0.containsType(StaticType::DATE_TYPE) && arg1.containsType(StaticType::DATE_TYPE)) {
+    _src.getStaticType() |= StaticType::DAY_TIME_DURATION_TYPE;
   }
-  if(arg0.containsType(TypeFlags::DATE_TIME) && arg1.containsType(TypeFlags::DATE_TIME)) {
-    _src.getStaticType().typeUnion(StaticType::DAY_TIME_DURATION);
+  if(arg0.containsType(StaticType::DATE_TIME_TYPE) && arg1.containsType(StaticType::DATE_TIME_TYPE)) {
+    _src.getStaticType() |= StaticType::DAY_TIME_DURATION_TYPE;
   }
-  if(arg0.containsType(TypeFlags::TIME) && arg1.containsType(TypeFlags::TIME)) {
-    _src.getStaticType().typeUnion(StaticType::DAY_TIME_DURATION);
+  if(arg0.containsType(StaticType::TIME_TYPE) && arg1.containsType(StaticType::TIME_TYPE)) {
+    _src.getStaticType() |= StaticType::DAY_TIME_DURATION_TYPE;
   }
 }
 

@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,15 +20,9 @@
 #ifndef XQGLOBALVARIABLE_HPP
 #define XQGLOBALVARIABLE_HPP
 
-#include <xqilla/ast/LocationInfo.hpp>
-#include <xqilla/ast/StaticAnalysis.hpp>
+#include <xqilla/ast/ASTNodeImpl.hpp>
 
 class SequenceType;
-class ASTNode;
-class XPath2MemoryManager;
-class DynamicContext;
-class StaticContext;
-class StaticTyper;
 
 class XQILLA_API XQGlobalVariable : public LocationInfo
 {

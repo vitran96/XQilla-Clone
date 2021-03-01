@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001, 2008,
  *     DecisionSoft Limited. All rights reserved.
- * Copyright (c) 2004, 2011,
- *     Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
+ *     
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@
 #include <xqilla/fulltext/DefaultTokenizer.hpp>
 #include <xqilla/schema/SequenceType.hpp>
 #include <xqilla/functions/FunctionSignature.hpp>
-#include <xqilla/framework/BasicMemoryManager.hpp>
 
 #include "../items/impl/FunctionRefImpl.hpp"
 
@@ -60,17 +59,23 @@ XQUserFunction *StaticTyper::optimizeFunctionDef(XQUserFunction *item)
 ASTNode *StaticTyper::optimize(ASTNode *item)
 {
   ASTNode *result = ASTVisitor::optimize(item);
-  if(result != item) return result;
+  if(result != item) return optimize(result);
 
   return item->staticTypingImpl(context_);
+}
+
+#define SUBSTITUTE(item, name) {\
+    ASTNode *result = item->get ## name (); \
+    item->set ##name (0); \
+    item->release(); \
+    return result; \
 }
 
 ASTNode *StaticTyper::optimizePredicate(XQPredicate *item)
 {
   item->setExpression(optimize(const_cast<ASTNode *>(item->getExpression())));
 
-  StaticType ciType(BasicMemoryManager::get());
-  ciType = item->getExpression()->getStaticAnalysis().getStaticType();
+  StaticType ciType = item->getExpression()->getStaticAnalysis().getStaticType();
   ciType.setCardinality(1, 1);
   AutoContextItemTypeReset contextTypeReset(context_, ciType);
 
@@ -86,8 +91,7 @@ ASTNode *StaticTyper::optimizeAnalyzeString(XQAnalyzeString *item)
   if(item->getFlags())
 	  item->setFlags(optimize(const_cast<ASTNode *>(item->getFlags())));
 
-  StaticType ciType(BasicMemoryManager::get());
-  ciType = StaticType::STRING;
+  StaticType ciType(StaticType::STRING_TYPE, 1, 1);
   AutoContextItemTypeReset contextTypeReset(context_, ciType);
 
   item->setMatch(optimize(const_cast<ASTNode *>(item->getMatch())));
@@ -98,7 +102,7 @@ ASTNode *StaticTyper::optimizeAnalyzeString(XQAnalyzeString *item)
 ASTNode *StaticTyper::optimizeNav(XQNav *item)
 {
   AutoContextItemTypeReset contextTypeReset(context_);
-  StaticType ciType(BasicMemoryManager::get());
+  StaticType ciType;
 
   XQNav::Steps &args = const_cast<XQNav::Steps &>(item->getSteps());
   for(XQNav::Steps::iterator i = args.begin(); i != args.end(); ++i) {
@@ -122,19 +126,18 @@ ASTNode *StaticTyper::optimizeMap(XQMap *item)
   VariableTypeStore* varStore = context_ ? context_->getVariableTypeStore() : 0;
 
   if(context_) {
-    StaticType &varType = item->getVarType();
+    StaticAnalysis &varSrc = const_cast<StaticAnalysis&>(item->getVarSRC());
 
-    varType = item->getArg1()->getStaticAnalysis().getStaticType();
-    varType.setCardinality(1, 1);
+    varSrc.getStaticType() = item->getArg1()->getStaticAnalysis().getStaticType();
+    varSrc.setProperties(StaticAnalysis::DOCORDER | StaticAnalysis::GROUPED |
+                         StaticAnalysis::PEER | StaticAnalysis::SUBTREE | StaticAnalysis::SAMEDOC |
+                         StaticAnalysis::ONENODE | StaticAnalysis::SELF);
 
     if(item->getName() == 0) {
-      context_->setContextItemType(varType);
+      context_->setContextItemType(varSrc.getStaticType());
     } else {
       varStore->addLogicalBlockScope();
-      VariableType vtype(StaticAnalysis::DOCORDER | StaticAnalysis::GROUPED | StaticAnalysis::PEER | StaticAnalysis::SUBTREE |
-                         StaticAnalysis::SAMEDOC | StaticAnalysis::ONENODE | StaticAnalysis::SELF,
-                         &varType, 0);
-      varStore->declareVar(item->getURI(), item->getName(), vtype);
+      varStore->declareVar(item->getURI(), item->getName(), varSrc);
     }
   }
 
@@ -154,14 +157,13 @@ ASTNode *StaticTyper::optimizeUTransform(UTransform *item)
   VectorOfCopyBinding *bindings = const_cast<VectorOfCopyBinding*>(item->getBindings());
   for(VectorOfCopyBinding::iterator i = bindings->begin(); i != bindings->end(); ++i) {
     (*i)->expr_ = optimize((*i)->expr_);
-    (*i)->type_ = (*i)->expr_->getStaticAnalysis().getStaticType();
+    (*i)->src_.getStaticType() = (*i)->expr_->getStaticAnalysis().getStaticType();
+    (*i)->src_.setProperties((*i)->expr_->getStaticAnalysis().getProperties());
 
     // Declare the variable binding
     if(context_) {
       varStore->addLogicalBlockScope();
-      varStore->declareVar((*i)->uri_, (*i)->name_,
-                           VariableType((*i)->expr_->getStaticAnalysis().getProperties(),
-                                        &(*i)->type_, 0));
+      varStore->declareVar((*i)->uri_, (*i)->name_, (*i)->src_);
     }
   }
 
@@ -179,64 +181,49 @@ ASTNode *StaticTyper::optimizeUTransform(UTransform *item)
   return item;
 }
 
-static inline void tupleInScope(const TupleNode *item, StaticContext *context)
-{
-  const StaticType &pType = item->getStaticAnalysis().getStaticType();
-  assert(pType.getTypes().size() == 1);
-
-  const ItemType *pItemType = pType.getTypes()[0];
-  assert(pItemType->getItemTestType() == ItemType::TEST_TUPLE);
-
-  VariableTypeStore *varStore = context->getVariableTypeStore();
-  varStore->addLogicalBlockScope();
-
-  TupleMembers *pMembers = const_cast<TupleMembers*>(pItemType->getTupleMembers());
-  if(pMembers) {
-    TupleMembers::iterator i = pMembers->begin();
-    for(; i != pMembers->end(); ++i) {
-      varStore->declareVar(i.getValue()->getURI(), i.getValue()->getName(), i.getValue());
-    }
-  }
-}
-
 ASTNode *StaticTyper::optimizeQuantified(XQQuantified *item)
 {
+  AutoReset<bool> reset(tupleSetup_);
+  tupleSetup_ = true;
   item->setParent(optimizeTupleNode(const_cast<TupleNode*>(item->getParent())));
 
-  if(context_) tupleInScope(item->getParent(), context_);
   item->setExpression(optimize(item->getExpression()));
-  if(context_) context_->getVariableTypeStore()->removeScope();
+
+  tupleSetup_ = false;
+  item->setParent(optimizeTupleNode(const_cast<TupleNode*>(item->getParent())));
 
   return item;
 }
 
 ASTNode *StaticTyper::optimizeReturn(XQReturn *item)
 {
+  AutoReset<bool> reset(tupleSetup_);
+  tupleSetup_ = true;
   item->setParent(optimizeTupleNode(const_cast<TupleNode*>(item->getParent())));
 
-  if(context_) tupleInScope(item->getParent(), context_);
   item->setExpression(optimize(item->getExpression()));
-  if(context_) context_->getVariableTypeStore()->removeScope();
+
+  tupleSetup_ = false;
+  item->setParent(optimizeTupleNode(const_cast<TupleNode*>(item->getParent())));
 
   return item;
 }
 
 void StaticTyper::optimizeCase(const StaticAnalysis &var_src, XQTypeswitch::Case *item)
 {
-  StaticType caseType(BasicMemoryManager::get());
+  AutoDelete<StaticAnalysis> caseSrc(0);
   if(context_ && item->isVariableUsed()) {
     VariableTypeStore* varStore = context_->getVariableTypeStore();
 
-    caseType = var_src.getStaticType();
-    unsigned props = var_src.getProperties();
+    caseSrc.set(new StaticAnalysis(context_->getMemoryManager()));
+    caseSrc->copy(var_src);
 
     if(item->getSequenceType() != 0) {
-      StaticType ctype(item->getSequenceType(), BasicMemoryManager::get());
-      caseType.typeIntersect(ctype);
+      caseSrc->getStaticType() &= item->getTreatType();
     }
 
     varStore->addLogicalBlockScope();
-    varStore->declareVar(item->getURI(), item->getName(), VariableType(props, &caseType, 0));
+    varStore->declareVar(item->getURI(), item->getName(), *caseSrc);
   }
 
   item->setExpression(optimize(item->getExpression()));
@@ -265,13 +252,16 @@ ASTNode *StaticTyper::optimizeFunctionCoercion(XQFunctionCoercion *item)
 {
   item->setExpression(optimize(item->getExpression()));
 
+  AutoDelete<StaticAnalysis> varSrc(0);
   if(item->getFuncConvert()) {
     if(context_) {
       // Could do better on the static type
+      varSrc.set(new StaticAnalysis(context_->getMemoryManager()));
+      varSrc->getStaticType() = StaticType::FUNCTION_TYPE;
+
       VariableTypeStore *varStore = context_->getVariableTypeStore();
       varStore->addLogicalBlockScope();
-      varStore->declareVar(0, XQFunctionCoercion::funcVarName,
-                           VariableType(0, &StaticType::FUNCTION, 0));
+      varStore->declareVar(0, XQFunctionCoercion::funcVarName, *varSrc);
     }
 
     {
@@ -305,22 +295,26 @@ ASTNode *StaticTyper::optimizeInlineFunction(XQInlineFunction *item)
   if(item->getUserFunction())
     item->getUserFunction()->staticTyping(context_, this);
 
+  AutoDelete<StaticAnalysis> instanceVarSrc(0);
   if(context_) {
+    XPath2MemoryManager *mm = context_->getMemoryManager();
+    instanceVarSrc.set(new StaticAnalysis(mm));
+    instanceVarSrc->getStaticType() = StaticType(StaticType::ITEM_TYPE, 0, StaticType::UNLIMITED);
+
     VariableTypeStore *varStore = context_->getVariableTypeStore();
     varStore->addLogicalBlockScope();
 
-    if(item->getItemType()->getFunctionSignature()->argSpecs) {
-      ArgumentSpecs::const_iterator argsIt = item->getItemType()->getFunctionSignature()->argSpecs->begin();
-      for(; argsIt != item->getItemType()->getFunctionSignature()->argSpecs->end(); ++argsIt) {
-        varStore->declareVar((*argsIt)->getURI(), (*argsIt)->getName(),
-                             VariableType(0, &StaticType::ITEM_STAR, 0));
+    if(item->getSignature()->argSpecs) {
+      ArgumentSpecs::const_iterator argsIt = item->getSignature()->argSpecs->begin();
+      for(; argsIt != item->getSignature()->argSpecs->end(); ++argsIt) {
+        varStore->declareVar((*argsIt)->getURI(), (*argsIt)->getName(), *instanceVarSrc);
       }
     }
   }
 
   {
     // The context item is not defined
-    AutoContextItemTypeReset contextTypeReset(context_, StaticType::EMPTY);
+    AutoContextItemTypeReset contextTypeReset(context_, StaticType());
     // Turn off warnings
     AutoMessageListenerReset reset(context_);
     item->setInstance(optimize(item->getInstance()));
@@ -343,14 +337,14 @@ ASTNode *StaticTyper::optimizeVariable(XQVariable *item)
 {
   if(!context_) return item;
 
-  const VariableType *vtype = context_->getVariableTypeStore()->getVar(item->getURI(), item->getName());
-  if(vtype && vtype->global) {
+  XQGlobalVariable *global = 0;
+  context_->getVariableTypeStore()->getVar(item->getURI(), item->getName(), &global);
+  if(global) {
     // See if this is a global variable from one of the imported modules,
     // and if so make sure it's static typed first
-    XQQuery *module = context_->getModule()->getModuleCache()->
-      findModuleForVariable(vtype->global);
+    XQQuery *module = context_->getModule()->findModuleForVariable(item->getURI(), item->getName());
     if(module == context_->getModule()) {
-      if(globalsUsed_) globalsUsed_->push_back(vtype->global);
+      if(globalsUsed_) globalsUsed_->push_back(global);
     }
     else if(module) {
       AutoReset<StaticContext*> autoReset(context_);
@@ -367,8 +361,8 @@ ASTNode *StaticTyper::optimizeUserFunction(XQUserFunctionInstance *item)
 
   // See if this is a function from one of the imported modules,
   // and if so make sure it's static typed first
-  XQQuery *module = context_->getModule()->getModuleCache()->
-    findModuleForFunction(item->getFunctionDefinition());
+  XQQuery *module = context_->getModule()->
+    findModuleForFunction(item->getFunctionURI(), item->getFunctionName(), item->getArguments().size());
   if(module && module != context_->getModule()) {
     AutoReset<StaticContext*> autoReset(context_);
     module->staticTypingOnce(this);
@@ -411,16 +405,47 @@ TupleNode *StaticTyper::optimizeTupleNode(TupleNode *item)
 {
   TupleNode *result = ASTVisitor::optimizeTupleNode(item);
   if(result != item) return result;
-  return item->staticTypingImpl(context_);
+
+  if(tupleSetup_)
+    return item->staticTypingImpl(context_);
+  return item;
 }
 
 TupleNode *StaticTyper::optimizeForTuple(ForTuple *item)
 {
   item->setParent(optimizeTupleNode(const_cast<TupleNode*>(item->getParent())));
 
-  if(context_) tupleInScope(item->getParent(), context_);
-  item->setExpression(optimize(item->getExpression()));
-  if(context_) context_->getVariableTypeStore()->removeScope();
+  if(tupleSetup_)
+    item->setExpression(optimize(item->getExpression()));
+
+  if(context_) {
+    VariableTypeStore* varStore = context_->getVariableTypeStore();
+
+    if(tupleSetup_) {
+      varStore->addLogicalBlockScope();
+
+      if(item->getVarName()) {
+        // Declare the variable binding
+        StaticAnalysis &varSrc = const_cast<StaticAnalysis&>(item->getVarSRC());
+        varSrc.getStaticType() = item->getExpression()->getStaticAnalysis().getStaticType();
+        varSrc.getStaticType().setCardinality(1, 1);
+        varSrc.setProperties(StaticAnalysis::DOCORDER | StaticAnalysis::GROUPED |
+                             StaticAnalysis::PEER | StaticAnalysis::SUBTREE | StaticAnalysis::SAMEDOC |
+                             StaticAnalysis::ONENODE | StaticAnalysis::SELF);
+        varStore->declareVar(item->getVarURI(), item->getVarName(), varSrc);
+      }
+
+      if(item->getPosName()) {
+        // Declare the positional variable binding
+        StaticAnalysis &posSrc = const_cast<StaticAnalysis&>(item->getPosSRC());
+        posSrc.getStaticType() = StaticType::DECIMAL_TYPE;
+        varStore->declareVar(item->getPosURI(), item->getPosName(), posSrc);
+      }
+    }
+    else {
+      varStore->removeScope();
+    }
+  }
 
   return item;
 }
@@ -429,9 +454,25 @@ TupleNode *StaticTyper::optimizeLetTuple(LetTuple *item)
 {
   item->setParent(optimizeTupleNode(const_cast<TupleNode*>(item->getParent())));
 
-  if(context_) tupleInScope(item->getParent(), context_);
-  item->setExpression(optimize(item->getExpression()));
-  if(context_) context_->getVariableTypeStore()->removeScope();
+  if(tupleSetup_)
+    item->setExpression(optimize(item->getExpression()));
+
+  if(context_) {
+    VariableTypeStore* varStore = context_->getVariableTypeStore();
+
+    if(tupleSetup_) {
+      varStore->addLogicalBlockScope();
+
+      // Declare the variable binding
+      StaticAnalysis &varSrc = const_cast<StaticAnalysis&>(item->getVarSRC());
+      varSrc.getStaticType() = item->getExpression()->getStaticAnalysis().getStaticType();
+      varSrc.setProperties(item->getExpression()->getStaticAnalysis().getProperties());
+      varStore->declareVar(item->getVarURI(), item->getVarName(), varSrc);
+    }
+    else {
+      varStore->removeScope();
+    }
+  }
 
   return item;
 }
@@ -440,9 +481,33 @@ TupleNode *StaticTyper::optimizeWhereTuple(WhereTuple *item)
 {
   item->setParent(optimizeTupleNode(const_cast<TupleNode*>(item->getParent())));
 
-  if(context_) tupleInScope(item->getParent(), context_);
-  item->setExpression(optimize(item->getExpression()));
-  if(context_) context_->getVariableTypeStore()->removeScope();
+  if(tupleSetup_)
+    item->setExpression(optimize(item->getExpression()));
+
+  return item;
+}
+
+TupleNode *StaticTyper::optimizeCountTuple(CountTuple *item)
+{
+  item->setParent(optimizeTupleNode(const_cast<TupleNode*>(item->getParent())));
+
+  if(context_) {
+    VariableTypeStore* varStore = context_->getVariableTypeStore();
+
+    if(tupleSetup_) {
+      varStore->addLogicalBlockScope();
+
+      if(item->getVarName()) {
+        // Declare the positional variable binding
+        StaticAnalysis &varSrc = const_cast<StaticAnalysis&>(item->getVarSRC());
+        varSrc.getStaticType() = StaticType::DECIMAL_TYPE;
+        varStore->declareVar(item->getVarURI(), item->getVarName(), varSrc);
+      }
+    }
+    else {
+      varStore->removeScope();
+    }
+  }
 
   return item;
 }
@@ -451,11 +516,11 @@ TupleNode *StaticTyper::optimizeOrderByTuple(OrderByTuple *item)
 {
   item->setParent(optimizeTupleNode(const_cast<TupleNode*>(item->getParent())));
 
-  AutoNodeSetOrderingReset orderReset(context_, (item->getModifiers() & OrderByTuple::UNSTABLE) == 0 ?
-                                      StaticContext::ORDERING_ORDERED : StaticContext::ORDERING_UNORDERED);
-  if(context_) tupleInScope(item->getParent(), context_);
-  item->setExpression(optimize(item->getExpression()));
-  if(context_) context_->getVariableTypeStore()->removeScope();
+  if(tupleSetup_) {
+    AutoNodeSetOrderingReset orderReset(context_, (item->getModifiers() & OrderByTuple::UNSTABLE) == 0 ?
+                                        StaticContext::ORDERING_ORDERED : StaticContext::ORDERING_UNORDERED);
+    item->setExpression(optimize(item->getExpression()));
+  }
 
   return item;
 }
