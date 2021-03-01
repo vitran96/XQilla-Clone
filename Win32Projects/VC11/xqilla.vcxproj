@@ -161,7 +161,7 @@
     <ClCompile >
       <Optimization>Disabled</Optimization>
       <MinimalRebuild>true</MinimalRebuild>
-      <AdditionalIncludeDirectories>../../include;../../src/lexer;../../../xerces-c-src/include;../../../xerces-c-src/src;../../../xerces-c-src/build/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include;../../src/lexer;../../../xerces-c/include;../../../xerces-c/src;../../../xerces-c/build/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;_CRT_SECURE_NO_WARNINGS;_USRDLL;XQILLA_APIS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -179,7 +179,7 @@
     <Link >
       <AdditionalOptions >/machine:x86 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalDependencies>xerces-c_3d.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>../../../xerces-c-src/build/src/$(ConfigurationName);../../../xerces-c-src/build/src/$(ConfigurationName);../../../xerces-c-src/build/src/$(ConfigurationName);../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../../xerces-c/build/src/$(ConfigurationName);../../../xerces-c/build/src/$(ConfigurationName);../../../xerces-c/build/src/$(ConfigurationName);../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <ProgramDatabaseFile>$(OutDir)xqilla23d.pdb</ProgramDatabaseFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -189,7 +189,7 @@
       <TargetMachine>NotSet</TargetMachine>
     </Link>
     <PreBuildEvent >
-      <Command>cd ..\..\..\xerces-c-src
+      <Command>cd ..\..\..\xerces-c
       mkdir build
       cd build
       cmake -DCMAKE_INSTALL_PREFIX=..\..\..\bin\debug -DBUILD_SHARED_LIBS=ON -G "Visual Studio 11 2012 "  ..\
@@ -201,7 +201,7 @@
     <ClCompile >
       <Optimization>Disabled</Optimization>
       <MinimalRebuild>true</MinimalRebuild>
-      <AdditionalIncludeDirectories>../../include;../../src/lexer;../../../xerces-c-src/include;../../../xerces-c-src/src;../../../xerces-c-src/build/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include;../../src/lexer;../../../xerces-c/include;../../../xerces-c/src;../../../xerces-c/build/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;_CRT_SECURE_NO_WARNINGS;_LIB;XQILLA_API=;XERCES_STATIC_LIBRARY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -221,7 +221,7 @@
       <AdditionalOptions >/machine:x86 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
     <PreBuildEvent >
-      <Command>cd ..\..\..\xerces-c-src
+      <Command>cd ..\..\..\xerces-c
       mkdir build
       cd build
       cmake -DCMAKE_INSTALL_PREFIX=..\..\..\bin\debug -DBUILD_SHARED_LIBS=OFF -G "Visual Studio 11 2012 "  ..\
@@ -234,7 +234,7 @@
       <Optimization>MaxSpeed</Optimization>
       <MinimalRebuild>true</MinimalRebuild>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>../../include;../../src/lexer;../../../xerces-c-src/include;../../../xerces-c-src/src;../../../xerces-c-src/build/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include;../../src/lexer;../../../xerces-c/include;../../../xerces-c/src;../../../xerces-c/build/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;_USRDLL;XQILLA_APIS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -252,7 +252,7 @@
     <Link >
       <AdditionalOptions >/machine:x86 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalDependencies>xerces-c_3.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>../../../xerces-c-src/build/src/$(ConfigurationName);../../../xerces-c-src/build/src/$(ConfigurationName);../../../xerces-c-src/build/src/$(ConfigurationName);../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../../xerces-c/build/src/$(ConfigurationName);../../../xerces-c/build/src/$(ConfigurationName);../../../xerces-c/build/src/$(ConfigurationName);../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <ProgramDatabaseFile>$(OutDir)xqilla23.pdb</ProgramDatabaseFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -262,7 +262,7 @@
       <TargetMachine>NotSet</TargetMachine>
     </Link>
     <PreBuildEvent >
-      <Command>cd ..\..\..\xerces-c-src
+      <Command>cd ..\..\..\xerces-c
       mkdir build
       cd build
       cmake -DCMAKE_INSTALL_PREFIX=..\..\..\bin\release -DBUILD_SHARED_LIBS=ON -G "Visual Studio 11 2012 "  ..\
@@ -275,7 +275,7 @@
       <Optimization>MaxSpeed</Optimization>
       <MinimalRebuild>true</MinimalRebuild>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>../../include;../../src/lexer;../../../xerces-c-src/include;../../../xerces-c-src/src;../../../xerces-c-src/build/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include;../../src/lexer;../../../xerces-c/include;../../../xerces-c/src;../../../xerces-c/build/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;_LIB;XQILLA_API=;XERCES_STATIC_LIBRARY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -295,7 +295,7 @@
       <AdditionalOptions >/machine:x86 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
     <PreBuildEvent >
-      <Command>cd ..\..\..\xerces-c-src
+      <Command>cd ..\..\..\xerces-c
       mkdir build
       cd build
       cmake -DCMAKE_INSTALL_PREFIX=..\..\..\bin\release -DBUILD_SHARED_LIBS=OFF -G "Visual Studio 11 2012 "  ..\
@@ -307,7 +307,7 @@
     <ClCompile >
       <Optimization>Disabled</Optimization>
       <MinimalRebuild>true</MinimalRebuild>
-      <AdditionalIncludeDirectories>../../include;../../src/lexer;../../../xerces-c-src/include;../../../xerces-c-src/src;../../../xerces-c-src/build/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include;../../src/lexer;../../../xerces-c/include;../../../xerces-c/src;../../../xerces-c/build/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;_CRT_SECURE_NO_WARNINGS;_USRDLL;XQILLA_APIS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -325,7 +325,7 @@
     <Link >
       <AdditionalOptions >/machine:x64 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalDependencies>xerces-c_3d.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>../../../xerces-c-src/build/src/$(ConfigurationName);../../../xerces-c-src/build/src/$(ConfigurationName);../../../xerces-c-src/build/src/$(ConfigurationName);../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../../xerces-c/build/src/$(ConfigurationName);../../../xerces-c/build/src/$(ConfigurationName);../../../xerces-c/build/src/$(ConfigurationName);../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <ProgramDatabaseFile>$(OutDir)xqilla23d.pdb</ProgramDatabaseFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -335,7 +335,7 @@
       <TargetMachine>NotSet</TargetMachine>
     </Link>
     <PreBuildEvent >
-      <Command>cd ..\..\..\xerces-c-src
+      <Command>cd ..\..\..\xerces-c
       mkdir build
       cd build
       cmake -DCMAKE_INSTALL_PREFIX=..\..\..\bin\debug -DBUILD_SHARED_LIBS=ON -G "Visual Studio 11 2012 Win64"  ..\
@@ -347,7 +347,7 @@
     <ClCompile >
       <Optimization>Disabled</Optimization>
       <MinimalRebuild>true</MinimalRebuild>
-      <AdditionalIncludeDirectories>../../include;../../src/lexer;../../../xerces-c-src/include;../../../xerces-c-src/src;../../../xerces-c-src/build/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include;../../src/lexer;../../../xerces-c/include;../../../xerces-c/src;../../../xerces-c/build/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;_CRT_SECURE_NO_WARNINGS;_LIB;XQILLA_API=;XERCES_STATIC_LIBRARY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -367,7 +367,7 @@
       <AdditionalOptions >/machine:x64 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
     <PreBuildEvent >
-      <Command>cd ..\..\..\xerces-c-src
+      <Command>cd ..\..\..\xerces-c
       mkdir build
       cd build
       cmake -DCMAKE_INSTALL_PREFIX=..\..\..\bin\debug -DBUILD_SHARED_LIBS=OFF -G "Visual Studio 11 2012 Win64"  ..\
@@ -380,7 +380,7 @@
       <Optimization>MaxSpeed</Optimization>
       <MinimalRebuild>true</MinimalRebuild>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>../../include;../../src/lexer;../../../xerces-c-src/include;../../../xerces-c-src/src;../../../xerces-c-src/build/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include;../../src/lexer;../../../xerces-c/include;../../../xerces-c/src;../../../xerces-c/build/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;_USRDLL;XQILLA_APIS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -398,7 +398,7 @@
     <Link >
       <AdditionalOptions >/machine:x64 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalDependencies>xerces-c_3.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>../../../xerces-c-src/build/src/$(ConfigurationName);../../../xerces-c-src/build/src/$(ConfigurationName);../../../xerces-c-src/build/src/$(ConfigurationName);../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../../xerces-c/build/src/$(ConfigurationName);../../../xerces-c/build/src/$(ConfigurationName);../../../xerces-c/build/src/$(ConfigurationName);../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <ProgramDatabaseFile>$(OutDir)xqilla23.pdb</ProgramDatabaseFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -408,7 +408,7 @@
       <TargetMachine>NotSet</TargetMachine>
     </Link>
     <PreBuildEvent >
-      <Command>cd ..\..\..\xerces-c-src
+      <Command>cd ..\..\..\xerces-c
       mkdir build
       cd build
       cmake -DCMAKE_INSTALL_PREFIX=..\..\..\bin\release -DBUILD_SHARED_LIBS=ON -G "Visual Studio 11 2012 Win64"  ..\
@@ -421,7 +421,7 @@
       <Optimization>MaxSpeed</Optimization>
       <MinimalRebuild>true</MinimalRebuild>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>../../include;../../src/lexer;../../../xerces-c-src/include;../../../xerces-c-src/src;../../../xerces-c-src/build/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include;../../src/lexer;../../../xerces-c/include;../../../xerces-c/src;../../../xerces-c/build/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;_LIB;XQILLA_API=;XERCES_STATIC_LIBRARY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -441,7 +441,7 @@
       <AdditionalOptions >/machine:x64 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
     <PreBuildEvent >
-      <Command>cd ..\..\..\xerces-c-src
+      <Command>cd ..\..\..\xerces-c
       mkdir build
       cd build
       cmake -DCMAKE_INSTALL_PREFIX=..\..\..\bin\release -DBUILD_SHARED_LIBS=OFF -G "Visual Studio 11 2012 Win64"  ..\
